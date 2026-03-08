@@ -17,6 +17,12 @@ dependencies = [
     "youtube-transcript-api>=1.2.4",
 ]
 
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu" },
+]
+
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
