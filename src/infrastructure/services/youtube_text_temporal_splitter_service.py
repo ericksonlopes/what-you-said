@@ -1,0 +1,215 @@
+import math
+from typing import List
+
+from langchain_core.documents import Document
+from youtube_transcript_api import FetchedTranscript
+
+from src.config.logger import Logger
+from src.domain.infraestructure.services.IModelLoaderService import IModelLoaderService
+
+logger = Logger()
+
+
+class YoutubeTranscriptSplitterService:
+    """Splits the transcript into overlapping temporal windows or into token-sized chunks.
+
+    Usage:
+      - Time-based: tempo.split_transcript(transcript, window_size=30, overlap=5)
+      - Token-based: tempo.split_transcript(transcript, mode='tokens', tokens_per_chunk=512, token_overlap=50)
+
+    Token-based splitting usa o tokenizer do model_loader_service.model.
+    Se não houver tokenizer, faz fallback para tiktoken.
+    """
+
+    def __init__(self, model_loader_service: IModelLoaderService):
+        self.model_loader_service: IModelLoaderService = model_loader_service
+
+    def split_transcript(
+            self,
+            transcript: FetchedTranscript,
+            window_size: int = 30,
+            overlap: int = 5,
+            mode: str = "time",
+            tokens_per_chunk: int | None = None,
+            token_overlap: int = 0
+    ) -> List[Document]:
+        video_id = self._get_video_id(transcript)
+        context = {
+            "window_size": window_size,
+            "overlap": overlap,
+            "mode": mode,
+            "tokens_per_chunk": tokens_per_chunk,
+            "token_overlap": token_overlap,
+            "transcript_length": len(transcript) if transcript else 0,
+            "video_id": video_id
+        }
+        logger.info("Starting transcript splitting into windows...", context=context)
+        documents: List[Document] = []
+
+        if not transcript:
+            logger.warning("Empty transcription.", context=context)
+            return documents
+
+        if mode == "time" or not tokens_per_chunk:
+            return self._split_by_time(transcript, window_size, overlap, context)
+
+        if mode == "tokens":
+            return self._split_by_tokens(transcript, tokens_per_chunk, token_overlap, context)
+
+        logger.error("Unknown splitting mode.", context={**context, "mode": mode})
+        raise ValueError(f"Unknown splitting mode: {mode}")
+
+    def _split_by_time(self, transcript, window_size, overlap, context):
+        step = window_size - overlap
+        if step <= 0:
+            logger.error("window_size must be greater than overlap", context=context)
+            raise ValueError("window_size must be greater than overlap")
+
+        total_duration = self._get_snippet_end(transcript[-1])
+        windows = math.ceil(total_duration / step)
+        documents: List[Document] = []
+
+        logger.info("Splitting transcript by time windows",
+                    context={**context, "total_duration": total_duration, "windows": windows})
+        for i in range(windows):
+            start = i * step
+            end = start + window_size
+            window_text = [
+                self._get_text(snippet) for snippet in transcript
+                if start <= self._get_start(snippet) < end
+            ]
+
+            if window_text:
+                doc_context = {**context, "window_index": i, "window_start": start, "window_end": end,
+                               "window_text_length": len(window_text)}
+                logger.debug("Creating document for time window", context=doc_context)
+                documents.append(
+                    self._create_document(window_text, start, end, self._get_video_id(transcript))
+                )
+
+        logger.info(f"Transcript split into {len(documents)} windows.",
+                    context={**context, "windows_created": len(documents)})
+        return documents
+
+    def _split_by_tokens(self, transcript, tokens_per_chunk, token_overlap, context):
+        step = tokens_per_chunk - token_overlap
+        if step <= 0:
+            logger.error("token_overlap must be smaller than tokens_per_chunk", context=context)
+            raise ValueError("token_overlap must be smaller than tokens_per_chunk")
+
+        tokenizer = getattr(self.model_loader_service.model, "tokenizer", None)
+        if tokenizer is None:
+            logger.error("No tokenizer available in the model.", context=context)
+            raise RuntimeError(
+                "No tokenizer available in the model. Please configure a tokenizer in model_loader_service.model.")
+
+        token_ids, token_meta = self._tokenize_transcript(transcript, tokenizer, context)
+        documents = self._create_token_chunks(token_ids, token_meta, tokens_per_chunk, step, transcript, context)
+        logger.info(f"Transcript split into {len(documents)} token windows.",
+                    context={**context, "token_windows_created": len(documents)})
+        return documents
+
+    def _tokenize_transcript(self, transcript, tokenizer, context):
+        token_ids = []
+        token_meta = []
+
+        def _encode(txt: str):
+            try:
+                return tokenizer.encode(txt, add_special_tokens=False)
+            except TypeError:
+                return tokenizer.encode(txt)
+
+        logger.info("Tokenizing transcript", context={**context, "transcript_length": len(transcript)})
+        for idx, snippet in enumerate(transcript):
+            text = self._get_text(snippet)
+            start_time = self._get_start(snippet)
+            duration = self._get_duration(snippet)
+            end_time = start_time + (duration or 0.0)
+
+            if not text:
+                logger.debug("Skipping empty snippet", context={**context, "snippet_index": idx})
+                continue
+
+            ids = _encode(text)
+            logger.debug("Tokenized snippet", context={**context, "snippet_index": idx, "token_count": len(ids)})
+            for t_id in ids:
+                token_ids.append(t_id)
+                token_meta.append({"start": start_time, "end": end_time, "snippet_index": idx})
+        logger.info("Tokenization complete", context={**context, "total_tokens": len(token_ids)})
+        return token_ids, token_meta
+
+    def _create_token_chunks(self, token_ids, token_meta, tokens_per_chunk, step, transcript, context):
+        n = len(token_ids)
+        i = 0
+        documents: List[Document] = []
+
+        def _decode(_ids: list):
+            try:
+                return self.model_loader_service.model.tokenizer.decode(_ids, skip_special_tokens=True)
+            except TypeError:
+                return self.model_loader_service.model.tokenizer.decode(_ids)
+            except AttributeError:
+                return str(_ids)
+
+        logger.info("Creating token chunks",
+                    context={**context, "total_tokens": n, "tokens_per_chunk": tokens_per_chunk, "step": step})
+        while i < n:
+            chunk_ids = token_ids[i: i + tokens_per_chunk]
+            chunk_meta = token_meta[i: i + tokens_per_chunk]
+
+            chunk_text = _decode(chunk_ids) if chunk_ids else ""
+
+            if chunk_meta:
+                window_start = min(m["start"] for m in chunk_meta)
+                window_end = max(m["end"] for m in chunk_meta)
+            else:
+                window_start = 0.0
+                window_end = 0.0
+
+            chunk_context = {**context, "chunk_index": i // step, "window_start": window_start,
+                             "window_end": window_end, "token_count": len(chunk_ids)}
+            logger.debug("Creating document for token chunk", context=chunk_context)
+            documents.append(
+                Document(
+                    page_content=chunk_text,
+                    metadata={
+                        "window_start": window_start,
+                        "window_end": window_end,
+                        "video_id": self._get_video_id(transcript),
+                        "token_count": len(chunk_ids),
+                    },
+                )
+            )
+            i += step
+        logger.info("Token chunk creation complete", context={**context, "chunks_created": len(documents)})
+        return documents
+
+    @classmethod
+    def _get_text(cls, snippet) -> str:
+        return getattr(snippet, "text", "")
+
+    @classmethod
+    def _get_start(cls, snippet) -> float:
+        return float(getattr(snippet, "start", 0.0))
+
+    @classmethod
+    def _get_duration(cls, snippet) -> float:
+        return float(getattr(snippet, "duration", 0.0))
+
+    def _get_snippet_end(self, snippet) -> float:
+        return self._get_start(snippet) + self._get_duration(snippet)
+
+    @classmethod
+    def _get_video_id(cls, transcript) -> str | None:
+        return getattr(transcript, "video_id", None)
+
+    @classmethod
+    def _create_document(cls, text_segments: List[str], start: float, end: float, video_id: str) -> Document:
+        return Document(
+            page_content=" ".join(text_segments),
+            metadata={
+                "window_start": start,
+                "window_end": end,
+                "video_id": video_id,
+            },
+        )

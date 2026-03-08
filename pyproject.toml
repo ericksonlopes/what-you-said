@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "what-you-said"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-text-splitters>=1.1.1",
+    "pydantic-settings>=2.13.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "sentence-transformers>=5.2.3",
+    "youtube-transcript-api>=1.2.4",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu" },
+]
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

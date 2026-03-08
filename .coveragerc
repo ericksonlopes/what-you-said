@@ -1,0 +1,11 @@
+[run]
+omit =
+    */tests/*
+    */domain/*
+
+[report]
+exclude_lines =
+    if __name__ == .__main__.:
+
+[html]
+directory = ./tests/coverage_html_report
