@@ -33,13 +33,15 @@ class YoutubeTranscriptSplitterService:
             tokens_per_chunk: int | None = None,
             token_overlap: int = 0
     ) -> List[Document]:
+        video_id = self._get_video_id(transcript)
         context = {
             "window_size": window_size,
             "overlap": overlap,
             "mode": mode,
             "tokens_per_chunk": tokens_per_chunk,
             "token_overlap": token_overlap,
-            "transcript_length": len(transcript) if transcript else 0
+            "transcript_length": len(transcript) if transcript else 0,
+            "video_id": video_id
         }
         logger.info("Starting transcript splitting into windows...", context=context)
         documents: List[Document] = []
