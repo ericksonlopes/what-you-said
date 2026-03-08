@@ -12,26 +12,27 @@ class DummyTranscript:
         return 1
 
 
-def test_fetch_transcript_success():
-    video_id = "dummy_id"
-    languages = ["pt"]
-    dummy_transcript = DummyTranscript()
+@pytest.mark.YoutubeTranscriptExtractor
+class TestYoutubeTranscriptExtractor:
+    def test_fetch_transcript_success(self):
+        video_id = "dummy_id"
+        languages = ["pt"]
+        dummy_transcript = DummyTranscript()
 
-    with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
-        mock_fetch.return_value = dummy_transcript
-        with patch.object(logger, "info"), patch.object(logger, "debug"):
-            extractor = YoutubeTranscriptExtractor()
-            result = extractor.fetch_transcript(video_id, languages)
-            assert result == dummy_transcript
-            mock_fetch.assert_called_once_with(video_id=video_id, languages=languages)
+        with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
+            mock_fetch.return_value = dummy_transcript
+            with patch.object(logger, "info"), patch.object(logger, "debug"):
+                extractor = YoutubeTranscriptExtractor()
+                result = extractor.fetch_transcript(video_id, languages)
+                assert result == dummy_transcript
+                mock_fetch.assert_called_once_with(video_id=video_id, languages=languages)
 
-
-def test_fetch_transcript_no_transcript_found():
-    video_id = "dummy_id"
-    languages = ["pt"]
-    with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
-        mock_fetch.side_effect = Exception("NoTranscriptFound")
-        with patch.object(logger, "info"), patch.object(logger, "error"):
-            extractor = YoutubeTranscriptExtractor()
-            with pytest.raises(Exception):
-                extractor.fetch_transcript(video_id, languages)
+    def test_fetch_transcript_no_transcript_found(self):
+        video_id = "dummy_id"
+        languages = ["pt"]
+        with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
+            mock_fetch.side_effect = Exception("NoTranscriptFound")
+            with patch.object(logger, "info"), patch.object(logger, "error"):
+                extractor = YoutubeTranscriptExtractor()
+                with pytest.raises(Exception):
+                    extractor.fetch_transcript(video_id, languages)

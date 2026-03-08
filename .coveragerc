@@ -1,0 +1,7 @@
+[run]
+omit =
+    */tests/*
+    */domain/*
+
+[html]
+directory = ./tests/coverage_html_report
