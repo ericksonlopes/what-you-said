@@ -22,9 +22,13 @@ Install the package (editable mode):
 
 ```bash
 python -m pip install -e .
+
+# Install project dependencies with uv (if you use uv to manage dependencies)
+uv sync
 ```
 
-Dependencies are declared in pyproject.toml. If you use `uv` to manage dependencies, use it to sync/install per the pyproject configuration (dev dependencies live under `[dependency-groups]`).
+
+Dependencies are declared in pyproject.toml. If you use `uv` to manage dependencies, use it to sync/install per the pyproject configuration.
 
 Run tests:
 
