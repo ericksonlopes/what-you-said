@@ -1,5 +1,6 @@
 import logging
 
+from src.config.settings import settings
 from src.infrastructure.services.model_loader_service import ModelLoaderService
 from src.infrastructure.services.transcript_processor_service import TranscriptProcessorService
 
@@ -7,7 +8,7 @@ logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 
 if __name__ == '__main__':
-    model = "paraphrase-multilingual-MiniLM-L12-v2"
+    model = settings.MODEL_EMBEDDING_NAME
     model_loader = ModelLoaderService(model)
     model_instance = model_loader.model
 

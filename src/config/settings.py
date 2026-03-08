@@ -13,6 +13,8 @@ class Settings(BaseSettings):
         description="Comma-separated list of log levels to enable (e.g., 'DEBUG,INFO,WARNING')"
     )
 
+    MODEL_EMBEDDING_NAME: str = Field(default="all-MiniLM-L6-v2", description="Name of the embedding model to use")
+
     @field_validator('LIST_LOG_LEVELS', mode='before')
     @classmethod
     def _parse_list_log_levels(cls, v) -> List[str]:
