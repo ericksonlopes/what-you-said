@@ -148,3 +148,19 @@ class TestStdLogger:
         logger = StdLogger(log_format, name=logger_name)
         logger_obj = logger._logger
         assert len(logger_obj.handlers) == 1  # Only the new handler remains
+
+    def test_handler_removal_loop(self):
+        log_format = "{message}"
+        logger_name = "handler_removal_loop"
+        logger = StdLogger(log_format, name=logger_name)
+        logger_obj = logger._logger
+        # Add multiple handlers
+        handler1 = logging.StreamHandler()
+        handler2 = logging.StreamHandler()
+        logger_obj.addHandler(handler1)
+        logger_obj.addHandler(handler2)
+        assert len(logger_obj.handlers) >= 3  # 1 default + 2 added
+        # Re-instantiate StdLogger to trigger handler removal loop
+        logger = StdLogger(log_format, name=logger_name)
+        logger_obj = logger._logger
+        assert len(logger_obj.handlers) == 1  # Only the new handler remains
