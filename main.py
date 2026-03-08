@@ -1,5 +1,13 @@
-from src.config.settings import settings
+from pprint import pprint
+
+from src.infrastructure.services.transcript_processor import TranscriptProcessor
 
 if __name__ == '__main__':
-    print(settings.LIST_LOG_LEVELS)
-    print(settings.allowed_log_levels)
+    tp = TranscriptProcessor()
+
+    v_id = "VQnM8Y3RIyM"
+    languages = ["pt"]
+
+    fetch = tp.fetch_transcript(video_id=v_id, languages=languages)
+
+    pprint(fetch)

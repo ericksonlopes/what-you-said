@@ -1,11 +1,10 @@
 import logging
 import sys
-from typing import Optional, Dict
+from typing import Optional, Any
 
 from src.config.settings import settings
-from src.infrastructure.logger.util import get_log_record
-
 from src.domain.infraestructure.logger.logger import ILogger
+from src.infrastructure.logger.util import get_log_record
 
 
 class StdLogger(ILogger):
@@ -54,54 +53,40 @@ class StdLogger(ILogger):
         except Exception:
             return True
 
-    def info(self, message: str, context: Optional[Dict] = None) -> None:
+    def _log(self, level: str, message: str, context: dict[str, Any] | None = None) -> None:
+        if not self._is_allowed(level):
+            return
+        ctx = get_log_record(level, message)
+        # Adiciona o contexto como string (JSON ou str) ao campo 'context'
+        if context:
+            import json
+            try:
+                ctx['context'] = json.dumps(context, ensure_ascii=False)
+            except Exception:
+                ctx['context'] = str(context)
+        else:
+            ctx['context'] = ""
+        formatted_message = self.log_format.format(**ctx)
+        log_method = getattr(self._logger, level.lower(), None)
+        if log_method:
+            log_method(formatted_message)
+
+    def info(self, message: str, context: dict[str, Any] | None = None) -> None:
         """Log at INFO level."""
-        if self._is_allowed('INFO'):
-            msg = message
-            if context:
-                msg += f" | context={context}"
-            ctx = get_log_record('INFO', msg)
-            formatted_message = self.log_format.format(**ctx)
-            self._logger.info(formatted_message)
+        self._log("INFO", message, context)
 
-    def debug(self, message: str, context: Optional[Dict] = None) -> None:
+    def debug(self, message: str, context: dict[str, Any] | None = None) -> None:
         """Log at DEBUG level."""
-        if self._is_allowed('DEBUG'):
-            msg = message
-            if context:
-                msg += f" | context={context}"
-            ctx = get_log_record('DEBUG', msg)
-            formatted_message = self.log_format.format(**ctx)
-            self._logger.debug(formatted_message)
+        self._log("DEBUG", message, context)
 
-    def warning(self, message: str, context: Optional[Dict] = None) -> None:
+    def warning(self, message: str, context: dict[str, Any] | None = None) -> None:
         """Log at WARNING level."""
-        if self._is_allowed('WARNING'):
-            msg = message
-            if context:
-                msg += f" | context={context}"
-            ctx = get_log_record('WARNING', msg)
-            formatted_message = self.log_format.format(**ctx)
-            self._logger.warning(formatted_message)
+        self._log("WARNING", message, context)
 
-    def error(self, error: Exception, context: Optional[Dict] = None) -> None:
+    def error(self, error: Exception, context: dict[str, Any] | None = None) -> None:
         """Log at ERROR level with optional exception/context support."""
-        if self._is_allowed('ERROR'):
-            msg = f"{error}"
-            if context:
-                msg += f" | context={context}"
+        self._log("ERROR", str(error), context)
 
-            ctx = get_log_record('ERROR', msg)
-            formatted_message = self.log_format.format(**ctx)
-            self._logger.error(formatted_message)
-
-    # Additional methods for compatibility with other implementations
-    def critical(self, message: str, context: Optional[Dict] = None) -> None:
+    def critical(self, message: str, context: dict[str, Any] | None = None) -> None:
         """Log at CRITICAL level."""
-        if self._is_allowed('CRITICAL'):
-            msg = message
-            if context:
-                msg += f" | context={context}"
-            ctx = get_log_record('CRITICAL', msg)
-            formatted_message = self.log_format.format(**ctx)
-            self._logger.critical(formatted_message)
+        self._log("CRITICAL", message, context)

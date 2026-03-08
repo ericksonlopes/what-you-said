@@ -33,8 +33,9 @@ class Settings(BaseSettings):
         }
         return {level_map[level] for level in self.LIST_LOG_LEVELS if level in level_map}
 
-    class Config:
-        env_file = ".env"
+    model_config = {
+        'env_file': '.env'
+    }
 
 
 settings = Settings()

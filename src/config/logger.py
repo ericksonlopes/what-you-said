@@ -1,6 +1,6 @@
 from src.infrastructure.logger.std_logger import StdLogger
 
-LOG_FORMAT = "{asctime} | {levelname} | {filepath}:{lineno} | {message}"
+LOG_FORMAT = "{asctime} | {levelname:<8} | {filename}:{funcName}:{lineno} | {message} | {context}"
 
 
 class Logger:
