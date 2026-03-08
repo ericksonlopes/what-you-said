@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from youtube_transcript_api import FetchedTranscript
 
 from src.config.logger import Logger
-from src.domain.infraestructure.IModelLoaderService import IModelLoaderService
+from src.domain.infraestructure.services.IModelLoaderService import IModelLoaderService
 
 logger = Logger()
 
