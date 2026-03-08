@@ -37,16 +37,6 @@ class TestStdLogger:
         logger.allowed_levels = []
         assert logger._is_allowed("INFO") is False
 
-    def test_is_allowed_exception(self, monkeypatch):
-        logger = StdLogger("{message}")
-        logger.allowed_levels = [10]
-
-        def broken_get_log_level(level_name):
-            raise KeyError("fail")
-
-        monkeypatch.setattr(logger, "_get_log_level", broken_get_log_level)
-        assert logger._is_allowed("INFO") is True
-
     def test_log_skips_if_not_allowed(self, monkeypatch):
         logger = StdLogger("{message}")
         monkeypatch.setattr(logger, "_is_allowed", lambda x: False)
@@ -118,6 +108,43 @@ class TestStdLogger:
         logger_obj.addHandler(handler1)
         logger_obj.addHandler(handler2)
         assert len(logger_obj.handlers) >= 3  # 1 default + 2 added
+        logger = StdLogger(log_format, name=logger_name)
+        logger_obj = logger._logger
+        assert len(logger_obj.handlers) == 1  # Only the new handler remains
+
+    def test_is_allowed_keyerror(self, monkeypatch):
+        logger = StdLogger("{message}")
+        logger.allowed_levels = [10]
+
+        def broken_get_log_level(level_name):
+            raise KeyError("fail")
+
+        monkeypatch.setattr(logger, "_get_log_level", broken_get_log_level)
+        assert logger._is_allowed("INFO") is True
+
+    def test_is_allowed_runtimeerror(self, monkeypatch):
+        logger = StdLogger("{message}")
+        logger.allowed_levels = [10]
+
+        def broken_get_log_level(level_name):
+            raise ValueError("fail")
+
+        monkeypatch.setattr(logger, "_get_log_level", broken_get_log_level)
+        with pytest.raises(RuntimeError) as exc:
+            logger._is_allowed("INFO")
+        assert "Unexpected error in _is_allowed" in str(exc.value)
+
+    def test_logger_remove_all_handlers(self):
+        log_format = "{message}"
+        logger_name = "remove_all_handlers"
+        logger = StdLogger(log_format, name=logger_name)
+        logger_obj = logger._logger
+        handler1 = logging.StreamHandler()
+        handler2 = logging.StreamHandler()
+        logger_obj.addHandler(handler1)
+        logger_obj.addHandler(handler2)
+        assert len(logger_obj.handlers) >= 3  # 1 default + 2 added
+        # Re-instantiate StdLogger to trigger handler removal
         logger = StdLogger(log_format, name=logger_name)
         logger_obj = logger._logger
         assert len(logger_obj.handlers) == 1  # Only the new handler remains

@@ -104,7 +104,8 @@ class StdLogger(ILogger):
             'message': message
         }
 
-    def _get_log_level(self, level_name: str):
+    @classmethod
+    def _get_log_level(cls, level_name: str):
         return getattr(logging, level_name.upper(), None)
 
     def _is_allowed(self, level_name: str) -> bool:
@@ -113,8 +114,6 @@ class StdLogger(ILogger):
                 return False
             level = self._get_log_level(level_name)
             return level in self.allowed_levels
-        except TypeError:
-            return False
         except KeyError:
             return True
         except Exception as exc:
