@@ -1,0 +1,12 @@
+[project]
+name = "what-you-said"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-text-splitters>=1.1.1",
+    "pydantic-settings>=2.13.1",
+    "sentence-transformers>=5.2.3",
+    "youtube-transcript-api>=1.2.4",
+]
