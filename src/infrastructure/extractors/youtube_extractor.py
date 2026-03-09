@@ -2,12 +2,13 @@ from youtube_transcript_api import YouTubeTranscriptApi, FetchedTranscript, Tran
 from yt_dlp import YoutubeDL
 
 from src.config.logger import Logger
+from src.domain.infraestructure.extractors.youtube_extractor_interface import IYoutubeExtractor
 from src.infrastructure.extractors.models.youtube_metadata_dto import YoutubeMetadataDTO
 
 logger = Logger()
 
 
-class YoutubeExtractor:
+class YoutubeExtractor(IYoutubeExtractor):
     """Extracts metadata and transcripts from YouTube videos."""
 
     def __init__(self, video_id: str):
