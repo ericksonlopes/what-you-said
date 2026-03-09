@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import Literal, List
 
 from langchain_core.documents import Document
 from youtube_transcript_api import FetchedTranscript
@@ -29,7 +29,7 @@ class YoutubeTranscriptSplitterService:
             transcript: FetchedTranscript,
             window_size: int = 30,
             overlap: int = 5,
-            mode: str = "time",
+            mode: Literal["time", "tokens"] = "time",
             tokens_per_chunk: int | None = None,
             token_overlap: int = 0
     ) -> List[Document]:
