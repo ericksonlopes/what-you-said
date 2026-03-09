@@ -181,6 +181,7 @@ class TestStdLogger:
         logger_obj.addHandler(handler1)
         logger_obj.addHandler(handler2)
         assert len(logger_obj.handlers) >= 2
+
         # Instantiate StdLogger with same logger name (simulate same instance)
         class StdLoggerTest(StdLogger):
             def __init__(self, log_format, name=None):
@@ -199,6 +200,7 @@ class TestStdLogger:
                 self._logger.addHandler(console_handler)
                 self._logger.parent = None
                 self.allowed_levels = [10, 20, 30, 40, 50]
+
         StdLoggerTest(log_format, name=logger_name)
         # Only one handler should remain
         assert len(logger_obj.handlers) == 1
@@ -222,4 +224,3 @@ class TestStdLogger:
         StdLogger(log_format, name=logger_name, logger_id=logger_id)
         # Apenas um handler deve restar
         assert len(logger_obj.handlers) == 1
-

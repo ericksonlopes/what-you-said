@@ -92,6 +92,7 @@ class TestYoutubeTranscriptSplitterService:
             if add_special_tokens is not None:
                 raise TypeError("unexpected argument")
             return [ord(c) for c in txt]
+
         mock_model_loader_service.model.tokenizer.encode.side_effect = encode_side_effect
         splitter = YoutubeTranscriptSplitterService(mock_model_loader_service)
         # Should trigger fallback in _encode
@@ -110,6 +111,7 @@ class TestYoutubeTranscriptSplitterService:
             text = ""
             start = 0
             duration = 0
+
         transcript = [EmptySnippet()]
         splitter = YoutubeTranscriptSplitterService(mock_model_loader_service)
         with patch.object(logger, "debug") as mock_debug:
@@ -120,19 +122,25 @@ class TestYoutubeTranscriptSplitterService:
         splitter = YoutubeTranscriptSplitterService(mock_model_loader_service)
         chunk_ids = [65, 66]
         transcript = [DummySnippet("A", 0, 1)]
+
         # Patch decode to raise TypeError only when skip_special_tokens is present
         def decode_typeerror(ids, *args, **kwargs):
             if kwargs.get("skip_special_tokens", False):
                 raise TypeError("unexpected argument")
             return "decoded"
+
         mock_model_loader_service.model.tokenizer.decode.side_effect = decode_typeerror
-        docs = splitter._create_token_chunks(chunk_ids, [{"start": 0, "end": 1, "snippet_index": 0}] * len(chunk_ids), len(chunk_ids), len(chunk_ids), transcript, {})
+        docs = splitter._create_token_chunks(chunk_ids, [{"start": 0, "end": 1, "snippet_index": 0}] * len(chunk_ids),
+                                             len(chunk_ids), len(chunk_ids), transcript, {})
         assert docs[0].page_content == "decoded"
+
         # Patch decode to raise AttributeError
         def decode_attributeerror(ids, *args, **kwargs):
             raise AttributeError("no decode")
+
         mock_model_loader_service.model.tokenizer.decode.side_effect = decode_attributeerror
-        docs = splitter._create_token_chunks(chunk_ids, [{"start": 0, "end": 1, "snippet_index": 0}] * len(chunk_ids), len(chunk_ids), len(chunk_ids), transcript, {})
+        docs = splitter._create_token_chunks(chunk_ids, [{"start": 0, "end": 1, "snippet_index": 0}] * len(chunk_ids),
+                                             len(chunk_ids), len(chunk_ids), transcript, {})
         assert docs[0].page_content == str(chunk_ids)
 
     def test_create_token_chunks_empty_meta(self, mock_model_loader_service):
@@ -144,3 +152,13 @@ class TestYoutubeTranscriptSplitterService:
         docs = splitter._create_token_chunks(token_ids, token_meta, len(token_ids), len(token_ids), transcript, {})
         assert math.isclose(docs[0].metadata["window_start"], 0.0)
         assert math.isclose(docs[0].metadata["window_end"], 0.0)
+
+    def test_unknown_mode_error(self, dummy_transcript, mock_model_loader_service):
+        with patch.object(logger, "error") as mock_error:
+            splitter = YoutubeTranscriptSplitterService(mock_model_loader_service)
+            with pytest.raises(ValueError) as exc:
+                splitter.split_transcript(dummy_transcript, mode="unknown_mode", tokens_per_chunk=10)
+            assert "Unknown splitting mode" in str(exc.value)
+            mock_error.assert_called()
+            call_args = mock_error.call_args[1]
+            assert call_args["context"]["mode"] == "unknown_mode"
