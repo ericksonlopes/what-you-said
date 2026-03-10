@@ -48,7 +48,7 @@ class StdLogger(ILogger):
         # Force logger to not inherit from parent (bypass root logger's level)
         self._logger.parent = None
 
-        self.allowed_levels = settings.allowed_log_levels
+        self.allowed_levels = settings.app.allowed_log_levels
 
     @staticmethod
     def get_logger_module_files(base_dir=None):

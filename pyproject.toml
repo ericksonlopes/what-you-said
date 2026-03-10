@@ -17,6 +17,7 @@ dependencies = [
     "youtube-transcript-api>=1.2.4",
     "torch>=2.9.1",
     "yt-dlp>=2026.3.3",
+    "langchain-weaviate>=0.0.6",
 ]
 
 [tool.uv.sources]
