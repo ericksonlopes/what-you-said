@@ -2,12 +2,11 @@ from pprint import pprint
 from typing import List
 
 from langchain_core.documents import Document
-from youtube_transcript_api import FetchedTranscript
 
 from src.config.settings import settings
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.infrastructure.services.model_loader_service import ModelLoaderService
-from src.infrastructure.services.youtube_text_temporal_splitter_service import YoutubeTranscriptSplitterService
+from src.infrastructure.services.youtube_data_service import YoutubeDataService
 
 if __name__ == '__main__':
     v_id = "VQnM8Y3RIyM"
@@ -18,10 +17,7 @@ if __name__ == '__main__':
 
     yt_extractor = YoutubeExtractor(video_id=v_id)
 
-    transcript: FetchedTranscript = yt_extractor.extract_transcript(language=language)
-    metadata = yt_extractor.extract_metadata()
+    ytts = YoutubeDataService(model_loader_service=model_loader, yt_extractor=yt_extractor)
+    result: List[Document] = ytts.split_transcript(mode="tokens", tokens_per_chunk=512, tokens_overlap=30)
 
-    ytts = YoutubeTranscriptSplitterService(model_loader)
-    result: List[Document] = ytts.split_transcript(transcript, mode="tokens", tokens_per_chunk=512, token_overlap=5)
     pprint(result)
-    pprint(metadata)

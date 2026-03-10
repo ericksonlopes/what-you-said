@@ -11,7 +11,7 @@ from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 logger = Logger()
 
 
-class YoutubeTranscriptSplitterService:
+class YoutubeDataService:
     """Splits the transcript into overlapping temporal windows or into token-sized chunks.
 
     Usage:
