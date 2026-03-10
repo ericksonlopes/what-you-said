@@ -18,49 +18,45 @@ class DummyTranscript:
 class TestYoutubeExtractor:
     def test_extract_transcript_success(self):
         video_id = "dummy_id"
-        language = "pt"
         dummy_transcript = DummyTranscript()
 
         with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
             mock_fetch.return_value = dummy_transcript
             with patch.object(logger, "info"), patch.object(logger, "debug"):
                 extractor = YoutubeExtractor(video_id)
-                result = extractor.extract_transcript(language)
+                result = extractor.extract_transcript()
                 assert result == dummy_transcript
-                mock_fetch.assert_called_once_with(video_id=video_id, languages=[language])
+                mock_fetch.assert_called_once_with(video_id=video_id, languages=[extractor.language])
 
     def test_extract_transcript_no_transcript_found(self):
         video_id = "dummy_id"
-        language = "pt"
         transcript_data = ""  # Should be a string
-        requested_language_codes = [language]
+        requested_language_codes = ["pt"]
         message = "No transcript found"
         with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
             mock_fetch.side_effect = NoTranscriptFound(transcript_data, requested_language_codes, message)
             with patch.object(logger, "info"), patch.object(logger, "error"):
                 extractor = YoutubeExtractor(video_id)
                 with pytest.raises(NoTranscriptFound):
-                    extractor.extract_transcript(language)
+                    extractor.extract_transcript()
 
     def test_extract_transcript_transcripts_disabled(self):
         video_id = "dummy_id"
-        language = "pt"
         with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
             mock_fetch.side_effect = TranscriptsDisabled("Transcripts disabled")
             with patch.object(logger, "info"), patch.object(logger, "warning"):
                 extractor = YoutubeExtractor(video_id)
                 with pytest.raises(TranscriptsDisabled):
-                    extractor.extract_transcript(language)
+                    extractor.extract_transcript()
 
     def test_extract_transcript_generic_error(self):
         video_id = "dummy_id"
-        language = "pt"
         with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
             mock_fetch.side_effect = Exception("Generic error")
             with patch.object(logger, "info"), patch.object(logger, "error"):
                 extractor = YoutubeExtractor(video_id)
                 with pytest.raises(Exception):
-                    extractor.extract_transcript(language)
+                    extractor.extract_transcript()
 
     def test_extract_metadata_success(self):
         video_id = "dummy_id"
