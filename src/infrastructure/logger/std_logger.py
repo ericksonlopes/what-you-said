@@ -15,12 +15,16 @@ class StdLogger(ILogger):
     Keeps compatibility with the ILogger interface.
     """
 
-    def __init__(self, log_format: str, name: Optional[str] = None) -> None:
+    def __init__(self, log_format: str, name: Optional[str] = None, logger_id: Optional[str] = None) -> None:
         self.log_format = log_format
         self.service_name = name or "std-logger"
 
-        # Create a unique logger instance to avoid conflicts
-        self._logger = logging.getLogger(f'std_logger_{self.service_name}_{id(self)}')
+        logger_name = f'std_logger_{self.service_name}'
+        if logger_id is not None:
+            logger_name = f'{logger_name}_{logger_id}'
+        else:
+            logger_name = f'{logger_name}_{id(self)}'
+        self._logger = logging.getLogger(logger_name)
 
         # Remove any existing handlers
         for handler in self._logger.handlers[:]:

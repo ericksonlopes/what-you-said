@@ -15,7 +15,8 @@ dependencies = [
     "pytest-cov>=7.0.0",
     "sentence-transformers>=5.2.3",
     "youtube-transcript-api>=1.2.4",
-    "torch>=2.9.1"
+    "torch>=2.9.1",
+    "yt-dlp>=2026.3.3",
 ]
 
 [tool.uv.sources]

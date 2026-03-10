@@ -19,7 +19,7 @@ class ModelLoaderService(IModelLoaderService):
         if self.model_instance is None:
             try:
                 self.model_instance = SentenceTransformer(self.model_name, device=self.device)
-                logger.info(f"Loading model from {self.model_name}")
+                logger.info("Loading model", context={"model_name": self.model_name, "device": self.device})
             except Exception as e:
                 logger.error(f"Error loading model: {e}")
                 raise RuntimeError(f"Failed to load model '{self.model_name}': {e}")

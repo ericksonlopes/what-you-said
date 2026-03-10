@@ -56,28 +56,6 @@ Run tests:
 pytest -v
 ```
 
-Basic example
-
-This example shows the typical flow used in the repository: fetch a YouTube transcript, split it into chunks, and
-prepare documents for embedding/indexing.
-
-```python
-from pprint import pprint
-
-from src.config.settings import settings
-from src.infrastructure.extractors.youtube_transcript_processor_extractor import YoutubeTranscriptExtractor
-from src.infrastructure.services.model_loader_service import ModelLoaderService
-from src.infrastructure.services.youtube_text_temporal_splitter_service import YoutubeTranscriptSplitterService
-
-model_loader = ModelLoaderService(settings.MODEL_EMBEDDING_NAME)
-extractor = YoutubeTranscriptExtractor()
-transcript = extractor.fetch_transcript(video_id="VQnM8Y3RIyM", language="pt")
-splitter = YoutubeTranscriptSplitterService(model_loader)
-docs = splitter.split_transcript(transcript, mode="tokens", tokens_per_chunk=512, token_overlap=5)
-
-pprint(docs)
-```
-
 Architecture
 
 - src/infrastructure/extractors: code to fetch raw content (e.g., YouTube transcripts, audio-to-text pipelines).

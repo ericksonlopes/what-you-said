@@ -1,16 +1,17 @@
 import math
-from typing import List
+from typing import Literal, List
 
 from langchain_core.documents import Document
 from youtube_transcript_api import FetchedTranscript
 
 from src.config.logger import Logger
 from src.domain.infraestructure.services.IModelLoaderService import IModelLoaderService
+from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
 logger = Logger()
 
 
-class YoutubeTranscriptSplitterService:
+class YoutubeDataService:
     """Splits the transcript into overlapping temporal windows or into token-sized chunks.
 
     Usage:
@@ -21,29 +22,31 @@ class YoutubeTranscriptSplitterService:
     Se não houver tokenizer, faz fallback para tiktoken.
     """
 
-    def __init__(self, model_loader_service: IModelLoaderService):
+    def __init__(self, model_loader_service: IModelLoaderService, yt_extractor: YoutubeExtractor):
         self.model_loader_service: IModelLoaderService = model_loader_service
+        self.yt_extractor = yt_extractor
 
     def split_transcript(
             self,
-            transcript: FetchedTranscript,
-            window_size: int = 30,
-            overlap: int = 5,
-            mode: str = "time",
-            tokens_per_chunk: int | None = None,
-            token_overlap: int = 0
+            mode: Literal["time", "tokens"] = "tokens",
+            time_window_size: int = 30,
+            time_overlap: int = 5,
+            tokens_per_chunk: int = 512,
+            tokens_overlap: int = 30
     ) -> List[Document]:
-        video_id = self._get_video_id(transcript)
+        video_id = self.yt_extractor.video_id
         context = {
-            "window_size": window_size,
-            "overlap": overlap,
+            "window_size": time_window_size,
+            "overlap": time_overlap,
             "mode": mode,
             "tokens_per_chunk": tokens_per_chunk,
-            "token_overlap": token_overlap,
-            "transcript_length": len(transcript) if transcript else 0,
+            "token_overlap": tokens_overlap,
             "video_id": video_id
         }
         logger.info("Starting transcript splitting into windows...", context=context)
+
+        transcript: FetchedTranscript = self.yt_extractor.extract_transcript()
+
         documents: List[Document] = []
 
         if not transcript:
@@ -51,10 +54,10 @@ class YoutubeTranscriptSplitterService:
             return documents
 
         if mode == "time" or not tokens_per_chunk:
-            return self._split_by_time(transcript, window_size, overlap, context)
+            return self._split_by_time(transcript, time_window_size, time_overlap, context)
 
         if mode == "tokens":
-            return self._split_by_tokens(transcript, tokens_per_chunk, token_overlap, context)
+            return self._split_by_tokens(transcript, tokens_per_chunk, tokens_overlap, context)
 
         logger.error("Unknown splitting mode.", context={**context, "mode": mode})
         raise ValueError(f"Unknown splitting mode: {mode}")
