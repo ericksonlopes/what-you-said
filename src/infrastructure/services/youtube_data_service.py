@@ -34,8 +34,6 @@ class YoutubeDataService:
             tokens_per_chunk: int = 512,
             tokens_overlap: int = 30
     ) -> List[Document]:
-        transcript: FetchedTranscript = self.yt_extractor.extract_transcript()
-
         video_id = self.yt_extractor.video_id
         context = {
             "window_size": time_window_size,
@@ -43,10 +41,12 @@ class YoutubeDataService:
             "mode": mode,
             "tokens_per_chunk": tokens_per_chunk,
             "token_overlap": tokens_overlap,
-            "transcript_length": len(transcript) if transcript else 0,
             "video_id": video_id
         }
         logger.info("Starting transcript splitting into windows...", context=context)
+
+        transcript: FetchedTranscript = self.yt_extractor.extract_transcript()
+
         documents: List[Document] = []
 
         if not transcript:
