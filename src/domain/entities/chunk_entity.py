@@ -14,7 +14,7 @@ class ChunkEntity(BaseModel):
     domain model; persistence will ensure required identifiers when needed.
     """
 
-    id: UUID = Field(default_factory=lambda: str(uuid4()), description="Logical ID of the chunk")
+    id: UUID = Field(default_factory=lambda: uuid4(), description="Logical ID of the chunk")
     job_id: Optional[UUID] = Field(default=None, description="ID of the processing job that created this chunk")
     content_source_id: Optional[UUID] = Field(default=None,
                                               description="ID of the original content source, e.g., video id or document id")

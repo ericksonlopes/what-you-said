@@ -6,6 +6,7 @@ from weaviate.collections.classes.filters import _Filters as Filters
 
 from src.config.logger import Logger
 from src.domain.interfaces.repository.retriver_repository import IRetrieverRepository
+from src.domain.mappers.chunk_mapper import ChunkMapper
 from src.infrastructure.repository.weaviate.model.chunk_model import ChunkModel
 from src.infrastructure.repository.weaviate.weaviate_client import WeaviateClient
 from src.infrastructure.repository.weaviate.weaviate_vector import WeaviateVector
@@ -39,14 +40,12 @@ class WeaviateChunkRepository(IRetrieverRepository):
             meta_datas = [doc.model_dump(exclude={"content", "id"}) for doc in documents]
             ids = [doc.id for doc in documents]
 
-            # Debug logs to inspect data before sending to Weaviate
             logger.debug("Prepared data for Weaviate", context={
                 "texts": texts,
                 "meta_datas": meta_datas,
                 "ids": ids
             })
 
-            # Validate data types
             if not all(isinstance(text, str) for text in texts):
                 raise ValueError("All 'texts' must be strings.")
             if not all(isinstance(meta, dict) for meta in meta_datas):
@@ -67,7 +66,7 @@ class WeaviateChunkRepository(IRetrieverRepository):
                          context={"num_documents": len(documents), "error": str(e)})
             raise e
 
-    def retriever(self, query: str, top_kn=5, filters: Filters = None) -> List[Document]:
+    def retriever(self, query: str, top_kn=5, filters: Filters = None) -> List[ChunkModel]:
         logger.info("Retrieving", context={
             "filters": filters,
             "query": query,
@@ -82,7 +81,11 @@ class WeaviateChunkRepository(IRetrieverRepository):
                         "filters": filters
                     }
                 )
-                results = retriever.invoke(query)
+                results: List[Document] = retriever.invoke(query)
+
+                mapper = ChunkMapper()
+                results: List[ChunkModel] = [mapper.document_to_model(doc) for doc in results]
+
                 logger.info("Retrieved documents", context={"query": query, "results": len(results)})
                 return results
         except Exception as e:

@@ -51,7 +51,7 @@ if __name__ == '__main__':
             external_source=video_id,
             subject_id=uuid.uuid4(),
             content=doc.page_content,
-            extra={"metadata": doc.metadata},
+            extra=doc.metadata,
             language="pt",
             embedding_model=model_loader.model_name,
             created_at=datetime.now(timezone.utc),
@@ -62,5 +62,7 @@ if __name__ == '__main__':
     created_ids = service.index_documents(list_chunk)
 
     query_result: List[ChunkEntity] = service.search_by_video_id(video_id=video_id)
-    pprint(query_result[0].model_dump())
+
+    query = service.search(query="coxinha", top_k=1)
+
     service.delete_by_video_id(video_id=video_id)
