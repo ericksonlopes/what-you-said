@@ -1,6 +1,5 @@
 import pytest
 from uuid import uuid4
-from types import SimpleNamespace
 
 from src.infrastructure.services.youtube_weaviate_service import YouTubeService
 from src.domain.entities.chunk_entity import ChunkEntity

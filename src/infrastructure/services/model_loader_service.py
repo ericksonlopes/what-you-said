@@ -1,4 +1,5 @@
 import torch
+from typing import Optional
 from sentence_transformers import SentenceTransformer
 
 from src.config.logger import Logger
@@ -12,7 +13,7 @@ class ModelLoaderService(IModelLoaderService):
         super().__init__()
         self.model_name = model_name
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model_instance = None
+        self.model_instance: Optional[SentenceTransformer] = None
         self.load_model()
 
     def load_model(self):
@@ -26,4 +27,8 @@ class ModelLoaderService(IModelLoaderService):
 
     @property
     def model(self) -> SentenceTransformer:
+        if self.model_instance is None:
+            # Attempt to (re)load the model; load_model will raise on failure.
+            self.load_model()
+        assert self.model_instance is not None
         return self.model_instance

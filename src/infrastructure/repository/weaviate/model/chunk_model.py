@@ -5,8 +5,6 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
-
-
 class ChunkModel(BaseModel):
     id: UUID = Field(default_factory=lambda: uuid4(), description="Logical ID of the chunk within the source")
 

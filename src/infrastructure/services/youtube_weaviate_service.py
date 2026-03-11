@@ -31,28 +31,31 @@ class YouTubeService:
         if not query:
             raise ValueError("Query must be provided for search")
 
-        results: List[ChunkModel] = self._repository.retriever(query=query, top_kn=top_k, filters=filters)
+        models: List[ChunkModel] = self._repository.retriever(query=query, top_kn=top_k, filters=filters)
 
         mapper = ChunkMapper()
-        results: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in results]
+        entities: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in models]
 
-        return results
+        return entities
 
     def search_by_video_id(self, video_id: str, filters: Optional[Filters] = None) -> List[ChunkEntity]:
         if not video_id:
             raise ValueError("video_id must be provided")
 
-        combined_filters: Filters = Filter.all_of([
-            Filter.by_property("external_source").equal(video_id),
-            filters if filters is not None else None
-        ])
+        filters_list: List[Filters] = [
+            Filter.by_property("external_source").equal(video_id)
+        ]
+        if filters is not None:
+            filters_list.append(filters)
 
-        results: List[ChunkModel] = self._repository.list_chunks(filters=combined_filters)
+        combined_filters: Filters = Filter.all_of(filters_list)
+
+        models: List[ChunkModel] = self._repository.list_chunks(filters=combined_filters)
         mapper = ChunkMapper()
 
-        results: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in results]
+        entities: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in models]
 
-        return results
+        return entities
 
     def delete_by_video_id(self, video_id: str) -> int:
         if not video_id:

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class YoutubeMetadataDTO(BaseModel):
-    video_id: str = Field(default=None, description="ID do vídeo do YouTube")
+    video_id: Optional[str] = Field(default=None, description="ID do vídeo do YouTube")
     original_url: Optional[str] = Field(default=None, description="URL original do vídeo")
     title: Optional[str] = Field(default=None, description="Título do vídeo")
     full_title: Optional[str] = Field(default=None, description="Título completo do vídeo", alias="fulltitle")
