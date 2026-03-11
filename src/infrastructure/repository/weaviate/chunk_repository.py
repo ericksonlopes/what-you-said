@@ -81,13 +81,13 @@ class WeaviateChunkRepository(IRetrieverRepository):
                         "filters": filters
                     }
                 )
-                results: List[Document] = retriever.invoke(query)
+                docs: List[Document] = retriever.invoke(query)
 
                 mapper = ChunkMapper()
-                results: List[ChunkModel] = [mapper.document_to_model(doc) for doc in results]
+                models: List[ChunkModel] = [mapper.document_to_model(doc) for doc in docs]
 
-                logger.info("Retrieved documents", context={"query": query, "results": len(results)})
-                return results
+                logger.info("Retrieved documents", context={"query": query, "results": len(models)})
+                return models
         except Exception as e:
             logger.error("Error retrieving documents", context={"query": query, "error": str(e)})
             raise e

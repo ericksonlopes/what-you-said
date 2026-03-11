@@ -31,12 +31,12 @@ class YouTubeService:
         if not query:
             raise ValueError("Query must be provided for search")
 
-        results: List[ChunkModel] = self._repository.retriever(query=query, top_kn=top_k, filters=filters)
+        models: List[ChunkModel] = self._repository.retriever(query=query, top_kn=top_k, filters=filters)
 
         mapper = ChunkMapper()
-        results: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in results]
+        entities: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in models]
 
-        return results
+        return entities
 
     def search_by_video_id(self, video_id: str, filters: Optional[Filters] = None) -> List[ChunkEntity]:
         if not video_id:
@@ -47,12 +47,12 @@ class YouTubeService:
             filters if filters is not None else None
         ])
 
-        results: List[ChunkModel] = self._repository.list_chunks(filters=combined_filters)
+        models: List[ChunkModel] = self._repository.list_chunks(filters=combined_filters)
         mapper = ChunkMapper()
 
-        results: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in results]
+        entities: List[ChunkEntity] = [mapper.model_to_entity(doc) for doc in models]
 
-        return results
+        return entities
 
     def delete_by_video_id(self, video_id: str) -> int:
         if not video_id:
