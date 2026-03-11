@@ -34,6 +34,3 @@ class WeaviateVector:
                 self._client.__exit__(exc_type, exc_val, exc_tb)
             except Exception as e:
                 logger.error(f"Error closing WeaviateConfig connection: {e}")
-
-        if exc_type is not None:
-            logger.error(f"Error during WeaviateConfig operation: {exc_val}")
