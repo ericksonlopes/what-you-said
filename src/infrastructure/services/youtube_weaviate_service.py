@@ -42,10 +42,13 @@ class YouTubeService:
         if not video_id:
             raise ValueError("video_id must be provided")
 
-        combined_filters: Filters = Filter.all_of([
-            Filter.by_property("external_source").equal(video_id),
-            filters if filters is not None else None
-        ])
+        filters_list: List[Filters] = [
+            Filter.by_property("external_source").equal(video_id)
+        ]
+        if filters is not None:
+            filters_list.append(filters)
+
+        combined_filters: Filters = Filter.all_of(filters_list)
 
         models: List[ChunkModel] = self._repository.list_chunks(filters=combined_filters)
         mapper = ChunkMapper()
