@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, Any
 
 from src.config.settings import settings
-from src.domain.infraestructure.logger.logger import ILogger
+from src.domain.interfaces.logger.logger import ILogger
 
 
 class StdLogger(ILogger):

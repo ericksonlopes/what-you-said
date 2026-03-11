@@ -2,7 +2,7 @@ from typing import List
 
 from langchain_core.embeddings import Embeddings
 
-from src.domain.infraestructure.services.mode_loader_service import IModelLoaderService
+from src.domain.interfaces.services.mode_loader_service import IModelLoaderService
 
 
 class EmbeddingService(Embeddings):

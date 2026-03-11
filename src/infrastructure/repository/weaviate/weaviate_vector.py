@@ -12,20 +12,23 @@ class WeaviateVector:
                  client: WeaviateClient,
                  embedding_service: EmbeddingService,
                  index_name: str,
-                 text_key: str):
+                 text_key: str,
+                 use_multi_tenancy: bool = True):
         self._client = client
         self._embedding_service = embedding_service
-        self.index_name = index_name
-        self.text_key = text_key
+        self._index_name = index_name
+        self._text_key = text_key
+        self._use_multi_tenancy = use_multi_tenancy
 
     def __enter__(self):
         self._client = self._client.__enter__()
 
         return WeaviateVectorStore(
             client=self._client,
-            index_name=self.index_name,
-            text_key=self.text_key,
-            embedding=self._embedding_service
+            index_name=self._index_name,
+            text_key=self._text_key,
+            embedding=self._embedding_service,
+            use_multi_tenancy=self._use_multi_tenancy
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):

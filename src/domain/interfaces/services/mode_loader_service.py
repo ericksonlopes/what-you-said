@@ -4,13 +4,13 @@ from sentence_transformers import SentenceTransformer
 
 
 class IModelLoaderService(ABC):
+    """Port for model loading and tokenizer access."""
+
     @abstractmethod
     def load_model(self):
-        """Loads the model into memory."""
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def model(self) -> SentenceTransformer:
-        """Returns the loaded model instance."""
-        pass
+        raise NotImplementedError
