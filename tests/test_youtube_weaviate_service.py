@@ -38,35 +38,36 @@ def make_chunk_entity():
     )
 
 
-def test_index_documents_and_search():
-    repo = DummyRepo()
-    service = YouTubeService(repository=repo)
-    entity = make_chunk_entity()
-    created = service.index_documents([entity])
-    assert created == ["id1"]
+@pytest.mark.YoutubeWeaviateService
+class TestYouTubeWeaviateService:
+    def test_index_documents_and_search(self):
+        repo = DummyRepo()
+        service = YouTubeService(repository=repo)
+        entity = make_chunk_entity()
+        created = service.index_documents([entity])
+        assert created == ["id1"]
 
-    # search with empty query raises
-    with pytest.raises(ValueError):
-        service.search(query="", top_k=1)
+        # search with empty query raises
+        with pytest.raises(ValueError):
+            service.search(query="", top_k=1)
 
-    res = service.search(query="q", top_k=1)
-    assert isinstance(res, list)
-    assert len(res) == 1
+        res = service.search(query="q", top_k=1)
+        assert isinstance(res, list)
+        assert len(res) == 1
 
+    def test_search_by_video_id_and_delete(self):
+        repo = DummyRepo()
+        service = YouTubeService(repository=repo)
 
-def test_search_by_video_id_and_delete():
-    repo = DummyRepo()
-    service = YouTubeService(repository=repo)
+        with pytest.raises(ValueError):
+            service.search_by_video_id(video_id="")
 
-    with pytest.raises(ValueError):
-        service.search_by_video_id(video_id="")
+        results = service.search_by_video_id(video_id="vid")
+        assert isinstance(results, list)
+        assert len(results) == 1
 
-    results = service.search_by_video_id(video_id="vid")
-    assert isinstance(results, list)
-    assert len(results) == 1
+        with pytest.raises(ValueError):
+            service.delete_by_video_id("")
 
-    with pytest.raises(ValueError):
-        service.delete_by_video_id("")
-
-    deleted = service.delete_by_video_id(video_id="vid")
-    assert deleted == 2
+        deleted = service.delete_by_video_id(video_id="vid")
+        assert deleted == 2

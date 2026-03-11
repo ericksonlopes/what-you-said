@@ -64,74 +64,73 @@ def make_repo():
     return repo
 
 
-def test_create_documents_success(monkeypatch):
-    repo = make_repo()
-    vec = DummyVector()
-    repo.vector_store = DummyVectorCtx(vec)
+@pytest.mark.ChunkRepository
+class TestChunkRepository:
+    def test_create_documents_success(self, monkeypatch):
+        repo = make_repo()
+        vec = DummyVector()
+        repo.vector_store = DummyVectorCtx(vec)
 
-    doc = ChunkModel(job_id=uuid4(), content_source_id=uuid4(), source_type="youtube", external_source="v1", subject_id=uuid4(), embedding_model="model-x", content="hello")
-    created = repo.create_documents([doc])
-    assert isinstance(created, list)
-    assert 'texts' in vec.last
-    assert vec.last['texts'] == ['hello']
-    assert isinstance(vec.last['ids'][0], type(doc.id))
+        doc = ChunkModel(job_id=uuid4(), content_source_id=uuid4(), source_type="youtube", external_source="v1", subject_id=uuid4(), embedding_model="model-x", content="hello")
+        created = repo.create_documents([doc])
+        assert isinstance(created, list)
+        assert 'texts' in vec.last
+        assert vec.last['texts'] == ['hello']
+        assert isinstance(vec.last['ids'][0], type(doc.id))
 
+    def test_create_documents_invalid_texts(self, monkeypatch):
+        repo = make_repo()
+        vec = DummyVector()
+        repo.vector_store = DummyVectorCtx(vec)
 
-def test_create_documents_invalid_texts(monkeypatch):
-    repo = make_repo()
-    vec = DummyVector()
-    repo.vector_store = DummyVectorCtx(vec)
+        # invalid content (not a string)
+        class FakeDoc:
+            def __init__(self):
+                self.id = uuid4()
+                self.content = 123  # non-string to trigger ValueError
 
-    # invalid content (not a string)
-    class FakeDoc:
-        def __init__(self):
-            self.id = uuid4()
-            self.content = 123  # non-string to trigger ValueError
+            def model_dump(self, exclude=None):
+                return {
+                    "id": self.id,
+                    "job_id": uuid4(),
+                    "content_source_id": uuid4(),
+                    "source_type": "youtube",
+                    "external_source": "v1",
+                    "subject_id": uuid4(),
+                    "embedding_model": "m",
+                    "content": self.content,
+                }
 
-        def model_dump(self, exclude=None):
-            return {
-                "id": self.id,
-                "job_id": uuid4(),
-                "content_source_id": uuid4(),
-                "source_type": "youtube",
-                "external_source": "v1",
-                "subject_id": uuid4(),
-                "embedding_model": "m",
-                "content": self.content,
-            }
+        bad = FakeDoc()
+        with pytest.raises(ValueError):
+            repo.create_documents([bad])
 
-    bad = FakeDoc()
-    with pytest.raises(ValueError):
-        repo.create_documents([bad])
+    def test_retriever_returns_models(self, monkeypatch):
+        repo = make_repo()
 
+        # stub retriever to return Document-like objects
+        docs = [SimpleNamespace(page_content="hi", metadata={"source_type": "youtube", "external_source": "v1", "subject_id": str(uuid4()), "embedding_model": "m", "job_id": str(uuid4()), "content_source_id": str(uuid4())})]
+        class FakeVectorStore:
+            def as_retriever(self, search_kwargs):
+                return DummyRetriever(docs)
 
-def test_retriever_returns_models(monkeypatch):
-    repo = make_repo()
+        repo.vector_store = DummyVectorCtx(FakeVectorStore())
+        results = repo.retriever(query="q", top_kn=2)
+        assert isinstance(results, list)
+        assert len(results) == 1
+        assert isinstance(results[0], ChunkModel)
 
-    # stub retriever to return Document-like objects
-    docs = [SimpleNamespace(page_content="hi", metadata={"source_type": "youtube", "external_source": "v1", "subject_id": str(uuid4()), "embedding_model": "m", "job_id": str(uuid4()), "content_source_id": str(uuid4())})]
-    class FakeVectorStore:
-        def as_retriever(self, search_kwargs):
-            return DummyRetriever(docs)
+    def test_list_chunks_and_delete(self, monkeypatch):
+        # prepare fake response object with objects
+        obj = SimpleNamespace(uuid=str(uuid4()), properties={"content": "txt", "job_id": str(uuid4()), "content_source_id": str(uuid4()), "source_type": "youtube", "external_source": "v1", "subject_id": str(uuid4()), "embedding_model": "m"})
+        response = SimpleNamespace(objects=[obj])
+        repo = WeaviateChunkRepository(weaviate_client=DummyClientCtx(response), embedding_service=object(), collection_name="c")
 
-    repo.vector_store = DummyVectorCtx(FakeVectorStore())
-    results = repo.retriever(query="q", top_kn=2)
-    assert isinstance(results, list)
-    assert len(results) == 1
-    assert isinstance(results[0], ChunkModel)
+        chunks = repo.list_chunks(filters=None)
+        assert isinstance(chunks, list)
+        assert len(chunks) == 1
+        assert isinstance(chunks[0], ChunkModel)
 
-
-def test_list_chunks_and_delete(monkeypatch):
-    # prepare fake response object with objects
-    obj = SimpleNamespace(uuid=str(uuid4()), properties={"content": "txt", "job_id": str(uuid4()), "content_source_id": str(uuid4()), "source_type": "youtube", "external_source": "v1", "subject_id": str(uuid4()), "embedding_model": "m"})
-    response = SimpleNamespace(objects=[obj])
-    repo = WeaviateChunkRepository(weaviate_client=DummyClientCtx(response), embedding_service=object(), collection_name="c")
-
-    chunks = repo.list_chunks(filters=None)
-    assert isinstance(chunks, list)
-    assert len(chunks) == 1
-    assert isinstance(chunks[0], ChunkModel)
-
-    # delete uses the client context and returns matches
-    deleted = repo.delete(filters=None)
-    assert deleted == 1
+        # delete uses the client context and returns matches
+        deleted = repo.delete(filters=None)
+        assert deleted == 1
