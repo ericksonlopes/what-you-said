@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional, Any
 from uuid import UUID
 
 from langchain_core.documents import Document
@@ -66,7 +66,7 @@ class WeaviateChunkRepository(IRetrieverRepository):
                          context={"num_documents": len(documents), "error": str(e)})
             raise e
 
-    def retriever(self, query: str, top_kn=5, filters: Filters = None) -> List[ChunkModel]:
+    def retriever(self, query: str, top_kn: int = 5, filters: Optional[Filters] = None) -> List[ChunkModel]:
         logger.info("Retrieving", context={
             "filters": filters,
             "query": query,
@@ -81,18 +81,18 @@ class WeaviateChunkRepository(IRetrieverRepository):
                         "filters": filters
                     }
                 )
-                results: List[Document] = retriever.invoke(query)
+                docs: List[Document] = retriever.invoke(query)
 
                 mapper = ChunkMapper()
-                results: List[ChunkModel] = [mapper.document_to_model(doc) for doc in results]
+                models: List[ChunkModel] = [mapper.document_to_model(doc) for doc in docs]
 
-                logger.info("Retrieved documents", context={"query": query, "results": len(results)})
-                return results
+                logger.info("Retrieved documents", context={"query": query, "results": len(models)})
+                return models
         except Exception as e:
             logger.error("Error retrieving documents", context={"query": query, "error": str(e)})
             raise e
 
-    def delete(self, filters: Filters) -> int:
+    def delete(self, filters: Optional[Filters]) -> int:
         logger.info("Deleting documents", context={"filters": filters})
         try:
             with self._weaviate_client as client:
@@ -108,7 +108,7 @@ class WeaviateChunkRepository(IRetrieverRepository):
                          context={"filters": filters, "error": str(e)})
             raise e
 
-    def list_chunks(self, filters: Filters, limit=1000) -> List[ChunkModel]:
+    def list_chunks(self, filters: Optional[Any], limit: int = 1000) -> List[ChunkModel]:
         logger.info("Listing chunks", context={"filters": filters, "limit": limit})
 
         try:

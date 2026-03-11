@@ -1,5 +1,5 @@
 import math
-from typing import Literal, List
+from typing import Literal, List, Tuple, Dict, Optional
 
 from langchain_core.documents import Document
 from youtube_transcript_api import FetchedTranscript
@@ -62,7 +62,8 @@ class YoutubeDataService:
         logger.error("Unknown splitting mode.", context={**context, "mode": mode})
         raise ValueError(f"Unknown splitting mode: {mode}")
 
-    def _split_by_time(self, transcript, window_size, overlap, context):
+    def _split_by_time(self, transcript: FetchedTranscript, window_size: int, overlap: int, context: dict) -> List[
+        Document]:
         step = window_size - overlap
         if step <= 0:
             logger.error("window_size must be greater than overlap", context=context)
@@ -94,7 +95,8 @@ class YoutubeDataService:
                     context={**context, "windows_created": len(documents)})
         return documents
 
-    def _split_by_tokens(self, transcript, tokens_per_chunk, token_overlap, context):
+    def _split_by_tokens(self, transcript: FetchedTranscript, tokens_per_chunk: int, token_overlap: int,
+                         context: dict) -> List[Document]:
         step = tokens_per_chunk - token_overlap
         if step <= 0:
             logger.error("token_overlap must be smaller than tokens_per_chunk", context=context)
@@ -112,7 +114,8 @@ class YoutubeDataService:
                     context={**context, "token_windows_created": len(documents)})
         return documents
 
-    def _tokenize_transcript(self, transcript, tokenizer, context):
+    def _tokenize_transcript(self, transcript: FetchedTranscript, tokenizer, context: dict) -> Tuple[
+        List[int], List[Dict]]:
         token_ids = []
         token_meta = []
 
@@ -141,7 +144,8 @@ class YoutubeDataService:
         logger.info("Tokenization complete", context={**context, "total_tokens": len(token_ids)})
         return token_ids, token_meta
 
-    def _create_token_chunks(self, token_ids, token_meta, tokens_per_chunk, step, transcript, context):
+    def _create_token_chunks(self, token_ids: List[int], token_meta: List[Dict], tokens_per_chunk: int, step: int,
+                             transcript: FetchedTranscript, context: dict) -> List[Document]:
         n = len(token_ids)
         i = 0
         documents: List[Document] = []
@@ -207,7 +211,7 @@ class YoutubeDataService:
         return getattr(transcript, "video_id", None)
 
     @classmethod
-    def _create_document(cls, text_segments: List[str], start: float, end: float, video_id: str) -> Document:
+    def _create_document(cls, text_segments: List[str], start: float, end: float, video_id: Optional[str]) -> Document:
         return Document(
             page_content=" ".join(text_segments),
             metadata={
