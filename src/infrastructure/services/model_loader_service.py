@@ -2,7 +2,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 from src.config.logger import Logger
-from src.domain.infraestructure.services.IModelLoaderService import IModelLoaderService
+from src.domain.interfaces.services.mode_loader_service import IModelLoaderService
 
 logger = Logger()
 
