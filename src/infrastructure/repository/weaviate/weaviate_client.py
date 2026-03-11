@@ -1,8 +1,7 @@
 import weaviate
-from weaviate.classes.init import Auth
-
 from src.config.logger import Logger
 from src.config.settings import WeaviateConfig
+from weaviate.classes.init import Auth
 
 logger = Logger()
 
@@ -16,7 +15,7 @@ class WeaviateClient:
     def _create_client(self):
         try:
             if self._env == "testing":
-                logger.info("Creating WeaviateConfig client", context={"env": self._env})
+                logger.debug("Creating WeaviateConfig client", context={"env": self._env})
                 client = weaviate.connect_to_local(
                     host=self._weaviate_config.host,
                     port=self._weaviate_config.port,
@@ -53,7 +52,3 @@ class WeaviateClient:
                 logger.error("Error closing WeaviateConfig connection", context={"error": str(e)})
             finally:
                 self._client = None
-
-        if exc_type is not None:
-            logger.error("Error during WeaviateConfig operation", context={"error_type": str(exc_type),
-                                                                           "error_value": str(exc_val)})

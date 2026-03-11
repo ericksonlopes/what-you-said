@@ -10,6 +10,8 @@ class WeaviateConfig(BaseSettings):
     port: int = Field(default=8081, description="WeaviateConfig port")
     api_key: Optional[str] = Field(default=None, description="WeaviateConfig API key for authentication")
     grpc_port: int = Field(default=50051, description="WeaviateConfig gRPC port for local connections")
+    collection_name_youtube_transcripts: str = Field(default="YoutubeTranscripts",
+                                                     description="WeaviateConfig collection name for YouTube transcripts")
 
     @property
     def url(self) -> str:
