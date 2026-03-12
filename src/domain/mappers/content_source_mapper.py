@@ -21,6 +21,10 @@ class ContentSourceMapper:
             created_at=model.created_at,
             ingested_at=getattr(model, "ingested_at", None),
             processing_status=getattr(model, "processing_status", "pending"),
+            embedding_model=getattr(model, "embedding_model", None),
+            dimensions=getattr(model, "dimensions", None),
+            status=getattr(model, "status", "active"),
+            chunks=getattr(model, "chunks", 0)
         )
 
     @staticmethod
@@ -35,4 +39,8 @@ class ContentSourceMapper:
             "external_source": entity.external_source,
             "title": entity.title,
             "language": entity.language,
+            "embedding_model": entity.embedding_model,
+            "dimensions": entity.dimensions,
+            "status": entity.status,
+            "chunks": entity.chunks
         }

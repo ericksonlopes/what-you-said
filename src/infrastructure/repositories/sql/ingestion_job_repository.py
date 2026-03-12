@@ -43,8 +43,7 @@ class IngestionJobSQLRepository:
         """
         with Connector() as session:
             try:
-                extra = {"job_id": job_id, "status": status, "error_message": error_message,
-                         "chunks_count": chunks_count}
+                extra = {"job_id": job_id, "status": status, "error_message": error_message}
                 logger.info("Updating ingestion job", context=extra)
                 job = session.get(IngestionJobModel, job_id)
                 if job is None:
@@ -54,8 +53,7 @@ class IngestionJobSQLRepository:
                 job.finished_at = datetime.now(timezone.utc)
                 job.status = status
                 job.error_message = error_message
-                if chunks_count is not None:
-                    job.chunks_count = chunks_count
+                
                 session.commit()
                 logger.info("Ingestion job updated successfully", context=extra)
             except Exception as e:

@@ -39,7 +39,7 @@ class KnowledgeSubjectSQLRepository:
             try:
                 logger.info("Fetching KnowledgeSubject by ID", context={"id": id})
                 result = session.get(KnowledgeSubjectModel, id)
-                logger.info("Fetch successful get_by_id", context={"id": id, "result": len(result)})
+                logger.info("Fetch successful get_by_id", context={"id": id, "result": result})
                 return result
             except Exception as e:
                 logger.error("Error fetching KnowledgeSubject by ID", context={"id": id, "error": str(e)})

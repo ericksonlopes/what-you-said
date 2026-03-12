@@ -1,5 +1,6 @@
-import torch
 from typing import Optional
+
+import torch
 from sentence_transformers import SentenceTransformer
 
 from src.config.logger import Logger
@@ -24,6 +25,10 @@ class ModelLoaderService(IModelLoaderService):
             except Exception as e:
                 logger.error(f"Error loading models: {e}")
                 raise RuntimeError(f"Failed to load models '{self.model_name}': {e}")
+
+    @property
+    def dimensions(self) -> int:
+        return self.model.get_sentence_embedding_dimension()
 
     @property
     def model(self) -> SentenceTransformer:

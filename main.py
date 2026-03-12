@@ -8,6 +8,7 @@ from langchain_core.documents import Document
 from src.config.logger import Logger
 from src.config.settings import settings
 from src.domain.entities.chunk_entity import ChunkEntity
+from src.domain.entities.content_source_status_enum import ContentSourceStatus
 from src.domain.entities.ingestion_job_status_enum import IngestionJobStatus
 from src.domain.entities.source_type_enum_entity import SourceType
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
@@ -73,7 +74,8 @@ if __name__ == '__main__':
         source_type=source_type,
         external_source=video_id,
         title=title,
-        language=language
+        language=language,
+        status=ContentSourceStatus.PENDING
     )
 
     ingestion_repository = IngestionJobSQLRepository()
@@ -85,6 +87,8 @@ if __name__ == '__main__':
         embedding_model=model_loader.model_name,
         pipeline_version="1.0"
     )
+
+    cs_service.update_processing_status(content_source_id=source.id, status=ContentSourceStatus.PROCESSING)
 
     yt_extractor = YoutubeExtractor(video_id=video_id)
     ytts = YoutubeDataProcessService(model_loader_service=model_loader, yt_extractor=yt_extractor)
@@ -120,6 +124,13 @@ if __name__ == '__main__':
     chunk_service.create_chunks(list_chunk)
 
     created_ids = service.index_documents(list_chunk)
+
+    cs_service.finish_ingestion(
+        content_source_id=source.id,
+        embedding_model=model_loader.model_name,
+        dimensions=model_loader.dimensions,
+        chunks=len(list_chunk)
+    )
 
     ingestion_service.update_job(
         job_id=ingestion.id,

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from src.config.logger import Logger
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.mappers.chunk_mapper import ChunkMapper
+from src.domain.mappers.chunk_index_mapper import ChunkIndexMapper
 from src.infrastructure.repositories.sql.chunk_index_repository import ChunkIndexSQLRepository
 
 
@@ -13,7 +13,7 @@ class ChunkIndexService:
     def __init__(self, repository: ChunkIndexSQLRepository, logger: Optional[Logger] = None) -> None:
         self._repo = repository
         self._logger = logger or Logger()
-        self._mapper = ChunkMapper()
+        self._mapper = ChunkIndexMapper()
 
     def create_chunks(self, entities: List[ChunkEntity]) -> List[UUID]:
         rows = []
@@ -23,6 +23,7 @@ class ChunkIndexService:
                 "content_source_id": e.content_source_id,
                 "job_id": e.job_id,
                 "chunk_id": str(e.id),
+                "chars": len(e.content) if e.content is not None else 0,
                 "language": e.language,
                 "version_number": e.version_number,
             })

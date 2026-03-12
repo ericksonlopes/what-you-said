@@ -22,7 +22,7 @@ class IngestionJobModel(Base):
     finished_at = Column(DateTime(timezone=True), nullable=True)
     status = Column(Text, nullable=False)
     error_message = Column(Text, nullable=True)
-    chunks_count = Column(Integer, nullable=True)
+    
     embedding_model = Column(Text, nullable=True)
     pipeline_version = Column(Text, nullable=True)
 

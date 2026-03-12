@@ -1,7 +1,9 @@
+from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID
 
 from src.config.logger import Logger
+from src.domain.entities.content_source_status_enum import ContentSourceStatus
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
 
@@ -12,10 +14,14 @@ class ContentSourceSQLRepository:
     """Repository for content_sources table (basic CRUD helpers)."""
 
     def create(self, subject_id: Optional[UUID], source_type: str, external_source: str,
-               title: Optional[str] = None, language: Optional[str] = None) -> UUID:
+               title: Optional[str] = None, language: Optional[str] = None,
+               embedding_model: Optional[str] = None, dimensions: Optional[int] = None,
+               status: Optional[str] = None, chunks: Optional[int] = None, chars: Optional[int] = None) -> UUID:
         with Connector() as session:
             try:
-                extra = {"subject_id": subject_id, "source_type": source_type, "external_source": external_source, "title": title, "language": language}
+                extra = {"subject_id": subject_id, "source_type": source_type, "external_source": external_source,
+                         "title": title, "language": language, "embedding_model": embedding_model,
+                         "dimensions": dimensions, "status": status, "chunks": chunks, "chars": chars}
                 logger.info("Creating ContentSource", context=extra)
                 cs = ContentSourceModel(
                     subject_id=subject_id,
@@ -23,6 +29,10 @@ class ContentSourceSQLRepository:
                     external_source=external_source,
                     title=title,
                     language=language,
+                    embedding_model=embedding_model,
+                    dimensions=dimensions,
+                    status=status or "active",
+                    chunks=chunks or 0
                 )
                 session.add(cs)
                 session.commit()
@@ -70,7 +80,7 @@ class ContentSourceSQLRepository:
                 logger.error("Error listing ContentSources by subject ID", context={**extra, "error": str(e)})
                 raise
 
-    def update_processing_status(self, content_source_id: UUID, status: str) -> None:
+    def update_status(self, content_source_id: UUID, status: str) -> None:
         with Connector() as session:
             try:
                 extra = {"content_source_id": content_source_id, "status": status}
@@ -84,5 +94,27 @@ class ContentSourceSQLRepository:
                 logger.info("Processing status updated successfully", context=extra)
             except Exception as e:
                 logger.error("Error updating processing status for ContentSource", context={**extra, "error": str(e)})
+                session.rollback()
+                raise
+
+    def finish_ingestion(self, content_source_id: UUID, embedding_model: str, dimensions: int, chunks: int) -> None:
+        with Connector() as session:
+            try:
+                extra = {"content_source_id": content_source_id, "embedding_model": embedding_model,
+                         "dimensions": dimensions, "chunks": chunks}
+                logger.info("Finishing ingestion for ContentSource", context=extra)
+                cs = session.get(ContentSourceModel, content_source_id)
+                if cs is None:
+                    logger.warning("ContentSource not found for finishing ingestion", context=extra)
+                    return
+                cs.processing_status = ContentSourceStatus.DONE.value
+                cs.ingested_at = datetime.now(timezone.utc)
+                cs.embedding_model = embedding_model
+                cs.dimensions = dimensions
+                cs.chunks = chunks
+                session.commit()
+                logger.info("Ingestion finished successfully", context=extra)
+            except Exception as e:
+                logger.error("Error finishing ingestion for ContentSource", context={**extra, "error": str(e)})
                 session.rollback()
                 raise
