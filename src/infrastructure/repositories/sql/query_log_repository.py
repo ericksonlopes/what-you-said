@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, cast
 from uuid import UUID
 
 from src.config.logger import Logger
@@ -25,7 +25,7 @@ class QueryLogSQLRepository:
                 session.add(q)
                 session.commit()
                 session.refresh(q)
-                return q.id
+                return cast(UUID, q.id)
             except Exception as e:
                 logger.error("Failed to create query log",
                              context={"error": str(e), "subject_id": str(subject_id), "query_text": query_text})

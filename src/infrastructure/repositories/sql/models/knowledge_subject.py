@@ -9,7 +9,6 @@ from sqlalchemy.orm import relationship
 
 from src.infrastructure.repositories.sql.connector import Base
 
-
 class KnowledgeSubjectModel(Base):
     __tablename__ = "knowledge_subjects"
 

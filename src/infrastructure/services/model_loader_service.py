@@ -28,7 +28,10 @@ class ModelLoaderService(IModelLoaderService):
 
     @property
     def dimensions(self) -> int:
-        return self.model.get_sentence_embedding_dimension()
+        dims = self.model.get_sentence_embedding_dimension()
+        if dims is None:
+            raise RuntimeError("Failed to determine model embedding dimensions")
+        return int(dims)
 
     @property
     def model(self) -> SentenceTransformer:

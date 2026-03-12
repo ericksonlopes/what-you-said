@@ -1,4 +1,5 @@
 from typing import Optional, List
+from typing import cast
 from uuid import UUID
 
 from src.config.logger import Logger
@@ -11,8 +12,7 @@ logger = Logger()
 class KnowledgeSubjectSQLRepository:
     """Repository helpers for knowledge_subjects table."""
 
-    def create_subject(self, name: str, external_ref: Optional[str] = None,
-                       description: Optional[str] = None) -> UUID:
+    def create_subject(self, name: str, external_ref: Optional[str] = None, description: Optional[str] = None) -> UUID:
         with Connector() as session:
             try:
                 logger.info("Creating KnowledgeSubject",
@@ -26,7 +26,8 @@ class KnowledgeSubjectSQLRepository:
                 session.commit()
                 session.refresh(ks)
                 logger.info("KnowledgeSubject created successfully", context={"id": ks.id})
-                return ks.id
+
+                return cast(UUID, ks.id)
             except Exception as e:
                 logger.error("Error creating KnowledgeSubject",
                              context={"name": name, "external_ref": external_ref, "description": description,

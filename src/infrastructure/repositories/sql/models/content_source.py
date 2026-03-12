@@ -9,7 +9,6 @@ from sqlalchemy.orm import relationship
 
 from src.infrastructure.repositories.sql.connector import Base
 
-
 class ContentSourceModel(Base):
     __tablename__ = "content_sources"
 

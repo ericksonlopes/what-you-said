@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, List
+from typing import cast
 from uuid import UUID
 
 from src.config.logger import Logger
@@ -38,7 +39,8 @@ class ContentSourceSQLRepository:
                 session.commit()
                 session.refresh(cs)
                 logger.info("ContentSource created successfully", context={"id": cs.id})
-                return cs.id
+
+                return cast(UUID, cs.id)
             except Exception as e:
                 logger.error("Error creating ContentSource", context={**extra, "error": str(e)})
                 session.rollback()

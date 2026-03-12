@@ -31,11 +31,13 @@ class ChunkIndexService:
 
     def list_by_content_source(self, content_source_id: UUID, limit: int = 1000) -> List[ChunkEntity]:
         models = self._repo.list_by_content_source(content_source_id=content_source_id, limit=limit)
-        return [self._mapper.model_to_entity(m) for m in models]
+        temp = [self._mapper.model_to_entity(m) for m in models]
+        return [e for e in temp if e is not None]
 
     def delete_by_content_source(self, content_source_id: UUID) -> int:
         return self._repo.delete_by_content_source(content_source_id=content_source_id)
 
     def search(self, query: Optional[str], top_k: int = 10, filters: Optional[Any] = None) -> List[ChunkEntity]:
         models = self._repo.search(query=query, top_k=top_k, filters=filters)
-        return [self._mapper.model_to_entity(m) for m in models]
+        temp = [self._mapper.model_to_entity(m) for m in models]
+        return [e for e in temp if e is not None]

@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional, List
+from typing import cast
 from uuid import UUID
 
 from src.config.logger import Logger
@@ -29,14 +30,14 @@ class IngestionJobSQLRepository:
                 session.commit()
                 session.refresh(job)
                 logger.info("Ingestion job created successfully", context={"job_id": job.id})
-                return job.id
+
+                return cast(UUID, job.id)
             except Exception as e:
                 logger.error("Error creating ingestion job", context={**extra, "error": str(e)})
                 session.rollback()
                 raise
 
-    def update_job(self, job_id: UUID, status: str, error_message: Optional[str] = None,
-                   chunks_count: Optional[int] = None) -> None:
+    def update_job(self, job_id: UUID, status: str, error_message: Optional[str] = None) -> None:
         """Update an ingestion job's status, error_message and optionally chunks_count.
 
         This replaces the previous `finish_job` behavior and will set finished_at to now when called.

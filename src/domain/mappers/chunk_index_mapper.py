@@ -1,8 +1,40 @@
-from typing import Optional, List
+from datetime import datetime
+from typing import Optional, List, cast
+from uuid import UUID
 
 from src.domain.entities.chunk_entity import ChunkEntity
 from src.domain.entities.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
+
+
+def _resolve_source_type(s: Optional[str]) -> SourceType:
+    """Resolve a SourceType from a string in a clear, deterministic manner.
+
+    This helper lives at module level so the main mapper method remains simple
+    and easier to test. It attempts value and name-based resolution, then
+    falls back to case-insensitive matching of name or value, and finally to
+    the first enum member as a default.
+    """
+    default = list(SourceType)[0]
+    if not s:
+        return default
+
+    try:
+        return SourceType(s)
+    except ValueError:
+        pass
+
+    try:
+        return SourceType[s]
+    except KeyError:
+        pass
+
+    s_norm = s.strip().lower()
+    for member in SourceType:
+        if member.value.lower() == s_norm or member.name.lower() == s_norm:
+            return member
+
+    return default
 
 
 class ChunkIndexMapper:
@@ -18,50 +50,12 @@ class ChunkIndexMapper:
     def model_to_entity(model: Optional[ChunkIndexModel]) -> Optional[ChunkEntity]:
         if model is None:
             return None
-
-        # Try to derive source_type and other metadata from the related content_source
-        source_type_str = None
-        external_source = None
-        subject_id = None
-        embedding_model = None
-        if hasattr(model, "content_source") and model.content_source is not None:
-            cs = model.content_source
-            source_type_str = getattr(cs, "source_type", None)
-            external_source = getattr(cs, "external_source", None)
-            subject_id = getattr(cs, "subject_id", None)
-            embedding_model = getattr(cs, "embedding_model", None)
-
-        # Convert source_type string to SourceType enum; fall back to first enum member
-        source_type = None
-        if source_type_str:
-            try:
-                source_type = SourceType(source_type_str)
-            except Exception:
-                try:
-                    source_type = SourceType[source_type_str]
-                except Exception:
-                    for member in SourceType:
-                        if member.value.lower() == source_type_str.lower() or member.name.lower() == source_type_str.lower():
-                            source_type = member
-                            break
-        if source_type is None:
-            source_type = list(SourceType)[0]
-
-        return ChunkEntity(
-            id=model.id,
-            job_id=getattr(model, "job_id", None),
-            content_source_id=getattr(model, "content_source_id", None),
-            source_type=source_type,
-            external_source=external_source or getattr(model, "chunk_id", None),
-            subject_id=subject_id,
-            content=None,
-            extra={"chunk_id": getattr(model, "chunk_id", None)},
-            language=getattr(model, "language", None),
-            embedding_model=embedding_model,
-            created_at=getattr(model, "created_at", None),
-            version_number=getattr(model, "version_number", 1),
-        )
+        cs_meta = _extract_cs_metadata(model)
+        source_type = _resolve_source_type(cs_meta.get("source_type_str"))
+        kwargs = _build_entity_kwargs(model, cs_meta, source_type)
+        return ChunkEntity(**kwargs)
 
     @staticmethod
     def model_list_to_entities(models: List[ChunkIndexModel]) -> List[ChunkEntity]:
-        return [ChunkIndexMapper.model_to_entity(m) for m in models if m is not None]
+        temp = [ChunkIndexMapper.model_to_entity(m) for m in models if m is not None]
+        return [r for r in temp if r is not None]

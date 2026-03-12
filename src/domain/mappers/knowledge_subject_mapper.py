@@ -1,4 +1,6 @@
-from typing import Optional, List
+from datetime import datetime
+from typing import Optional, List, cast
+from uuid import UUID
 
 from src.domain.entities.knowledge_subject_entity import KnowledgeSubjectEntity
 from src.infrastructure.repositories.sql.models.knowledge_subject import KnowledgeSubjectModel
@@ -12,13 +14,14 @@ class KnowledgeSubjectMapper:
         if model is None:
             return None
         return KnowledgeSubjectEntity(
-            id=model.id,
-            external_ref=model.external_ref,
-            name=model.name,
-            description=model.description,
-            created_at=model.created_at,
+            id=cast(UUID, getattr(model, "id")),
+            external_ref=cast(Optional[str], getattr(model, "external_ref", None)),
+            name=cast(str, getattr(model, "name", "")),
+            description=cast(Optional[str], getattr(model, "description", None)),
+            created_at=cast(datetime, getattr(model, "created_at")),
         )
 
     @staticmethod
     def model_list_to_entities(models: List[KnowledgeSubjectModel]) -> List[KnowledgeSubjectEntity]:
-        return [KnowledgeSubjectMapper.model_to_entity(m) for m in models if m is not None]
+        temp = [KnowledgeSubjectMapper.model_to_entity(m) for m in models if m is not None]
+        return [r for r in temp if r is not None]

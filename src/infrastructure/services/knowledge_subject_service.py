@@ -27,7 +27,9 @@ class KnowledgeSubjectService:
         self._logger.info("Creating knowledge subject", context={"name": name, "external_ref": external_ref})
         created_id = self._repo.create_subject(name=name, external_ref=external_ref, description=description)
         model = self._repo.get_by_id(created_id)
-        return KnowledgeSubjectMapper.model_to_entity(model)
+        entity = KnowledgeSubjectMapper.model_to_entity(model)
+        assert entity is not None
+        return entity
 
     def get_by_name(self, name: str) -> Optional[KnowledgeSubjectEntity]:
         """Fetch a knowledge subject by name and return as an Entity."""
@@ -55,12 +57,16 @@ class KnowledgeSubjectService:
         self._logger.info("get_or_create_by_external_ref", context={"external_ref": external_ref})
         existing = self._repo.get_by_external_ref(external_ref)
         if existing is not None:
-            return KnowledgeSubjectMapper.model_to_entity(existing)
+            entity = KnowledgeSubjectMapper.model_to_entity(existing)
+            assert entity is not None
+            return entity
 
         created_id = self._repo.create_subject(name=name or external_ref, external_ref=external_ref,
                                                description=description)
         model = self._repo.get_by_id(created_id)
-        return KnowledgeSubjectMapper.model_to_entity(model)
+        entity = KnowledgeSubjectMapper.model_to_entity(model)
+        assert entity is not None
+        return entity
 
     def list_subjects(self, limit: int = 100) -> List[KnowledgeSubjectEntity]:
         """List recent subjects up to `limit` and return Domain Entities."""

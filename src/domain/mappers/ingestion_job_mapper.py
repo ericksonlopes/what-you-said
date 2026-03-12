@@ -1,4 +1,6 @@
-from typing import Optional, List
+from typing import Optional, List, cast
+from uuid import UUID
+from datetime import datetime
 
 from src.domain.entities.ingestion_job_entity import IngestionJobEntity
 from src.domain.entities.ingestion_job_status_enum import IngestionJobStatus
@@ -21,17 +23,18 @@ class IngestionJobMapper:
                 status_enum = None
 
         return IngestionJobEntity(
-            id=model.id,
-            content_source_id=model.content_source_id,
-            started_at=model.started_at,
-            finished_at=getattr(model, "finished_at", None),
+            id=cast(UUID, getattr(model, "id")),
+            content_source_id=cast(Optional[UUID], getattr(model, "content_source_id", None)),
+            started_at=cast(datetime, getattr(model, "started_at")),
+            finished_at=cast(Optional[datetime], getattr(model, "finished_at", None)),
             status=status_enum or IngestionJobStatus.STARTED,
-            error_message=getattr(model, "error_message", None),
-            chunks_count=getattr(model, "chunks_count", None),
-            embedding_model=getattr(model, "embedding_model", None),
-            pipeline_version=getattr(model, "pipeline_version", None),
+            error_message=cast(Optional[str], getattr(model, "error_message", None)),
+            chunks_count=cast(Optional[int], getattr(model, "chunks_count", None)),
+            embedding_model=cast(Optional[str], getattr(model, "embedding_model", None)),
+            pipeline_version=cast(Optional[str], getattr(model, "pipeline_version", None)),
         )
 
     @staticmethod
     def model_list_to_entities(models: List[IngestionJobModel]) -> List[IngestionJobEntity]:
-        return [IngestionJobMapper.model_to_entity(o) for o in models if o is not None]
+        temp = [IngestionJobMapper.model_to_entity(o) for o in models if o is not None and isinstance(o, IngestionJobModel)]
+        return [r for r in temp if r is not None]

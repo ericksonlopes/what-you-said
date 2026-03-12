@@ -1,11 +1,11 @@
 from typing import List, Optional, Any
-from uuid import UUID
+from typing import cast
 
 from src.config.logger import Logger
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
-
+from uuid import UUID
 logger = Logger()
 
 
@@ -31,7 +31,8 @@ class ChunkIndexSQLRepository:
                     orm_objs.append(obj)
 
                 session.commit()
-                return [o.id for o in orm_objs]
+
+                return [cast(UUID, o.id) for o in orm_objs]
             except Exception as e:
                 session.rollback()
                 logger.error("Error creating chunk index rows", context={"error": str(e)})

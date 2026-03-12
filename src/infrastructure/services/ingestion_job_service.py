@@ -21,7 +21,9 @@ class IngestionJobService:
         job_id = self._repo.create_job(content_source_id=content_source_id, status=status.value,
                                        embedding_model=embedding_model, pipeline_version=pipeline_version)
         model = self._repo.get_by_id(job_id)
-        return IngestionJobMapper.model_to_entity(model)
+        entity = IngestionJobMapper.model_to_entity(model)
+        assert entity is not None
+        return entity
 
     def update_job(self, job_id: UUID, status: IngestionJobStatus, error_message: Optional[str] = None,
                    chunks_count: Optional[int] = None) -> None:

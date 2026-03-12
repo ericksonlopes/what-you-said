@@ -35,7 +35,9 @@ class ContentSourceService:
                                        embedding_model=embedding_model, dimensions=dimensions,
                                        status=(status.value if status is not None else None))
         model = self._repo.get_by_id(created_id)
-        return ContentSourceMapper.model_to_entity(model)
+        entity = ContentSourceMapper.model_to_entity(model)
+        assert entity is not None
+        return entity
 
     def get_by_source_info(self, source_type: SourceType, external_source: str) -> Optional[ContentSourceEntity]:
         """Get a content source by its source_type and external_source."""

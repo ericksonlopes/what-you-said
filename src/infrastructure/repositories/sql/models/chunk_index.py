@@ -9,7 +9,6 @@ from sqlalchemy.orm import relationship
 
 from src.infrastructure.repositories.sql.connector import Base
 
-
 class ChunkIndexModel(Base):
     __tablename__ = "chunk_index"
 
