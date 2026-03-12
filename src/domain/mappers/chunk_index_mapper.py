@@ -37,6 +37,43 @@ def _resolve_source_type(s: Optional[str]) -> SourceType:
     return default
 
 
+def _extract_cs_metadata(model: ChunkIndexModel) -> dict:
+    """Safely extract related ContentSource metadata from a ChunkIndexModel.
+
+    Returning a small dict keeps downstream code simple and avoids
+    repeated getattr/conditional logic inside the main mapper.
+    """
+    cs = getattr(model, "content_source", None)
+    return {
+        "source_type_str": getattr(cs, "source_type", None),
+        "external_source": getattr(cs, "external_source", None),
+        "subject_id": getattr(cs, "subject_id", None),
+        "embedding_model": getattr(cs, "embedding_model", None),
+    }
+
+
+def _build_entity_kwargs(model: ChunkIndexModel, cs_meta: dict, source_type: SourceType) -> dict:
+    """Construct keyword args for ChunkEntity from model and extracted metadata.
+
+    Having this in a helper reduces the number of expressions inside the main
+    mapper method and makes the mapping easier to test.
+    """
+    return {
+        "id": cast(UUID, getattr(model, "id")),
+        "job_id": cast(Optional[UUID], getattr(model, "job_id", None)),
+        "content_source_id": cast(Optional[UUID], getattr(model, "content_source_id", None)),
+        "source_type": source_type,
+        "external_source": cast(Optional[str], cs_meta.get("external_source") or getattr(model, "chunk_id", None)),
+        "subject_id": cast(Optional[UUID], cs_meta.get("subject_id")),
+        "content": None,
+        "extra": {"chunk_id": getattr(model, "chunk_id", None)},
+        "language": cast(Optional[str], getattr(model, "language", None)),
+        "embedding_model": cast(Optional[str], cs_meta.get("embedding_model")),
+        "created_at": cast(datetime, getattr(model, "created_at")),
+        "version_number": cast(int, getattr(model, "version_number", 1)),
+    }
+
+
 class ChunkIndexMapper:
     """Mapper for converting ChunkIndex SQL models into domain ChunkEntity objects.
 
