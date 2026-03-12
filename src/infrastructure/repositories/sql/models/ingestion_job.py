@@ -4,9 +4,11 @@ ORM models for ingestion_jobs table.
 
 import uuid
 
-from sqlalchemy import Column, Text, DateTime, Integer, func, ForeignKey, UUID
+from sqlalchemy import Column, Text, DateTime, func, ForeignKey, UUID
 from sqlalchemy.orm import relationship
+
 from src.infrastructure.repositories.sql.connector import Base
+
 
 class IngestionJobModel(Base):
     __tablename__ = "ingestion_jobs"
