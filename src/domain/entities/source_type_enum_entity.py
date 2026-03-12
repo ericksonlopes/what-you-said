@@ -1,6 +1,6 @@
 from enum import Enum
 
 
-class ExternalSourceEnum(Enum):
+class SourceType(Enum):
     """Enum for external sources."""
     YOUTUBE = "youtube"

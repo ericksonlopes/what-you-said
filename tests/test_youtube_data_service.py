@@ -42,7 +42,7 @@ def mock_model_loader_service():
     return mock
 
 
-@pytest.mark.YoutubeExtractorService
+@pytest.mark.YoutubeDataProcessService
 class TestYoutubeDataService:
     def test_split_by_time(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript

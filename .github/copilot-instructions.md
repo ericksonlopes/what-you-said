@@ -36,14 +36,14 @@ Database migrations
 - Entry/example flow: main.py demonstrates a typical indexing flow:
   1. Load model via ModelLoaderService -> EmbeddingService
   2. Extract content (src.infrastructure.extractors e.g. YoutubeExtractor)
-  3. Preprocess / split transcripts (YoutubeExtractorService)
+  3. Preprocess / split transcripts (YoutubeDataProcessService)
   4. Create vector-store client (WeaviateClient / other stores)
-  5. Repository (WeaviateChunkRepository) stores ChunkEntity objects
+  5. Repository (ChunkWeaviateRepository) stores ChunkEntity objects
   6. Services (e.g., YouTubeVectorService) orchestrate indexing/search
 
 - Key areas:
   - src/config: settings (pydantic-settings), logger, encoding
-  - src/domain: entities and enums (ChunkEntity, ExternalSourceEnum, etc.)
+  - src/domain: entities and enums (ChunkEntity, SourceType, etc.)
   - src/infrastructure/extractors: data ingestion (YouTube, audio, text)
   - src/infrastructure/services: splitting, model-loading, embedding orchestration
   - src/infrastructure/repository/vector_stores: vector-store adapters (weaviate, chroma)

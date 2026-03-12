@@ -2,15 +2,16 @@ import math
 from typing import Literal, List, Tuple, Dict, Optional
 
 from langchain_core.documents import Document
+from youtube_transcript_api import FetchedTranscript
+
 from src.config.logger import Logger
 from src.domain.interfaces.services.mode_loader_service import IModelLoaderService
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
-from youtube_transcript_api import FetchedTranscript
 
 logger = Logger()
 
 
-class YoutubeExtractorService:
+class YoutubeDataProcessService:
     """Splits the transcript into overlapping temporal windows or into token-sized chunks.
 
     Usage:

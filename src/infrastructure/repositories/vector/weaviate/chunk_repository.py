@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from weaviate.collections.classes.filters import _Filters as Filters
 
 from src.config.logger import Logger
-from src.domain.interfaces.repository.retriver_repository import IRetrieverRepository
+from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.domain.mappers.chunk_mapper import ChunkMapper
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 from src.infrastructure.repositories.vector.weaviate.weaviate_client import WeaviateClient
@@ -15,7 +15,7 @@ from src.infrastructure.services.embeddding_service import EmbeddingService
 logger = Logger()
 
 
-class WeaviateChunkRepository(IRetrieverRepository):
+class ChunkWeaviateRepository(IVectorRepository):
     def __init__(self, weaviate_client: WeaviateClient,
                  embedding_service: EmbeddingService,
                  collection_name: str,

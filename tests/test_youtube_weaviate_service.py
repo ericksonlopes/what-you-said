@@ -2,7 +2,7 @@ from uuid import uuid4
 
 import pytest
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.entities.external_source_enum_entity import ExternalSourceEnum
+from src.domain.entities.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 from src.infrastructure.services.youtube_vector_service import YouTubeVectorService
 
@@ -31,7 +31,7 @@ def make_chunk_entity():
         id=uuid4(),
         job_id=uuid4(),
         content_source_id=uuid4(),
-        source_type=ExternalSourceEnum.YOUTUBE,
+        source_type=SourceType.YOUTUBE,
         external_source="vid",
         content="x",
     )

@@ -6,10 +6,11 @@ import uuid
 
 from sqlalchemy import Column, Text, DateTime, Integer, func, ForeignKey, UUID
 from sqlalchemy.orm import relationship
+
 from src.infrastructure.repositories.sql.connector import Base
 
 
-class QueryLog(Base):
+class QueryLogModel(Base):
     __tablename__ = "query_logs"
 
     id = Column(UUID, primary_key=True, default=uuid.uuid4)
@@ -23,4 +24,4 @@ class QueryLog(Base):
     top_k = Column(Integer, nullable=True)
     latency_ms = Column(Integer, nullable=True)
 
-    subject = relationship("KnowledgeSubject")
+    subject = relationship("KnowledgeSubjectModel")

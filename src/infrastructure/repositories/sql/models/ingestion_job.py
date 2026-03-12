@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship
 from src.infrastructure.repositories.sql.connector import Base
 
 
-class IngestionJob(Base):
+class IngestionJobModel(Base):
     __tablename__ = "ingestion_jobs"
 
     id = Column(UUID, primary_key=True, default=uuid.uuid4)
@@ -26,5 +26,5 @@ class IngestionJob(Base):
     embedding_model = Column(Text, nullable=True)
     pipeline_version = Column(Text, nullable=True)
 
-    content_source = relationship("ContentSource", back_populates="ingestion_jobs")
-    chunks = relationship("ChunkIndex", back_populates="job", cascade="all, delete-orphan")
+    content_source = relationship("ContentSourceModel", back_populates="ingestion_jobs")
+    chunks = relationship("ChunkIndexModel", back_populates="job", cascade="all, delete-orphan")

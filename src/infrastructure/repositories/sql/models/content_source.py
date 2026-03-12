@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship
 from src.infrastructure.repositories.sql.connector import Base
 
 
-class ContentSource(Base):
+class ContentSourceModel(Base):
     __tablename__ = "content_sources"
 
     id = Column(UUID, primary_key=True, default=uuid.uuid4)
@@ -26,6 +26,6 @@ class ContentSource(Base):
     ingested_at = Column(DateTime(timezone=True), nullable=True)
     processing_status = Column(Text, nullable=False, default="pending")
 
-    subject = relationship("KnowledgeSubject", back_populates="content_sources")
-    ingestion_jobs = relationship("IngestionJob", back_populates="content_source", cascade="all, delete-orphan")
-    chunks = relationship("ChunkIndex", back_populates="content_source", cascade="all, delete-orphan")
+    subject = relationship("KnowledgeSubjectModel", back_populates="content_sources")
+    ingestion_jobs = relationship("IngestionJobModel", back_populates="content_source", cascade="all, delete-orphan")
+    chunks = relationship("ChunkIndexModel", back_populates="content_source", cascade="all, delete-orphan")

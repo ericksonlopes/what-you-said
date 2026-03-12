@@ -9,6 +9,7 @@ Session = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 Base = declarative_base()
 
+from src.infrastructure.repositories.sql.models import knowledge_subject, content_source, chunk_index, ingestion_job, query_log  # noqa: F401
 
 class Connector:
     def __init__(self):

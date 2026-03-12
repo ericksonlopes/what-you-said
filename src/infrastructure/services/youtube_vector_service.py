@@ -4,7 +4,7 @@ from weaviate.collections.classes.filters import _Filters as Filters, Filter
 
 from src.config.logger import Logger
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.interfaces.repository.retriver_repository import IRetrieverRepository
+from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.domain.mappers.chunk_mapper import ChunkMapper
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 
@@ -12,7 +12,7 @@ logger = Logger()
 
 
 class YouTubeVectorService:
-    def __init__(self, repository: IRetrieverRepository):
+    def __init__(self, repository: IVectorRepository):
         self._repository = repository
 
     def index_documents(self, documents: List[ChunkEntity]) -> List[str]:

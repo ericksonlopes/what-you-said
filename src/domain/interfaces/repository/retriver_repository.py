@@ -4,7 +4,7 @@ from typing import List, Optional, Any
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 
 
-class IRetrieverRepository(ABC):
+class IVectorRepository(ABC):
     """Repository port for storing and retrieving domain Chunk entities."""
 
     @abstractmethod
