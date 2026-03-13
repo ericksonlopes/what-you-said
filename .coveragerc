@@ -3,6 +3,7 @@ omit =
     */tests/*
     */domain/*
     */models/*
+    */dtos/*
     __init__.py
 
 [report]

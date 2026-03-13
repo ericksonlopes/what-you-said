@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from src.domain.entities.ingestion_job_status_enum import IngestionJobStatus
+from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 
 
 class IngestionJobEntity(BaseModel):

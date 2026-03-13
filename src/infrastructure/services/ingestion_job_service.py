@@ -3,7 +3,7 @@ from uuid import UUID
 
 from src.config.logger import Logger
 from src.domain.entities.ingestion_job_entity import IngestionJobEntity
-from src.domain.entities.ingestion_job_status_enum import IngestionJobStatus
+from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.domain.mappers.ingestion_job_mapper import IngestionJobMapper
 from src.infrastructure.repositories.sql.ingestion_job_repository import IngestionJobSQLRepository
 

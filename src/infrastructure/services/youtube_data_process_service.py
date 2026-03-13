@@ -34,6 +34,7 @@ class YoutubeDataProcessService:
             tokens_per_chunk: int = 512,
             tokens_overlap: int = 30
     ) -> List[Document]:
+        """Split transcript. If `transcript` is provided it will be used instead of fetching again from YouTube."""
         video_id = self.yt_extractor.video_id
         context = {
             "window_size": time_window_size,
