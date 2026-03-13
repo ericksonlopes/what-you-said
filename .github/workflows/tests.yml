@@ -39,6 +39,14 @@ jobs:
         run: |
           uv run pytest --cov=what_you_said --cov-branch --cov-report=xml:coverage.xml
 
+      - name: Upload coverage to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          report_type: coverage
+          files: coverage.xml
+
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
         uses: codecov/codecov-action@v5
