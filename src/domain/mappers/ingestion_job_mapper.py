@@ -3,7 +3,7 @@ from uuid import UUID
 from datetime import datetime
 
 from src.domain.entities.ingestion_job_entity import IngestionJobEntity
-from src.domain.entities.ingestion_job_status_enum import IngestionJobStatus
+from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.infrastructure.repositories.sql.models.ingestion_job import IngestionJobModel
 
 

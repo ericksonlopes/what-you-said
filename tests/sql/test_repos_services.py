@@ -3,9 +3,9 @@ from uuid import uuid4, UUID
 import pytest
 
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.entities.content_source_status_enum import ContentSourceStatus
-from src.domain.entities.ingestion_job_status_enum import IngestionJobStatus
-from src.domain.entities.source_type_enum_entity import SourceType
+from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.chunk_index_repository import ChunkIndexSQLRepository
 from src.infrastructure.repositories.sql.content_source_repository import ContentSourceSQLRepository
 from src.infrastructure.repositories.sql.ingestion_job_repository import IngestionJobSQLRepository

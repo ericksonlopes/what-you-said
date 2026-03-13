@@ -11,9 +11,9 @@ from src.application.dtos.enums.youtube_data_type import YoutubeDataType
 from src.application.dtos.results.ingest_youtube_result import IngestYoutubeResult
 from src.config.logger import Logger
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.entities.content_source_status_enum import ContentSourceStatus
-from src.domain.entities.ingestion_job_status_enum import IngestionJobStatus
-from src.domain.entities.source_type_enum_entity import SourceType
+from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.content_source_service import ContentSourceService

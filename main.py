@@ -3,7 +3,7 @@ from pprint import pprint
 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
 from src.config.logger import Logger
 from src.config.settings import settings
-from src.domain.entities.source_type_enum_entity import SourceType
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.chunk_index_repository import ChunkIndexSQLRepository
 from src.infrastructure.repositories.sql.content_source_repository import ContentSourceSQLRepository
 from src.infrastructure.repositories.sql.ingestion_job_repository import IngestionJobSQLRepository

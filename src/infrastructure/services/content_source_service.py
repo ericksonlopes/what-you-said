@@ -3,8 +3,8 @@ from uuid import UUID
 
 from src.config.logger import Logger
 from src.domain.entities.content_source_entity import ContentSourceEntity
-from src.domain.entities.content_source_status_enum import ContentSourceStatus
-from src.domain.entities.source_type_enum_entity import SourceType
+from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.domain.mappers.content_source_mapper import ContentSourceMapper
 from src.infrastructure.repositories.sql.content_source_repository import ContentSourceSQLRepository
 

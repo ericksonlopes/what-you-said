@@ -3,7 +3,7 @@ from typing import Optional, List, cast
 from uuid import UUID
 
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.entities.source_type_enum_entity import SourceType
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
 
 

@@ -4,7 +4,7 @@ from typing import cast
 from uuid import UUID
 
 from src.config.logger import Logger
-from src.domain.entities.content_source_status_enum import ContentSourceStatus
+from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
 
