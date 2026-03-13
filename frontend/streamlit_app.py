@@ -9,7 +9,7 @@ root = Path(__file__).resolve().parents[1]
 if str(root) not in sys.path:
     sys.path.insert(0, str(root))
 
-from src.config.settings import settings
+from src.config.settings import settings  # noqa: E402
 
 st.set_page_config(page_title="WhatYouSaid UI", layout="wide")
 
@@ -171,9 +171,9 @@ if st.sidebar.button("New Subject", key="open_create_subject_btn"):
                     safe_rerun()
 
 # Content Sources tab
-from frontend.tabs.content_sources import render as render_content_sources
-from frontend.tabs.search import render as render_search
-from frontend.tabs.diagnostics import render as render_diagnostics
+from frontend.tabs.content_sources import render as render_content_sources  # noqa: E402
+from frontend.tabs.search import render as render_search  # noqa: E402
+from frontend.tabs.diagnostics import render as render_diagnostics  # noqa: E402
 
 with tabs[0]:
     services = init_basic_services()

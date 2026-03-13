@@ -7,6 +7,10 @@ Provides open_create_subject(sidebar_ks, safe_rerun) which uses the
 import streamlit as st
 
 
+# Reuse this constant to avoid duplicated literal and satisfy SonarQube
+CREATE_SUBJECT_TITLE = "Criar Subject"
+
+
 def _create_subject_body(sidebar_ks, safe_rerun):
     """Render the form body used by dialog/modal/expander."""
     _new_name = st.text_input("Novo Subject - Nome", key="dialog_create_subject_name")
@@ -37,7 +41,7 @@ def open_create_subject(sidebar_ks, safe_rerun):
     """
     # Prefer the decorator dialog API when available
     if hasattr(st, "dialog"):
-        @st.dialog("Criar Subject")
+        @st.dialog(CREATE_SUBJECT_TITLE)
         def _dialog():
             _create_subject_body(sidebar_ks, safe_rerun)
 
@@ -47,12 +51,12 @@ def open_create_subject(sidebar_ks, safe_rerun):
     # Fallback to modal or expander
     try:
         if hasattr(st, "modal"):
-            with st.modal("Criar Subject"):
+            with st.modal(CREATE_SUBJECT_TITLE):
                 _create_subject_body(sidebar_ks, safe_rerun)
         else:
-            with st.expander("Criar Subject", expanded=True):
+            with st.expander(CREATE_SUBJECT_TITLE, expanded=True):
                 _create_subject_body(sidebar_ks, safe_rerun)
     except Exception:
         # Last-resort fallback
-        with st.expander("Criar Subject", expanded=True):
+        with st.expander(CREATE_SUBJECT_TITLE, expanded=True):
             _create_subject_body(sidebar_ks, safe_rerun)

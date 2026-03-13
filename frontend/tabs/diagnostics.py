@@ -45,7 +45,8 @@ def render(init_full_services, settings):
 
                 wc = WeaviateClient(settings.vector)
                 try:
-                    with wc as client:
+                    # Use context manager without assigning an unused name to avoid SonarQube warning
+                    with wc:
                         st.success("Weaviate successfully connected")
                 except Exception as e:
                     st.error(f"Error connecting to Weaviate: {e}")
