@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 import pytest
 
-from src.infrastructure.repository.weaviate.weaviate_vector import WeaviateVector
+from src.infrastructure.repositories.vector.weaviate.weaviate_vector import WeaviateVector
 
 
 class DummyClientContext:
@@ -38,7 +38,7 @@ class TestWeaviateVector:
                 return SimpleNamespace(invoke=lambda q: [])
 
         monkeypatch.setattr(
-            'src.infrastructure.repository.weaviate.weaviate_vector.WeaviateVectorStore',
+            'src.infrastructure.repositories.vector.weaviate.weaviate_vector.WeaviateVectorStore',
             FakeWeaviateVectorStore,
         )
 

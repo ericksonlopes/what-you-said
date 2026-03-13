@@ -22,10 +22,10 @@ class TestModelLoaderService:
 
         from src.infrastructure.services.model_loader_service import ModelLoaderService
 
-        svc = ModelLoaderService("test-model")
+        svc = ModelLoaderService("test-models")
         assert hasattr(svc, 'model_instance')
         assert isinstance(svc.model_instance, FakeSentenceTransformer)
-        assert svc.model.name == "test-model"
+        assert svc.model.name == "test-models"
 
 
     def test_load_model_failure(self, monkeypatch):

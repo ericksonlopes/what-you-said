@@ -1,14 +1,14 @@
 import weaviate
 from src.config.logger import Logger
-from src.config.settings import WeaviateConfig
+from src.config.settings import VectorConfig
 from weaviate.classes.init import Auth
 
 logger = Logger()
 
 
 class WeaviateClient:
-    def __init__(self, weaviate_config: WeaviateConfig, env: str = "testing"):
-        self._weaviate_config = weaviate_config
+    def __init__(self, vector_config: VectorConfig, env: str = "testing"):
+        self._weaviate_config = vector_config
         self._env = env
         self._client = None
 
@@ -17,14 +17,14 @@ class WeaviateClient:
             if self._env == "testing":
                 logger.debug("Creating WeaviateConfig client", context={"env": self._env})
                 client = weaviate.connect_to_local(
-                    host=self._weaviate_config.host,
-                    port=self._weaviate_config.port,
-                    grpc_port=self._weaviate_config.grpc_port,
+                    host=self._weaviate_config.weaviate_host,
+                    port=self._weaviate_config.weaviate_port,
+                    grpc_port=self._weaviate_config.weaviate_grpc_port,
                 )
             else:
                 client = weaviate.connect_to_weaviate_cloud(
-                    cluster_url=self._weaviate_config.host,
-                    auth_credentials=Auth.api_key(self._weaviate_config.api_key),
+                    cluster_url=self._weaviate_config.weaviate_url,
+                    auth_credentials=Auth.api_key(self._weaviate_config.weaviate_api_key),
                 )
 
             if client.is_ready() and client.is_live():

@@ -21,7 +21,7 @@ class YoutubeExtractor(IYoutubeExtractor):
         logger.info("Starting metadata extraction", context={"video_id": self.video_id})
 
         ydl_opts = {
-            'logger': logger
+            'loggers': logger
         }
 
         try:

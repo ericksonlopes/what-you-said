@@ -2,9 +2,8 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
-
-from src.infrastructure.repository.weaviate.chunk_repository import WeaviateChunkRepository
-from src.infrastructure.repository.weaviate.model.chunk_model import ChunkModel
+from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
+from src.infrastructure.repositories.vector.weaviate.chunk_repository import ChunkWeaviateRepository
 
 
 class DummyVector:
@@ -60,7 +59,7 @@ class DummyClientCtx:
 
 def make_repo():
     # supply dummy objects; we'll override vector_store in tests
-    repo = WeaviateChunkRepository(weaviate_client=DummyClientCtx(None), embedding_service=object(), collection_name="c")
+    repo = ChunkWeaviateRepository(weaviate_client=DummyClientCtx(None), embedding_service=object(), collection_name="c")
     return repo
 
 
@@ -71,7 +70,8 @@ class TestChunkRepository:
         vec = DummyVector()
         repo.vector_store = DummyVectorCtx(vec)
 
-        doc = ChunkModel(job_id=uuid4(), content_source_id=uuid4(), source_type="youtube", external_source="v1", subject_id=uuid4(), embedding_model="model-x", content="hello")
+        doc = ChunkModel(job_id=uuid4(), content_source_id=uuid4(), source_type="youtube", external_source="v1",
+                         subject_id=uuid4(), embedding_model="models-x", content="hello")
         created = repo.create_documents([doc])
         assert isinstance(created, list)
         assert 'texts' in vec.last
@@ -124,7 +124,7 @@ class TestChunkRepository:
         # prepare fake response object with objects
         obj = SimpleNamespace(uuid=str(uuid4()), properties={"content": "txt", "job_id": str(uuid4()), "content_source_id": str(uuid4()), "source_type": "youtube", "external_source": "v1", "subject_id": str(uuid4()), "embedding_model": "m"})
         response = SimpleNamespace(objects=[obj])
-        repo = WeaviateChunkRepository(weaviate_client=DummyClientCtx(response), embedding_service=object(), collection_name="c")
+        repo = ChunkWeaviateRepository(weaviate_client=DummyClientCtx(response), embedding_service=object(), collection_name="c")
 
         chunks = repo.list_chunks(filters=None)
         assert isinstance(chunks, list)

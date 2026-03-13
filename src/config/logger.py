@@ -1,4 +1,4 @@
-from src.infrastructure.logger.std_logger import StdLogger
+from src.infrastructure.loggers.std_logger import StdLogger
 
 LOG_FORMAT = "{asctime} | {levelname:<8} | {filepath}:{funcName}:{lineno} | {message} | {context}"
 

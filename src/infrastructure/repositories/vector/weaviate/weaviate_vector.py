@@ -1,7 +1,8 @@
 from langchain_weaviate import WeaviateVectorStore
 
 from src.config.logger import Logger
-from src.infrastructure.repository.weaviate.weaviate_client import WeaviateClient
+from src.infrastructure.repositories.vector.weaviate.weaviate_client import WeaviateClient
+
 from src.infrastructure.services.embeddding_service import EmbeddingService
 
 logger = Logger()
@@ -13,7 +14,7 @@ class WeaviateVector:
                  embedding_service: EmbeddingService,
                  index_name: str,
                  text_key: str,
-                 use_multi_tenancy: bool = True):
+                 use_multi_tenancy: bool = False):
         self._client = client
         self._embedding_service = embedding_service
         self._index_name = index_name

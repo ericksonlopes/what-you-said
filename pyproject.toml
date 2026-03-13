@@ -19,6 +19,7 @@ dependencies = [
     "yt-dlp>=2026.3.3",
     "langchain-weaviate>=0.0.6",
     "mypy>=1.19.1",
+    "alembic>=1.18.4",
 ]
 
 [tool.uv.sources]
