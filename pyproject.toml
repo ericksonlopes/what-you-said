@@ -20,6 +20,7 @@ dependencies = [
     "langchain-weaviate>=0.0.6",
     "mypy>=1.19.1",
     "alembic>=1.18.4",
+    "streamlit>=1.55.0",
 ]
 
 [tool.uv.sources]
