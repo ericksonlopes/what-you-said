@@ -5,18 +5,41 @@ from pydantic import field_validator, Field
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
-class WeaviateConfig(BaseSettings):
-    host: str = Field(default="localhost", description="WeaviateConfig host URL")
-    port: int = Field(default=8081, description="WeaviateConfig port")
-    api_key: Optional[str] = Field(default=None, description="WeaviateConfig API key for authentication")
-    grpc_port: int = Field(default=50051, description="WeaviateConfig gRPC port for local connections")
-    collection_name_youtube_transcripts: str = Field(default="YoutubeTranscripts",
-                                                     description="WeaviateConfig collection name for YouTube transcripts")
+class SQLConfig(BaseSettings):
+    type: Optional[str] = Field(default=None, description="SQL database connection type")
+    host: Optional[str] = Field(default=None, description="SQL database host")
+    port: Optional[str] = Field(default=None, description="SQL database port")
+    user: Optional[str] = Field(default=None, description="SQL database username")
+    password: Optional[str] = Field(default=None, description="SQL database password")
+    database: Optional[str] = Field(default=None, description="SQL database name")
 
     @property
     def url(self) -> str:
+        if self.type == "postgres":
+            return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+        if self.type == "mysql":
+            return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+        return "sqlite:///app.sql"
+
+
+class VectorConfig(BaseSettings):
+    store_type: str = Field(default="chroma", description="Type of vector store to use (e.g., 'chroma', 'weaviate')")
+    vector_index_path: str = Field(default="./vector_index",
+                                   description="Path to store vector index files (for Chroma)")
+
+    weaviate_host: str = Field(default="localhost", description="WeaviateConfig host URL")
+    weaviate_port: int = Field(default=8081, description="WeaviateConfig port")
+    weaviate_api_key: Optional[str] = Field(default=None, description="WeaviateConfig API key for authentication")
+    weaviate_grpc_port: int = Field(default=50051, description="WeaviateConfig gRPC port for local connections")
+    weaviate_collection_name_chunks: str = Field(default="chunks",
+                                                 description="WeaviateConfig collection name for YouTube transcripts")
+
+    @property
+    def weaviate_url(self) -> str:
         """Construct the full URL for WeaviateConfig connection."""
-        return f"http://{self.host}:{self.port}"
+        return f"http://{self.weaviate_host}:{self.weaviate_port}"
 
 
 class App(BaseSettings):
@@ -59,7 +82,7 @@ class App(BaseSettings):
 
 
 class ModelEmbedding(BaseSettings):
-    name: str = Field(default="all-MiniLM-L6-v2", description="Name of the embedding model to use")
+    name: str = Field(default="all-MiniLM-L6-v2", description="Name of the embedding models to use")
 
 
 class Settings(BaseSettings):
@@ -69,8 +92,9 @@ class Settings(BaseSettings):
         env_nested_delimiter='__'
     )
     app: App = Field(default_factory=App, description="Application settings")
-    weaviate: WeaviateConfig = Field(default_factory=WeaviateConfig, description="WeaviateConfig connection settings")
+    vector: VectorConfig = Field(default_factory=VectorConfig, description="Vector store settings")
     model_embedding: ModelEmbedding = Field(default_factory=ModelEmbedding, description="Model embedding settings")
+    sql: SQLConfig = Field(default_factory=SQLConfig, description="SQL database connection settings")
 
 
 settings = Settings()

@@ -8,10 +8,9 @@ from typing import Any, Dict
 from uuid import uuid4
 
 from langchain_core.documents import Document
-
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.entities.external_source_enum_entity import ExternalSourceEnum
-from src.infrastructure.repository.weaviate.model.chunk_model import ChunkModel
+from src.domain.entities.source_type_enum_entity import SourceType
+from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 
 
 class ChunkMapper:
@@ -31,15 +30,15 @@ class ChunkMapper:
             data["content_source_id"] = uuid4()
         # ensure source_type is a primitive str for persistence
         source = data.get("source_type")
-        if isinstance(source, ExternalSourceEnum):
+        if isinstance(source, SourceType):
             data["source_type"] = source.value
         elif isinstance(source, str):
             # try to normalize enum names like 'YOUTUBE' to their values
             try:
-                data["source_type"] = ExternalSourceEnum[source].value
+                data["source_type"] = SourceType[source].value
             except Exception:
                 try:
-                    data["source_type"] = ExternalSourceEnum(source).value
+                    data["source_type"] = SourceType(source).value
                 except Exception:
                     pass
         return ChunkModel(**data)
@@ -51,10 +50,10 @@ class ChunkMapper:
         source = data.get("source_type")
         if isinstance(source, str):
             try:
-                data["source_type"] = ExternalSourceEnum(source)
+                data["source_type"] = SourceType(source)
             except ValueError:
                 try:
-                    data["source_type"] = ExternalSourceEnum[source]
+                    data["source_type"] = SourceType[source]
                 except Exception:
                     pass
         return ChunkEntity(**data)
@@ -85,7 +84,7 @@ class ChunkMapper:
 
         # Normalize source_type to canonical string (attempt to map to enum values)
         source = data.get("source_type")
-        if isinstance(source, ExternalSourceEnum):
+        if isinstance(source, SourceType):
             data["source_type"] = source.value
         elif isinstance(source, str):
             norm = ChunkMapper._normalize_source_type(source)
@@ -125,11 +124,11 @@ class ChunkMapper:
         s = source.strip()
         # try by name (case-insensitive)
         try:
-            return ExternalSourceEnum[s.upper()].value
+            return SourceType[s.upper()].value
         except Exception:
             pass
         # try match to value ignoring case
-        for member in ExternalSourceEnum:
+        for member in SourceType:
             if member.value.lower() == s.lower() or member.name.lower() == s.lower():
                 return member.value
         # fallback: return original string

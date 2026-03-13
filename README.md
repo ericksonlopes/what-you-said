@@ -3,8 +3,10 @@
 # WhatYouSaid
 
 [![codecov](https://codecov.io/github/ericksonlopes/what-you-said/graph/badge.svg?token=8CZJARVJUE)](https://codecov.io/github/ericksonlopes/what-you-said)
-[![Tests](https://github.com/ericksonlopes/what-you-said/actions/workflows/python-tests.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/what-you-said/actions/workflows/python-tests.yml)
-[![LinkedIn|150](https://img.shields.io/badge/LinkedIn-Erickson_Lopes-blue)](https://www.linkedin.com/in/ericksonlopes/)
+
+[![Tests](https://github.com/ericksonlopes/what-you-said/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/what-you-said/actions/workflows/python-tests.yml)
+[![Code Quality](https://github.com/ericksonlopes/what-you-said/actions/workflows/code-quality.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/what-you-said/actions/workflows/code-quality.yml)
+[![Security](https://github.com/ericksonlopes/what-you-said/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/what-you-said/actions/workflows/security.ymll)
 
 ![Python](https://img.shields.io/badge/-Python-3776AB?&logo=Python&logoColor=FFFFFF)
 ![LangChain](https://img.shields.io/badge/-LangChain-1C3C3C?&logo=LangChain&logoColor=FFFFFF)
@@ -78,3 +80,11 @@ This project includes a LICENSE file; see it for licensing details.
 Acknowledgements
 
 Built to be an extensible foundation for building searchable, vectorized person profiles and RAG-enabled applications.
+
+<div align="center">
+    <p>Made with ❤️ by Erickson Lopes </p>
+
+[![LinkedIn|150](https://img.shields.io/badge/LinkedIn-Erickson_Lopes-blue)](https://www.linkedin.com/in/ericksonlopes/)
+
+</div>
+

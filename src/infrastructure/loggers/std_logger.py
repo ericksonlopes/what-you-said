@@ -11,13 +11,13 @@ from src.domain.interfaces.logger.logger import ILogger
 
 class StdLogger(ILogger):
     """
-    Standard logger that uses Python's built-in logging instead of loguru.
+    Standard loggers that uses Python's built-in logging instead of loguru.
     Keeps compatibility with the ILogger interface.
     """
 
     def __init__(self, log_format: str, name: Optional[str] = None, logger_id: Optional[str] = None) -> None:
         self.log_format = log_format
-        self.service_name = name or "std-logger"
+        self.service_name = name or "std-loggers"
 
         logger_name = f'std_logger_{self.service_name}'
         if logger_id is not None:
@@ -30,8 +30,8 @@ class StdLogger(ILogger):
         for handler in self._logger.handlers[:]:
             self._logger.removeHandler(handler)
 
-        # Set the logger to accept all levels (NOTSET)
-        # This prevents it from inheriting the root logger level
+        # Set the loggers to accept all levels (NOTSET)
+        # This prevents it from inheriting the root loggers level
         self._logger.setLevel(logging.NOTSET)
         self._logger.propagate = False
 
@@ -45,7 +45,7 @@ class StdLogger(ILogger):
         console_handler.setFormatter(formatter)
         self._logger.addHandler(console_handler)
 
-        # Force logger to not inherit from parent (bypass root logger's level)
+        # Force loggers to not inherit from parent (bypass root loggers's level)
         self._logger.parent = None
 
         self.allowed_levels = settings.app.allowed_log_levels
@@ -54,8 +54,8 @@ class StdLogger(ILogger):
     def get_logger_module_files(base_dir=None):
         """
         Returns a set with normalized (absolute) paths of ALL .py files
-        inside src/infrastructure/logger, including subdirectories.
-        This list adapts dynamically to all files present in the logger infra.
+        inside src/infrastructure/loggers, including subdirectories.
+        This list adapts dynamically to all files present in the loggers infra.
         """
         if base_dir is None:
             base_dir = os.path.join(
@@ -73,7 +73,7 @@ class StdLogger(ILogger):
         """
         Extracts detailed context from the frame where the log was originally called.
         Returns a dict with all fields for the standard log template.
-        This context excludes any frame from infrastructure python files found in the logger directory.
+        This context excludes any frame from infrastructure python files found in the loggers directory.
         """
         logger_files = StdLogger.get_logger_module_files()
         stack = inspect.stack()

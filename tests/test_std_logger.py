@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from src.infrastructure.logger.std_logger import StdLogger
+from src.infrastructure.loggers.std_logger import StdLogger
 
 
 class DummySettings:
@@ -24,7 +24,7 @@ def logger():
 @pytest.mark.std_logger
 class TestStdLogger:
     def test_get_logger_module_files_custom_dir(self, tmp_path):
-        d = tmp_path / "logger"
+        d = tmp_path / "loggers"
         d.mkdir()
         (d / "a.py").write_text("# test")
         (d / "b.py").write_text("# test")
@@ -169,12 +169,12 @@ class TestStdLogger:
     def test_explicit_handler_removal_loop(self):
         """
         Test explicit coverage of handler removal loop in StdLogger (__init__, line 27).
-        Ensures that existing handlers are removed from logger instance.
+        Ensures that existing handlers are removed from loggers instance.
         """
         import logging
         log_format = "{message}"
         logger_name = "explicit_handler_removal"
-        # Create logger and add handlers
+        # Create loggers and add handlers
         logger_obj = logging.getLogger(f'std_logger_{logger_name}')
         handler1 = logging.StreamHandler()
         handler2 = logging.StreamHandler()
@@ -182,12 +182,12 @@ class TestStdLogger:
         logger_obj.addHandler(handler2)
         assert len(logger_obj.handlers) >= 2
 
-        # Instantiate StdLogger with same logger name (simulate same instance)
+        # Instantiate StdLogger with same loggers name (simulate same instance)
         class StdLoggerTest(StdLogger):
             def __init__(self, log_format, name=None):
                 self.log_format = log_format
-                self.service_name = name or "std-logger"
-                # Use fixed logger name for test
+                self.service_name = name or "std-loggers"
+                # Use fixed loggers name for test
                 self._logger = logging.getLogger(f'std_logger_{self.service_name}')
                 for handler in self._logger.handlers[:]:
                     self._logger.removeHandler(handler)
@@ -213,7 +213,7 @@ class TestStdLogger:
         log_format = "{message}"
         logger_name = "coverage_handler_removal"
         logger_id = "fixed"
-        # Cria logger e adiciona handlers
+        # Cria loggers e adiciona handlers
         logger_obj = logging.getLogger(f'std_logger_{logger_name}_{logger_id}')
         handler1 = logging.StreamHandler()
         handler2 = logging.StreamHandler()

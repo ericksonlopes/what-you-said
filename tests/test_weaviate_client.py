@@ -1,13 +1,12 @@
 import pytest
-
-from src.infrastructure.repository.weaviate.weaviate_client import WeaviateClient
+from src.infrastructure.repositories.vector.weaviate.weaviate_client import WeaviateClient
 
 
 class DummyConfig:
-    host = "localhost"
-    port = 8080
-    grpc_port = 8090
-    api_key = "key"
+    weaviate_host = "localhost"
+    weaviate_port = 8080
+    weaviate_grpc_port = 8090
+    weaviate_api_key = "key"
 
 
 class FakeClient:
@@ -31,7 +30,7 @@ class TestWeaviateClient:
             return FakeClient()
 
         monkeypatch.setattr(
-            "src.infrastructure.repository.weaviate.weaviate_client.weaviate.connect_to_local",
+            "src.infrastructure.repositories.vector.weaviate.weaviate_client.weaviate.connect_to_local",
             fake_connect_to_local,
         )
 
@@ -49,7 +48,7 @@ class TestWeaviateClient:
                 return True
 
         monkeypatch.setattr(
-            "src.infrastructure.repository.weaviate.weaviate_client.weaviate.connect_to_local",
+            "src.infrastructure.repositories.vector.weaviate.weaviate_client.weaviate.connect_to_local",
             lambda host, port, grpc_port: BadClient(),
         )
 
@@ -73,7 +72,7 @@ class TestWeaviateClient:
                 self.closed = True
 
         monkeypatch.setattr(
-            "src.infrastructure.repository.weaviate.weaviate_client.weaviate.connect_to_local",
+            "src.infrastructure.repositories.vector.weaviate.weaviate_client.weaviate.connect_to_local",
             lambda host, port, grpc_port: FakeClient2(),
         )
 

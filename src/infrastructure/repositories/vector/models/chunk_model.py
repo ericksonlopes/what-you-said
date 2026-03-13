@@ -18,6 +18,6 @@ class ChunkModel(BaseModel):
     extra: Dict[str, Any] = Field(default_factory=dict)
 
     language: Optional[str] = Field(default=None, description="Language of the content, e.g., 'en', 'pt', etc.")
-    embedding_model: Optional[str] = Field(description="Name of the embedding model used to generate the vector")
+    embedding_model: Optional[str] = Field(description="Name of the embedding models used to generate the vector")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     version_number: int = 1

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langchain_core.documents import Document
 
-from src.infrastructure.services.youtube_data_service import YoutubeDataService, logger
+from src.infrastructure.services.youtube_data_process_service import YoutubeDataProcessService, logger
 
 
 @pytest.fixture
@@ -42,12 +42,12 @@ def mock_model_loader_service():
     return mock
 
 
-@pytest.mark.YoutubeDataService
+@pytest.mark.YoutubeDataProcessService
 class TestYoutubeDataService:
     def test_split_by_time(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "info"), patch.object(logger, "debug"):
-            splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             docs = splitter.split_transcript(mode="time", time_window_size=30, time_overlap=5)
             assert isinstance(docs, list)
             assert all(isinstance(doc, Document) for doc in docs)
@@ -60,7 +60,7 @@ class TestYoutubeDataService:
     def test_split_by_tokens(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "info"), patch.object(logger, "debug"):
-            splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             docs = splitter.split_transcript(mode="tokens", tokens_per_chunk=10, tokens_overlap=2)
             assert isinstance(docs, list)
             assert all(isinstance(doc, Document) for doc in docs)
@@ -73,14 +73,14 @@ class TestYoutubeDataService:
 
     def test_empty_transcript(self, mock_model_loader_service, dummy_yt_extractor):
         with patch.object(logger, "info"), patch.object(logger, "debug"):
-            splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             docs = splitter.split_transcript(mode="time", time_window_size=30, time_overlap=5)
             assert docs == []
 
     def test_invalid_overlap(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "error"):
-            splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             with pytest.raises(ValueError):
                 splitter.split_transcript(mode="time", time_window_size=30, time_overlap=40)
             with pytest.raises(ValueError):
@@ -91,7 +91,7 @@ class TestYoutubeDataService:
         with patch.object(logger, "error"):
             mock_model_loader_service = MagicMock()
             mock_model_loader_service.model.tokenizer = None
-            splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             with pytest.raises(RuntimeError):
                 splitter.split_transcript(mode="tokens", tokens_per_chunk=10, tokens_overlap=2)
 
@@ -104,7 +104,7 @@ class TestYoutubeDataService:
             return [ord(c) for c in txt]
 
         mock_model_loader_service.model.tokenizer.encode.side_effect = encode_side_effect
-        splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         docs = splitter.split_transcript(mode="tokens", tokens_per_chunk=10, tokens_overlap=2)
         assert isinstance(docs, list)
         assert all(isinstance(doc, Document) for doc in docs)
@@ -122,13 +122,13 @@ class TestYoutubeDataService:
             duration = 0
 
         transcript = [EmptySnippet()]
-        splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         with patch.object(logger, "debug") as mock_debug:
             splitter._tokenize_transcript(transcript, mock_model_loader_service.model.tokenizer, {})
             mock_debug.assert_called_with("Skipping empty snippet", context={"snippet_index": 0})
 
     def test_decode_typeerror_and_attributeerror(self, mock_model_loader_service, dummy_yt_extractor):
-        splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         chunk_ids = [65, 66]
         transcript = [DummySnippet("A", 0, 1)]
 
@@ -152,7 +152,7 @@ class TestYoutubeDataService:
 
     def test_create_token_chunks_empty_meta(self, mock_model_loader_service, dummy_yt_extractor):
         import math
-        splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         token_ids = [65, 66]
         token_meta = []
         transcript = [DummySnippet("A", 0, 1)]
@@ -163,7 +163,7 @@ class TestYoutubeDataService:
     def test_unknown_mode_error(self, mock_model_loader_service, dummy_yt_extractor, dummy_transcript):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "error") as mock_error:
-            splitter = YoutubeDataService(mock_model_loader_service, dummy_yt_extractor)
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             with pytest.raises(ValueError) as exc:
                 splitter.split_transcript(mode="unknown_mode", tokens_per_chunk=10)  # type: ignore
             assert "Unknown splitting mode" in str(exc.value)
