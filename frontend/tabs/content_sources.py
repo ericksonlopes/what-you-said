@@ -90,9 +90,10 @@ def _render_table(table_rows, source_ids, selected_subject_name):
     rows_html = ""
     for i, r in enumerate(table_rows):
         src_id = source_ids[i]
+        # Use query parameter to trigger dialog without full rerun issues
         link = f"?source={src_id}"
         status_class = f"badge-{r['status']}" if r['status'] in ['done', 'processing', 'pending', 'error'] else "badge-active"
-        # Shorten model name with safety check for None
+        
         raw_embedding = r.get('embedding')
         if raw_embedding and isinstance(raw_embedding, str):
             model_name = raw_embedding.split('/')[-1] if '/' in raw_embedding else raw_embedding
@@ -149,35 +150,32 @@ def render(services, settings, safe_rerun):
 
     chunk_service = services["chunk_service"]
 
-    # Detect if we should show the chunks dialog based on query params
-    source_id_to_view = None
-    try:
-        # Use query_params instead of modern Streamlit
-        params = st.query_params
-        if 'source' in params:
-            source_id_to_view = params['source']
-    except Exception:
-        pass
-
     @st.fragment(run_every="3s")
     def table_fragment():
+        # Detect if we should show the chunks dialog based on query params INSIDE the fragment
+        source_id_to_view = None
+        try:
+            params = st.query_params
+            if 'source' in params:
+                source_id_to_view = params['source']
+        except Exception:
+            pass
+
         content_sources = _fetch_content_sources(services)
         table_rows, source_ids = _build_rows(content_sources, settings)
 
         # If a source is selected via URL, show the dialog
         if source_id_to_view:
-            # Find the title for the selected source
             source_title = "Selected Source"
             for i, sid in enumerate(source_ids):
                 if sid == source_id_to_view:
                     source_title = table_rows[i]['title']
                     break
             
-            from frontend.dialogs.source_chunks_dialog import show_source_chunks_dialog
-            
             # Clear the query param so the dialog doesn't keep popping up on every rerun
             st.query_params.clear()
             
+            from frontend.dialogs.source_chunks_dialog import show_source_chunks_dialog
             show_source_chunks_dialog(source_id_to_view, source_title, chunk_service)
 
         selected_subject_name = st.session_state.get("sidebar_selected_subject")
