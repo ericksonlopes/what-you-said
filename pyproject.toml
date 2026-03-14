@@ -11,16 +11,22 @@ requires-python = ">=3.12"
 dependencies = [
     "langchain-text-splitters>=1.1.1",
     "pydantic-settings>=2.13.1",
-    "pytest>=9.0.2",
-    "pytest-cov>=7.0.0",
     "sentence-transformers>=5.2.3",
     "youtube-transcript-api>=1.2.4",
     "torch>=2.9.1",
     "yt-dlp>=2026.3.3",
     "langchain-weaviate>=0.0.6",
-    "mypy>=1.19.1",
     "alembic>=1.18.4",
     "streamlit>=1.55.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "mypy>=1.19.1",
+    "ruff>=0.15.6",
+    "bandit>=1.8.3",
 ]
 
 [tool.uv.sources]

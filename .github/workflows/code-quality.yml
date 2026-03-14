@@ -33,12 +33,10 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Sync dependencies with uv
-        run: uv sync --locked
+        run: uv sync --locked --group dev
 
       - name: Run ruff
-        uses: astral-sh/ruff-action@v3
-        with:
-          args: check src tests
+        run: uv run ruff check src tests
 
   types:
     runs-on: ubuntu-latest
@@ -66,11 +64,8 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Sync dependencies with uv
-        run: uv sync --locked
-
-      - name: Install mypy
-        run: pip install mypy
+        run: uv sync --locked --group dev
 
       - name: Run mypy
-        run: mypy src
+        run: uv run mypy src
 

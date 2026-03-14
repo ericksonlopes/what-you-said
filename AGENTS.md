@@ -66,34 +66,35 @@ This document provides essential knowledge for AI coding agents to be productive
   ```bash
   python -m pip install -e .
   uv sync
+  uv sync --group dev
   ```
 
 ### Testing
 - Run all tests:
   ```bash
-  pytest -v
+  uv run pytest -v
   ```
 - Run a specific test:
   ```bash
-  pytest -q tests/path/to/test_file.py::test_function_name
+  uv run pytest -q tests/path/to/test_file.py::test_function_name
   ```
 - Check coverage:
   ```bash
-  pytest --cov=src --cov-report=xml
+  uv run pytest --cov=src --cov-report=xml
   ```
 
 ### Static Checks
+- All-in-one check (Ruff):
+  ```bash
+  uv run ruff check .
+  ```
 - Type checking:
   ```bash
-  mypy src tests
+  uv run mypy src tests
   ```
-- Formatting:
+- Security scan (Bandit):
   ```bash
-  black .
-  ```
-- Import sorting:
-  ```bash
-  isort .
+  uv run bandit -r src
   ```
 
 ### Database Migrations
@@ -174,8 +175,8 @@ O conteúdo de orientação para Copilot/Contributors que estava em `copilot-ins
 evitar duplicação. Principais pontos resumidos:
 
 - Ambiente e instalação: Python 3.12+, python -m venv .venv, .\.venv\Scripts\Activate, python -m pip install -e .; use
-  `uv install` / `uv sync` quando aplicável.
-- Testes e qualidade: pytest -v, pytest -q, mypy src tests, black ., isort .
+  `uv sync --group dev` para instalar dependências de desenvolvimento.
+- Testes e qualidade: uv run pytest -v, uv run mypy src tests, uv run ruff check .
 - Migrações: alembic upgrade head; alembic revision --autogenerate -m "description"
 - Convenções: Faça mudanças cirúrgicas; planeje alterações complexas (use plan.md); atualize docs e testes ao alterar
   comportamento público.

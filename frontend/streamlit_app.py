@@ -9,15 +9,11 @@ if str(root) not in sys.path:
     sys.path.insert(0, str(root))
 
 from src.config.settings import settings
-from frontend.tabs.content_sources import render as render_content_sources
+from frontend.tabs.content_sources import render as render_content_sources  # noqa: E402
 from frontend.tabs.search import render as render_search
 from frontend.tabs.diagnostics import render as render_diagnostics
-from frontend.utils.services import (
-    init_basic_services, 
-    get_raw_services, 
-    init_full_services, 
-    list_subjects
-)
+from frontend.utils.services import init_basic_services, get_raw_services, init_full_services, list_subjects
+
 
 st.set_page_config(page_title="WhatYouSaid UI", layout="wide")
 
@@ -139,13 +135,10 @@ st.markdown(TABLE_CSS, unsafe_allow_html=True)
 
 
 def safe_rerun():
-    try:
-        st.rerun()
-    except Exception:
-        pass
+    st.rerun()
 
 
-def render_ingestion_history(ingestion_service):
+def render_ingestion_history(ig_service):
     st.markdown("### 🔔 Tasks")
     st.caption("RECENT TASKS")
 
@@ -164,10 +157,10 @@ def render_ingestion_history(ingestion_service):
             from uuid import UUID
             try:
                 sid = UUID(selected_sid)
-            except Exception:
+            except ValueError:
                 sid = selected_sid
                 
-            jobs = ingestion_service.list_recent_jobs_by_subject(sid, limit=20)
+            jobs = ig_service.list_recent_jobs_by_subject(sid, limit=20)
             if not jobs:
                 st.caption("No recent ingestion jobs.")
                 return

@@ -45,12 +45,14 @@ Install the package (editable mode):
 ```bash
 python -m pip install -e .
 
-# Install project dependencies with uv (if you use uv to manage dependencies)
+# Install project dependencies with uv
 uv sync
+
+# Install development dependencies (testing, linting, etc.)
+uv sync --group dev
 ```
 
-Dependencies are declared in pyproject.toml. If you use `uv` to manage dependencies, use it to sync/install per the
-pyproject configuration.
+Dependencies are declared in `pyproject.toml`. Core dependencies are in the main list, while development tools like `pytest`, `ruff`, `mypy`, and `bandit` are managed in the `dev` group.
 
 Run tests:
 
