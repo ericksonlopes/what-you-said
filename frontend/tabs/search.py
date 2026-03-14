@@ -31,32 +31,34 @@ def render(init_full_services):
                         if not results:
                             st.info("No results found")
                         else:
-                            # Deduplicate results while preserving order. Use id when available,
-                            # fallback to (subject_id, external_source, content preview).
-                            seen = set()
-                            unique_results = []
-                            for r in results:
-                                rid = getattr(r, "id", None)
-                                if rid is None:
-                                    key = (
-                                        str(getattr(r, "subject_id", "")),
-                                        str(getattr(r, "external_source", "")),
-                                        (getattr(r, "content") or "")[:200],
-                                    )
-                                else:
-                                    key = str(rid)
-                                if key in seen:
-                                    continue
-                                seen.add(key)
-                                unique_results.append(r)
+                            # Wrap results in a scrollable container
+                            with st.container(height=600, border=False):
+                                # Deduplicate results while preserving order. Use id when available,
+                                # fallback to (subject_id, external_source, content preview).
+                                seen = set()
+                                unique_results = []
+                                for r in results:
+                                    rid = getattr(r, "id", None)
+                                    if rid is None:
+                                        key = (
+                                            str(getattr(r, "subject_id", "")),
+                                            str(getattr(r, "external_source", "")),
+                                            (getattr(r, "content") or "")[:200],
+                                        )
+                                    else:
+                                        key = str(rid)
+                                    if key in seen:
+                                        continue
+                                    seen.add(key)
+                                    unique_results.append(r)
 
-                            if not unique_results:
-                                st.info("No results found")
-                            else:
-                                for r in unique_results:
-                                    st.markdown(r.content or "(no content)")
-                                    st.caption(f"subject_id: {r.subject_id} • external_source: {r.external_source}")
-                                    st.divider()
+                                if not unique_results:
+                                    st.info("No results found")
+                                else:
+                                    for r in unique_results:
+                                        st.markdown(r.content or "(no content)")
+                                        st.caption(f"subject_id: {r.subject_id} • external_source: {r.external_source}")
+                                        st.divider()
                     except Exception as e:
                         st.error(f"Search error: {e}")
                         st.code(traceback.format_exc())

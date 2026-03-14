@@ -112,4 +112,27 @@ TABLE_CSS = """<style>
         margin-left: 8px;
     }
     .chunk-content { color: #a1a1aa; font-size: 14px; line-height: 1.6; }
+
+    /* Fixed Header and Scrollable Content logic */
+    [data-testid="stHeader"] {
+        background-color: rgba(14, 17, 23, 0.8);
+        backdrop-filter: blur(10px);
+    }
+
+    /* Target the tabs container to make it sticky */
+    div[data-testid="stTabs"] [data-testid="stTabsHeader"] {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background-color: #0e1117;
+        padding-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    /* Utility class for scrollable area if needed via st.html */
+    .scrollable-content {
+        height: calc(100vh - 180px);
+        overflow-y: auto;
+        padding-right: 10px;
+    }
 </style>"""

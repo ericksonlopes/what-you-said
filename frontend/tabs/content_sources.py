@@ -265,15 +265,18 @@ def _table_fragment_internal(services, safe_rerun):
         source_title = st.session_state.get("view_source_title", "Selected Source")
         _render_chunks_view(view_source_id, source_title, services)
     else:
-        # Header + Add Knowledge button
-        _render_header_and_button(services, safe_rerun)
-        
-        selected_subject_name = st.session_state.get("sidebar_selected_subject")
-        content_sources = _fetch_content_sources(services)
-        table_rows, source_ids = _build_rows(content_sources)
-        _render_table(table_rows, source_ids, selected_subject_name)
+        # Wrap table in a scrollable container
+        with st.container(height=600, border=False):
+            selected_subject_name = st.session_state.get("sidebar_selected_subject")
+            content_sources = _fetch_content_sources(services)
+            table_rows, source_ids = _build_rows(content_sources)
+            _render_table(table_rows, source_ids, selected_subject_name)
 
 
 def render(services, safe_rerun):
-    # Always call the fragment
+    # Fixed Header (Only shown when NOT in chunks view to keep chunks view title fixed naturally)
+    if not st.session_state.get("view_source_id"):
+        _render_header_and_button(services, safe_rerun)
+    
+    # Always call the fragment for the main content area
     _table_fragment_internal(services, safe_rerun)
