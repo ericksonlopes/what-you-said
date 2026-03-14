@@ -6,13 +6,21 @@ from src.config.logger import Logger
 
 logger = Logger()
 
-def run_youtube_ingestion(get_services_func: Callable[[], dict[str, Any]], video_url: str, subject_id: str, pre_job_id: str, data_type: YoutubeDataType = YoutubeDataType.VIDEO):
+def run_youtube_ingestion(get_services_func: Callable[[], dict[str, Any]], video_url: str, subject_id: str, pre_job_id: str, 
+                           data_type: YoutubeDataType = YoutubeDataType.VIDEO,
+                           tokens_per_chunk: int = 512, tokens_overlap: int = 50):
     """Background job to run YouTube ingestion use case.
     
     This function is intended to be called by a background worker (e.g. ThreadPoolExecutor).
     It initializes the full service stack and executes the IngestYoutubeUseCase.
     """
-    logger.info("Starting background YouTube ingestion", context={"video_url": video_url, "job_id": pre_job_id, "data_type": data_type.value})
+    logger.info("Starting background YouTube ingestion", context={
+        "video_url": video_url, 
+        "job_id": pre_job_id, 
+        "data_type": data_type.value,
+        "tokens": tokens_per_chunk,
+        "overlap": tokens_overlap
+    })
     
     try:
         init_result = get_services_func()
@@ -37,7 +45,9 @@ def run_youtube_ingestion(get_services_func: Callable[[], dict[str, Any]], video
             video_url=video_url, 
             subject_id=subject_id, 
             data_type=data_type,
-            ingestion_job_id=pre_job_id
+            ingestion_job_id=pre_job_id,
+            tokens_per_chunk=tokens_per_chunk,
+            tokens_overlap=tokens_overlap
         )
         
         result = use_case.execute(cmd)

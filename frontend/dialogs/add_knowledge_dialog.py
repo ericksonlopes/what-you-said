@@ -101,11 +101,19 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
     st.write("Paste the link to the YouTube video or playlist you want to ingest.")
     
     st.text_input("YouTube URL", key="add_knowledge_youtube_url")
-    st.radio("Content Type", options=["Single Video", "Playlist"], horizontal=True, key="add_knowledge_youtube_type")
+    data_col1, data_col2 = st.columns(2)
+    with data_col1:
+        st.radio("Content Type", options=["Single Video", "Playlist"], horizontal=True, key="add_knowledge_youtube_type")
+    
+    with st.expander("🛠️ Splitting Configuration", expanded=False):
+        st.slider("Tokens per chunk", min_value=128, max_value=2048, value=512, step=128, key="add_knowledge_tokens")
+        st.slider("Chunk overlap (tokens)", min_value=0, max_value=512, value=50, step=10, key="add_knowledge_overlap")
 
     if st.button("Add YouTube", key="add_knowledge_youtube_ingest"):
         url = st.session_state.get("add_knowledge_youtube_url", "").strip()
         is_playlist = st.session_state.get("add_knowledge_youtube_type") == "Playlist"
+        tokens = st.session_state.get("add_knowledge_tokens", 512)
+        overlap = st.session_state.get("add_knowledge_overlap", 50)
         
         if not url:
             st.error("YouTube URL is required")
@@ -141,13 +149,7 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
                         st.info("This video has already been processed.")
                         return
                 
-                # 2. For playlist, we don't create a ContentSource upfront here 
-                # because it will create multiple ones in the use case.
-                # However, the UI expects an IngestionJob to track progress.
-                # We'll create a dummy content source for the playlist task itself?
-                # Or just let the use case handle it. 
-                # Let's create a "Playlist Source" to track the overall job.
-
+                # 2. Source Creation
                 if not is_playlist:
                     video_id = _extract_video_id_from_url(url)
                     source_entity = cs_service.get_by_source_info(source_type=SourceType.YOUTUBE, external_source=video_id)
@@ -181,9 +183,8 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
                     ingestion_type="youtube"
                 )
                 
-                # Submit to background executor
-                # We need to update run_youtube_ingestion to support data_type
-                job_id = submit_job(run_youtube_ingestion, get_raw_services, url, str(selected_subject.id), str(job_entity.id), dtype)
+                # Submit to background executor with custom split settings
+                job_id = submit_job(run_youtube_ingestion, get_raw_services, url, str(selected_subject.id), str(job_entity.id), dtype, tokens, overlap)
                 st.session_state["current_ingestion_job_id"] = job_id
                 st.rerun()
                 
