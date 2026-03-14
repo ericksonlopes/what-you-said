@@ -10,25 +10,10 @@ def _render_header_and_button(services, safe_rerun):
         st.header("Content Sources")
         st.space("stretch")
 
-        theme_type = st.context.theme.type
-        if theme_type == "dark":
-            btn_color = "white"
-            btn_text_color = "black"
-        else:
-            btn_color = "black"
-            btn_text_color = "white"
+        if st.button("Sync", key="sync_btn"):
+            st.rerun()
 
-        st.html(f"""
-            <style>
-            div.st-key-add_knowledge_btn > div.stButton > button {{
-                background-color: {btn_color};
-                color: {btn_text_color};
-                border: 1px solid gray;
-            }}
-            </style>
-        """)
-
-        if st.button("Add Knowledge", key="add_knowledge_btn"):
+        if st.button("Add Knowledge", key="add_knowledge_btn", type="primary"):
             try:
                 from frontend.dialogs.add_knowledge_dialog import open_add_knowledge
                 open_add_knowledge(services, safe_rerun)

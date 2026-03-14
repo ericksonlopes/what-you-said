@@ -305,7 +305,7 @@ if st.sidebar.button("New Subject", key="open_create_subject_btn"):
 st.sidebar.markdown("Run: `streamlit run frontend/streamlit_app.py`")
 
 # --- Main Layout ---
-main_col, history_col = st.columns([3, 1])
+main_col, history_col = st.columns([4, 1])
 
 with main_col:
     tabs = st.tabs(["Content Sources", "Search", "Diagnostics"])
@@ -322,6 +322,8 @@ with main_col:
         render_diagnostics(init_full_services, settings)
 
 with history_col:
+    # Adding a bit of top margin to align with headers
+    st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
     # Using fresh instances in this column to ensure all new service methods are available
     from src.infrastructure.repositories.sql.ingestion_job_repository import IngestionJobSQLRepository
     from src.infrastructure.services.ingestion_job_service import IngestionJobService
