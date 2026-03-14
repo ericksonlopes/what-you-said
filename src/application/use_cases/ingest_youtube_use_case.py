@@ -153,9 +153,9 @@ class IngestYoutubeUseCase:
                 ingestion = self._create_ingestion_job(source)
 
             self._mark_source_processing(source)
+            self._update_ingestion_processing(ingestion)
 
             docs = self._extract_and_split(cmd, video_id, yt_extractor=yt_extractor)
-            self._update_ingestion_processing(ingestion)
 
             chunks = self._build_chunk_entities(docs, source, subject, cmd)
             self._persist_chunks(chunks)

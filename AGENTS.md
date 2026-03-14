@@ -23,12 +23,33 @@ This document provides essential knowledge for AI coding agents to be productive
    `src/infrastructure/repository/vector_stores`.
 4. **Domain Layer**: Defines entities and enums (e.g., `ChunkEntity`, `SourceType`) in `src/domain`.
 5. **Configuration**: Managed via `src/config/settings.py` using `pydantic-settings`.
+6. **Frontend (Streamlit)**: Dashboard UI located in `frontend/`.
 
 ### Data Flow
 1. **Extraction**: Content is ingested via extractors.
 2. **Processing**: Transcripts are split into chunks and embedded.
 3. **Storage**: Chunks are stored in a vector database for retrieval.
 4. **Search/RAG**: Data is queried for semantic search or RAG workflows.
+
+---
+
+## Frontend (Streamlit)
+
+### Architecture
+- **Entry point**: `frontend/streamlit_app.py`.
+- **Tabs**: Modularized in `frontend/tabs/` (e.g., `content_sources.py`, `search.py`).
+- **Dialogs**: Located in `frontend/dialogs/` (e.g., `add_knowledge_dialog.py`).
+
+### Key Patterns
+1. **Auto-refresh**: Use `@st.fragment(run_every="3s")` to refresh specific UI components (like the Tasks sidebar or the Content Sources table) without a full page reload.
+2. **Ingestion Workflow**:
+    - **Foreground (Immediate)**: Extract metadata (e.g., Video ID), create `ContentSource` with `pending` status, and create `IngestionJob` with `started` status.
+    - **Background (Async)**: Trigger the heavy lifting via `frontend/utils/background_jobs.py`, passing the pre-created `job_id`.
+    - **Sync**: Use `st.rerun()` after starting the job (ensure it's not inside an `on_click` callback) to show the new task immediately.
+3. **Styling**: 
+    - Custom CSS is injected via `TABLE_CSS` in `streamlit_app.py`.
+    - Use `.task-card` for task history items for consistent layout.
+    - Badges follow `.badge-done`, `.badge-processing`, etc.
 
 ---
 
