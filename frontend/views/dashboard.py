@@ -5,7 +5,7 @@ from frontend.tabs.content_sources import render as render_content_sources
 from frontend.tabs.search import render as render_search
 from frontend.utils.services import init_basic_services, get_raw_services, init_full_services
 
-def render_dashboard_view(safe_rerun):
+def render_dashboard_view(safe_rerun, settings):
     tabs = st.tabs(["Content Sources", "Search"])
 
     with tabs[0]:

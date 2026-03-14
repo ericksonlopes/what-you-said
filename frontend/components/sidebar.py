@@ -44,13 +44,8 @@ def render_sidebar(safe_rerun):
             if callable(open_create_subject):
                 open_create_subject(sidebar_ks, safe_rerun)
 
+        st.markdown("---")
+
         if st.button("⚙️ Settings", key="sidebar_settings_btn", use_container_width=True):
             st.session_state["main_view"] = "settings"
             st.rerun()
-
-        st.markdown("---")
-        # Ingestion history is always shown
-        from src.infrastructure.repositories.sql.ingestion_job_repository import IngestionJobSQLRepository
-        from src.infrastructure.services.ingestion_job_service import IngestionJobService
-        ingestion_service = IngestionJobService(IngestionJobSQLRepository())
-        render_ingestion_history(ingestion_service)
