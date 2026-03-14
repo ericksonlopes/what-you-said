@@ -10,12 +10,21 @@ if str(root) not in sys.path:
 
 from src.config.settings import settings
 from frontend.tabs.content_sources import render as render_content_sources  # noqa: E402
-from frontend.tabs.search import render as render_search
-from frontend.tabs.diagnostics import render as render_diagnostics
-from frontend.utils.services import init_basic_services, get_raw_services, init_full_services, list_subjects
+from frontend.tabs.search import render as render_search  # noqa: E402
+from frontend.tabs.diagnostics import render as render_diagnostics  # noqa: E402
+from frontend.utils.services import (  # noqa: E402
+    init_basic_services, 
+    get_raw_services, 
+    init_full_services, 
+    list_subjects
+)
 
 
 st.set_page_config(page_title="WhatYouSaid UI", layout="wide")
+
+# Initialize session state for navigation
+if "main_view" not in st.session_state:
+    st.session_state["main_view"] = "dashboard"
 
 # Styles for a modern dashboard look
 TABLE_CSS = """<style>
@@ -135,7 +144,10 @@ st.markdown(TABLE_CSS, unsafe_allow_html=True)
 
 
 def safe_rerun():
-    st.rerun()
+    try:
+        st.rerun()
+    except Exception:
+        pass
 
 
 @st.fragment(run_every="5s")
@@ -149,7 +161,7 @@ def _show_history_fragment(ig_service):
         from uuid import UUID
         try:
             sid = UUID(selected_sid)
-        except ValueError:
+        except Exception:
             sid = selected_sid
             
         jobs = ig_service.list_recent_jobs_by_subject(sid, limit=20)
@@ -216,11 +228,42 @@ def _show_history_fragment(ig_service):
 def render_ingestion_history(ig_service):
     st.markdown("### 🔔 Tasks")
     st.caption("RECENT TASKS")
-
-    # If something triggered a need for a refresh (like adding a source), 
-    # the fragment will rerun on its own cycle, but we can also force it here
-    # if we are outside the fragment or by just letting it run.
     _show_history_fragment(ig_service)
+
+
+def render_settings_view():
+    """Renders the settings and information view."""
+    # Back button to return to dashboard
+    if st.button("← Back to Content Sources"):
+        st.session_state["main_view"] = "dashboard"
+        st.rerun()
+        
+    st.title("⚙️ Settings & Diagnostics")
+    st.markdown("---")
+    
+    tab_diag, tab_info = st.tabs(["🔍 Diagnostics", "ℹ️ System Info"])
+    
+    with tab_diag:
+        render_diagnostics(init_full_services, settings)
+        
+    with tab_info:
+        st.subheader("🛠️ Advanced Info")
+        st.caption("Current running environment and configurations.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Environment", settings.app.env.upper())
+            st.metric("Vector Store", settings.vector.store_type.upper())
+        with col2:
+            st.metric("Embedding Model", settings.model_embedding.name.split('/')[-1])
+            st.metric("SQL Driver", settings.sql.url.split(':')[0])
+            
+        st.markdown("---")
+        st.write("**Run command:**")
+        st.code("streamlit run frontend/streamlit_app.py", language="bash")
+        
+        st.write("**Database URL:**")
+        st.code(settings.sql.url)
 
 
 # --- App Body ---
@@ -270,30 +313,28 @@ with st.sidebar:
         if callable(open_create_subject):
             open_create_subject(sidebar_ks, safe_rerun)
 
-    st.markdown("---")
-    with st.expander("🛠️ Advanced Info"):
-        st.caption(f"Environment: {settings.app.env}")
-        st.caption(f"Vector Store: {settings.vector.store_type}")
-        st.code("streamlit run frontend/streamlit_app.py", language="bash")
+    if st.button("⚙️ Settings", key="sidebar_settings_btn", use_container_width=True):
+        st.session_state["main_view"] = "settings"
+        st.rerun()
 
     st.markdown("---")
-    # Move history/tasks to sidebar for better layout
+    # Ingestion history is always shown
     from src.infrastructure.repositories.sql.ingestion_job_repository import IngestionJobSQLRepository
     from src.infrastructure.services.ingestion_job_service import IngestionJobService
     ingestion_service = IngestionJobService(IngestionJobSQLRepository())
     render_ingestion_history(ingestion_service)
 
 
-# --- Main Layout (Fixed Full Width Tabs) ---
-tabs = st.tabs(["Content Sources", "Search", "Diagnostics"])
+# --- Main Layout ---
+if st.session_state["main_view"] == "dashboard":
+    tabs = st.tabs(["Content Sources", "Search"])
 
-with tabs[0]:
-    services = init_basic_services()
-    services["init_full_services"] = get_raw_services
-    render_content_sources(services, safe_rerun)
+    with tabs[0]:
+        services = init_basic_services()
+        services["init_full_services"] = get_raw_services
+        render_content_sources(services, safe_rerun)
 
-with tabs[1]:
-    render_search(init_full_services)
-
-with tabs[2]:
-    render_diagnostics(init_full_services, settings)
+    with tabs[1]:
+        render_search(init_full_services)
+else:
+    render_settings_view()
