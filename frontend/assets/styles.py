@@ -48,7 +48,7 @@ TABLE_CSS = """<style>
     
     .source-sub {
         color: #6a737d;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
     
     .meta-text {
@@ -84,7 +84,7 @@ TABLE_CSS = """<style>
         border: 1px solid #27272a;
         padding: 12px;
         border-radius: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
 
     /* Chunk Cards */

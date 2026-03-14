@@ -254,10 +254,17 @@ def _render_chunks_view(source_id, source_title, services):
     st.caption(f"Source ID: {source_id}")
 
     chunk_service = services["chunk_service"]
+    cs_service = services["cs_service"]
+    ingestion_service = services["ingestion_service"]
+    
     try:
         from uuid import UUID
         sid_uuid = UUID(str(source_id))
         
+        # Check source status first
+        source_entity = cs_service.get_by_id(sid_uuid)
+        is_failed = source_entity and getattr(source_entity, 'processing_status', None) == 'failed'
+
         # Pagination logic
         current_page = st.session_state.get("chunks_current_page", 1)
         offset = (current_page - 1) * CHUNKS_PAGE_SIZE
@@ -266,7 +273,19 @@ def _render_chunks_view(source_id, source_title, services):
         chunks = chunk_service.list_by_content_source(content_source_id=sid_uuid, limit=CHUNKS_PAGE_SIZE, offset=offset)
 
         if not chunks and total_count == 0:
-            st.info("No chunks found for this source.")
+            if is_failed:
+                st.error("### ❌ Ingestion Failed")
+                # Fetch the last job for this source to get the error message
+                jobs = ingestion_service.list_by_content_source(sid_uuid)
+                if jobs:
+                    last_job = jobs[0] # assuming sorted by date or most recent
+                    st.markdown("**Error Details:**")
+                    st.code(last_job.error_message or "No detailed error message available.", language="text")
+                    
+                    st.markdown("---")
+                    st.info("💡 **Suggestion:** Check if the YouTube video has transcripts enabled or try a different video.")
+            else:
+                st.info("No chunks found for this source.")
             return
 
         st.markdown(f"Total chunks: **{total_count}**")

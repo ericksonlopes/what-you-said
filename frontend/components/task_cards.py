@@ -50,28 +50,23 @@ def _show_history_fragment(ig_service):
                     dur_str = f"{int(dur // 60)}m {int(dur % 60)}s"
             
             stats_display = s_info["stats"]
-            if status_val == "failed" and job.error_message:
-                stats_display = f"Error: {job.error_message[:30]}..."
 
+            # Add each card to the combined HTML string
             all_cards_html += f"""
                 <div class="task-card">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <b style="color: white; font-size: 0.9em;">Ingestion | {job.ingestion_type.capitalize() if job.ingestion_type else 'Generic'}</b>
-                        <span style="color: {s_info['color']}; font-size: 0.8em; font-weight: 500;">{s_info['label']}</span>
+                        <span style="color: {s_info['color']}; font-size: 0.8em; font-weight: 600;">{s_info['label']}</span>
                     </div>
                     <div style="font-size: 0.8em; color: #71717a; margin-top: 6px; line-height: 1.4;">
-                        ID: <span style="font-family: monospace; font-size: 0.85em;">{job.id}</span> <br>
+                        ID: <span style="font-family: monospace; font-size: 0.85em;">{str(job.id)[:8]}</span> <br>
                         {stats_display} • {ts} {f'({dur_str})' if dur_str else ''}
                     </div>
                 </div>
             """
         
-        # Wrap all cards in a scrollable div
-        st.html(f"""
-            <div style="max-height: 450px; overflow-y: auto; padding-right: 10px; margin-bottom: 10px;">
-                {all_cards_html}
-            </div>
-        """)
+        # Render all cards at once to ensure consistent spacing controlled by CSS
+        st.html(f'<div class="notifications-container">{all_cards_html}</div>')
 
     except Exception as e:
         st.error(f"Failed to load notifications: {e}")

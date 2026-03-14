@@ -79,9 +79,9 @@ def _job_status_poller(job_id: str, safe_rerun):
             st.rerun()
     elif status == "done":
         st.success("✅ Ingestion completed successfully!")
-        if st.button("Close and Refresh", key="close_dialog_success"):
+        if st.button("Create New Knowledge", key="new_knowledge_success"):
             st.session_state.pop("current_ingestion_job_id", None)
-            safe_rerun()
+            st.rerun()
     elif status == "error":
         st.error(f"❌ Ingestion error: {job.get('exception')}")
         if st.button("Back", key="close_dialog_error"):
