@@ -81,63 +81,99 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
     yt_url = st.text_input("YouTube URL", key="add_knowledge_youtube_url")
     st.caption("Atualmente apenas vídeos avulsos são suportados (playlist não implementado).")
 
-    # Define the callback to handle logic and state, but NO UI ELEMENTS here
-    def handle_ingest_callback():
+    # Use a normal button instead of on_click callback to avoid st.rerun() issues
+    if st.button("Adicionar YouTube", key="add_knowledge_youtube_ingest"):
         url = st.session_state.get("add_knowledge_youtube_url", "").strip()
         if not url:
-            st.session_state["ingest_error"] = "URL do YouTube é obrigatória"
-            return
-        if not selected_subject:
-            st.session_state["ingest_error"] = "Selecione um Subject válido"
-            return
+            st.error("URL do YouTube é obrigatória")
+        elif not selected_subject:
+            st.error("Selecione um Subject válido")
+        else:
+            from frontend.streamlit_app import get_raw_services
+            try:
+                video_id = _extract_video_id_from_url(url)
+                if not video_id:
+                    st.error("Não foi possível extrair o ID do vídeo desta URL.")
+                    return
 
-        # We must use get_raw_services for background threads, not the cached init_full_services
-        from frontend.streamlit_app import get_raw_services
-
-        try:
-            # Helper for background ingest (logic only)
-            def _background_run_ingest(get_services_func, video_url, subject_id):
-                # USE THE RAW FUNCTION INSIDE THE THREAD
-                fs = get_services_func()
-                if not fs or not fs.get('ok'):
-                    raise RuntimeError(f"Failed to initialize services: {fs.get('error') if fs else 'unknown'}")
-                svc = fs['services']
-                from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
-                from src.application.dtos.enums.youtube_data_type import YoutubeDataType
-                from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
-
-                use_case = IngestYoutubeUseCase(
-                    ks_service=svc.get("ks_service"),
-                    cs_service=svc.get("cs_service"),
-                    ingestion_service=svc.get("ingestion_service"),
-                    model_loader_service=svc.get("model_loader"),
-                    embedding_service=svc.get("embedding_service"),
-                    chunk_service=svc.get("chunk_service"),
-                    vector_service=svc.get("vector_service"),
+                # Create services for foreground operations
+                cs_service = services.get("cs_service")
+                ingestion_service = services.get("ingestion_service")
+                
+                from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+                from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
+                from src.domain.entities.enums.source_type_enum_entity import SourceType
+                from src.config.settings import settings
+                
+                # 1. Check if already exists to avoid duplicates in UI
+                existing = cs_service.get_by_source_info(source_type=SourceType.YOUTUBE, external_source=video_id)
+                if existing and existing.processing_status == "done":
+                    st.info("Este vídeo já foi processado anteriormente.")
+                    return
+                
+                # 2. Create ContentSource in PENDING status
+                source_entity = existing
+                if not source_entity:
+                    source_entity = cs_service.create_source(
+                        subject_id=selected_subject.id,
+                        source_type=SourceType.YOUTUBE,
+                        external_source=video_id,
+                        title=f"YouTube Video {video_id}", # Fallback title until ingestion extracts real one
+                        status=ContentSourceStatus.ACTIVE,
+                        processing_status="pending"
+                    )
+                
+                # 3. Create IngestionJob linked to the source
+                job_entity = ingestion_service.create_job(
+                    content_source_id=source_entity.id,
+                    status=IngestionJobStatus.STARTED,
+                    embedding_model=settings.model_embedding.name,
+                    pipeline_version="1.0"
                 )
-                cmd = IngestYoutubeCommand(video_url=video_url, subject_id=subject_id, data_type=YoutubeDataType.VIDEO)
-                result = use_case.execute(cmd)
-                return f"Ingest finished — created_chunks: {getattr(result, 'created_chunks', None)}"
+                job_id = job_entity.id
 
-            job_id = submit_job(_background_run_ingest, get_raw_services, url, str(selected_subject.id))
-            st.session_state['add_knowledge_jobs'] = st.session_state.get('add_knowledge_jobs', []) + [job_id]
-            
-            # Store success info to be displayed by the main loop
-            st.session_state["ingest_success_job"] = job_id
-            # Clear input
-            st.session_state["add_knowledge_youtube_url"] = ""
-            
-        except Exception as e:
-            st.session_state["ingest_error"] = f"Erro ao iniciar: {e}"
+                # Helper for background ingest (logic only)
+                def _background_run_ingest(get_services_func, video_url, subject_id, pre_job_id):
+                    fs = get_services_func()
+                    if not fs or not fs.get('ok'):
+                        raise RuntimeError(f"Failed to initialize services")
+                    svc = fs['services']
+                    from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
+                    from src.application.dtos.enums.youtube_data_type import YoutubeDataType
+                    from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
 
-    # Render any messages from previous click
-    if "ingest_error" in st.session_state:
-        st.error(st.session_state.pop("ingest_error"))
+                    use_case = IngestYoutubeUseCase(
+                        ks_service=svc.get("ks_service"),
+                        cs_service=svc.get("cs_service"),
+                        ingestion_service=svc.get("ingestion_service"),
+                        model_loader_service=svc.get("model_loader"),
+                        embedding_service=svc.get("embedding_service"),
+                        chunk_service=svc.get("chunk_service"),
+                        vector_service=svc.get("vector_service"),
+                    )
+                    cmd = IngestYoutubeCommand(
+                        video_url=video_url, 
+                        subject_id=subject_id, 
+                        data_type=YoutubeDataType.VIDEO,
+                        ingestion_job_id=str(pre_job_id)
+                    )
+                    use_case.execute(cmd)
+
+                submit_job(_background_run_ingest, get_raw_services, url, str(selected_subject.id), job_id)
+                
+                st.session_state["ingest_success_job"] = job_id
+                
+                # Now we can safely rerun the app to refresh everything.
+                st.rerun()
+                
+            except Exception as e:
+                st.error(f"Erro ao iniciar: {e}")
+
+    # Render success message if just happened
     if "ingest_success_job" in st.session_state:
         jid = st.session_state.pop("ingest_success_job")
         st.toast(f"Iniciando ingestão... (Job: {jid})", icon="🚀")
 
-    st.button("Adicionar YouTube", key="add_knowledge_youtube_ingest", on_click=handle_ingest_callback)
 
 
 def _upload_tab_body():

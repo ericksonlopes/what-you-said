@@ -185,6 +185,10 @@ def render_ingestion_history(ingestion_service):
     st.markdown("### 🔔 Tasks")
     st.caption("RECENT TASKS")
 
+    # If something triggered a need for a refresh (like adding a source), 
+    # the fragment will rerun on its own cycle, but we can also force it here
+    # if we are outside the fragment or by just letting it run.
+
     @st.fragment(run_every="3s")
     def show_history():
         try:

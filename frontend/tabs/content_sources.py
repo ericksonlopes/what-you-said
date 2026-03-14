@@ -159,7 +159,7 @@ def _render_table(table_rows, source_ids, selected_subject_name):
 
 
 def render(services, settings, safe_rerun):
-    # Header + Add Knowledge button
+    # Header + Add Knowledge button (Keep outside fragment to avoid widget issues)
     _render_header_and_button(services, safe_rerun)
 
     chunk_service = services["chunk_service"]
@@ -167,32 +167,35 @@ def render(services, settings, safe_rerun):
     # Detect if we should show the chunks dialog based on query params
     source_id_to_view = None
     try:
-        # Use query_params instead of experimental_get_query_params for modern Streamlit
+        # Use query_params instead of modern Streamlit
         params = st.query_params
         if 'source' in params:
             source_id_to_view = params['source']
     except Exception:
         pass
 
-    content_sources = _fetch_content_sources(services)
-    table_rows, source_ids = _build_rows(content_sources, settings)
+    @st.fragment(run_every="3s")
+    def table_fragment():
+        content_sources = _fetch_content_sources(services)
+        table_rows, source_ids = _build_rows(content_sources, settings)
 
-    # If a source is selected via URL, show the dialog
-    if source_id_to_view:
-        # Find the title for the selected source
-        source_title = "Selected Source"
-        for i, sid in enumerate(source_ids):
-            if sid == source_id_to_view:
-                source_title = table_rows[i]['title']
-                break
-        
-        from frontend.dialogs.source_chunks_dialog import show_source_chunks_dialog
-        
-        # Clear the query param so the dialog doesn't keep popping up on every rerun
-        # but only after we ensure the dialog function is called.
-        st.query_params.clear()
-        
-        show_source_chunks_dialog(source_id_to_view, source_title, chunk_service)
+        # If a source is selected via URL, show the dialog
+        if source_id_to_view:
+            # Find the title for the selected source
+            source_title = "Selected Source"
+            for i, sid in enumerate(source_ids):
+                if sid == source_id_to_view:
+                    source_title = table_rows[i]['title']
+                    break
+            
+            from frontend.dialogs.source_chunks_dialog import show_source_chunks_dialog
+            
+            # Clear the query param so the dialog doesn't keep popping up on every rerun
+            st.query_params.clear()
+            
+            show_source_chunks_dialog(source_id_to_view, source_title, chunk_service)
 
-    selected_subject_name = st.session_state.get("sidebar_selected_subject")
-    _render_table(table_rows, source_ids, selected_subject_name)
+        selected_subject_name = st.session_state.get("sidebar_selected_subject")
+        _render_table(table_rows, source_ids, selected_subject_name)
+
+    table_fragment()
