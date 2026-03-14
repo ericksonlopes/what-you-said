@@ -77,38 +77,33 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
     """Render the YouTube ingestion tab body and trigger ingestion when requested."""
     st.markdown("#### YouTube")
     st.write("Cole o link do vídeo do YouTube que deseja ingerir.")
+    
+    # We use the key to control the widget
     yt_url = st.text_input("YouTube URL", key="add_knowledge_youtube_url")
     st.caption("Atualmente apenas vídeos avulsos são suportados (playlist não implementado).")
 
-    if st.button("Adicionar YouTube", key="add_knowledge_youtube_ingest"):
-        if not yt_url or not yt_url.strip():
+    # Define the callback to handle the logic and clear the input
+    def handle_ingest():
+        url = st.session_state.get("add_knowledge_youtube_url", "").strip()
+        if not url:
             st.error("URL do YouTube é obrigatória")
             return
         if not selected_subject:
             st.error("Selecione um Subject válido")
             return
 
-        # Initialize heavy services via the parent-provided factory
         init_full_services = services.get("init_full_services")
         if not init_full_services:
             st.error("Serviço de inicialização não disponível.")
             return
 
-        fs = init_full_services()
-        if not fs or not fs.get("ok"):
-            st.error(f"Não foi possível inicializar serviços: {fs.get('error') if fs else 'unknown error'}")
-            return
-
-
         try:
-            # Start ingestion in background (runs in a worker thread; do not call Streamlit APIs inside it)
+            # Helper for background ingest (already defined in your scope)
             def _background_run_ingest(init_full_services_func, video_url, subject_id):
-                # Initialize heavy services inside the worker thread
                 fs = init_full_services_func()
                 if not fs or not fs.get('ok'):
                     raise RuntimeError(f"Failed to initialize services: {fs.get('error') if fs else 'unknown'}")
                 svc = fs['services']
-
                 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
                 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
                 from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
@@ -122,31 +117,24 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
                     chunk_service=svc.get("chunk_service"),
                     vector_service=svc.get("vector_service"),
                 )
-
-                cmd = IngestYoutubeCommand(
-                    video_url=video_url,
-                    subject_id=subject_id,
-                    data_type=YoutubeDataType.VIDEO,
-                )
-
+                cmd = IngestYoutubeCommand(video_url=video_url, subject_id=subject_id, data_type=YoutubeDataType.VIDEO)
                 result = use_case.execute(cmd)
-                created_chunks = getattr(result, 'created_chunks', None)
-                return f"Ingest finished — created_chunks: {created_chunks}"
+                return f"Ingest finished — created_chunks: {getattr(result, 'created_chunks', None)}"
 
-            try:
-                job_id = submit_job(_background_run_ingest, init_full_services, yt_url.strip(),
-                                    str(selected_subject.id))
-                st.session_state['add_knowledge_jobs'] = st.session_state.get('add_knowledge_jobs', []) + [job_id]
-                
-                st.info(f"Ingest started in background (job id: {job_id}). You will be notified when it completes.")
-                
-                # We no longer need the HTML polling hack here. 
-                # The main app has a @st.fragment that polls all jobs and shows toasts.
-                
-            except Exception as be:
-                st.error(f"Erro ao iniciar ingestão em background: {be}")
+            job_id = submit_job(_background_run_ingest, init_full_services, url, str(selected_subject.id))
+            st.session_state['add_knowledge_jobs'] = st.session_state.get('add_knowledge_jobs', []) + [job_id]
+            
+            # Show immediate toast
+            st.toast(f"Iniciando ingestão... (Job: {job_id})", icon="🚀")
+            
+            # CLEAR the input field here - this works inside a callback!
+            st.session_state["add_knowledge_youtube_url"] = ""
+            
         except Exception as e:
-            st.error(f"Erro durante ingestão: {e}")
+            st.error(f"Erro ao iniciar ingestão: {e}")
+
+    # Use on_click to trigger the callback
+    st.button("Adicionar YouTube", key="add_knowledge_youtube_ingest", on_click=handle_ingest)
 
 
 def _upload_tab_body():

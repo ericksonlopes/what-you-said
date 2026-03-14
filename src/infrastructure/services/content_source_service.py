@@ -26,14 +26,19 @@ class ContentSourceService:
                       language: Optional[str] = None,
                       embedding_model: Optional[str] = None,
                       dimensions: Optional[int] = None,
+                      processing_status: Optional[str] = None,
 
                       ) -> ContentSourceEntity:
         """Create a content source and return a domain entity."""
         self._logger.info("Creating content source", context={"external_source": external_source})
+        
+        effective_processing_status = processing_status or (status.value if status is not None else "pending")
+        
         created_id = self._repo.create(subject_id=subject_id, source_type=source_type.value,
                                        external_source=external_source, title=title, language=language,
                                        embedding_model=embedding_model, dimensions=dimensions,
-                                       status=(status.value if status is not None else None))
+                                       status="active", # General operational status
+                                       processing_status=effective_processing_status) # Ingestion status
         model = self._repo.get_by_id(created_id)
         entity = ContentSourceMapper.model_to_entity(model)
         assert entity is not None

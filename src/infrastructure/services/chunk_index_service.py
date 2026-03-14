@@ -23,6 +23,7 @@ class ChunkIndexService:
                 "content_source_id": e.content_source_id,
                 "job_id": e.job_id,
                 "chunk_id": str(e.id),
+                "content": e.content,
                 "chars": len(e.content) if e.content is not None else 0,
                 "language": e.language,
                 "version_number": e.version_number,

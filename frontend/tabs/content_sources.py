@@ -68,26 +68,30 @@ def _build_rows(content_sources, settings):
     source_ids = []
     if content_sources:
         for c in content_sources:
-            source = getattr(c, 'title', None) or getattr(c, 'external_source', None) or str(getattr(c, 'id', ''))
+            # Main title from database, fallback to ID/Source
+            title = getattr(c, 'title', None) or getattr(c, 'external_source', None) or str(getattr(c, 'id', ''))
+            ext_source = getattr(c, 'external_source', None) or ""
+            
             stype = getattr(c, 'source_type', None)
             if stype is not None:
                 try:
-                    ctype = stype.value
+                    ctype = stype.value if hasattr(stype, 'value') else str(stype)
                 except Exception:
                     ctype = str(stype)
             else:
                 ctype = getattr(c, 'mime_type', None) or "application/pdf"
+                
             chunks = getattr(c, 'chunks', 0)
-            embedding = getattr(c, 'embedding_model', settings.model_embedding.name or "text-embedding-3-small")
-            dims = getattr(c, 'dimensions', 1536)
-            status = getattr(c, 'processing_status', getattr(c, 'status', 'Active'))
+            embedding = getattr(c, 'embedding_model', "N/A")
+            status = getattr(c, 'processing_status', getattr(c, 'status', 'pending'))
+            
             table_rows.append({
-                "source": source,
+                "title": title,
+                "external_source": ext_source,
                 "type": ctype,
                 "chunks": chunks,
                 "embedding": embedding,
-                "dims": dims,
-                "status": status,
+                "status": str(status).lower(),
             })
             source_ids.append(str(getattr(c, 'id', '')))
     return table_rows, source_ids
@@ -156,39 +160,61 @@ def _render_viewing(viewing,chunk_service, safe_rerun, table_rows):
 
 def _render_table(table_rows, source_ids, selected_subject_name):
     if selected_subject_name:
-        st.markdown(f"**Filtering by:** {selected_subject_name}")
+        st.caption(f"Showing sources for: **{selected_subject_name}**")
     else:
-        st.markdown("**Filtering by:** All")
+        st.caption("Showing all sources")
 
-    header_cols = st.columns([3, 1, 0.7, 1.2, 0.6, 0.4, 0.4])
-    header_cols[0].markdown("**Source**")
-    header_cols[1].markdown("**Type**")
-    header_cols[2].markdown("**Chunks**")
-    header_cols[3].markdown("**Embedding model**")
-    header_cols[4].markdown("**Dimensions**")
-    header_cols[5].markdown("**Status**")
-    header_cols[6].markdown("")
+    if not table_rows:
+        st.info("No content sources found for this subject.")
+        return
 
+    # Build the entire table as a single HTML string
+    rows_html = ""
     for i, r in enumerate(table_rows):
-        row_cols = st.columns([3, 1, 0.7, 1.2, 0.6, 0.4, 0.4])
         src_id = source_ids[i]
         link = f"?source={src_id}"
-        row_cols[0].markdown(f"[{r['source']}]({link})", unsafe_allow_html=True)
-        row_cols[1].markdown(f"<div class='small'>{r.get('type', '')}</div>", unsafe_allow_html=True)
-        row_cols[2].markdown(f"<div class='small'>{r.get('chunks', '')}</div>", unsafe_allow_html=True)
-        row_cols[3].markdown(f"<div class='small'>{r.get('embedding', '')}</div>", unsafe_allow_html=True)
-        row_cols[4].markdown(f"<div class='small'>{r.get('dims', '')}</div>", unsafe_allow_html=True)
-        row_cols[5].markdown(f"<span class='badge green'>{r.get('status', '')}</span>", unsafe_allow_html=True)
-        row_cols[6].markdown("<span class='action-dots'>⋯</span>", unsafe_allow_html=True)
+        status_class = f"badge-{r['status']}" if r['status'] in ['done', 'processing', 'pending', 'error'] else "badge-active"
+        model_name = r['embedding'].split('/')[-1] if '/' in r['embedding'] else r['embedding']
+        
+        rows_html += f"""
+            <tr>
+                <td>
+                    <div class="source-info">
+                        <a href="{link}" class="source-title" target="_self">{r['title']}</a>
+                        <span class="source-sub">{r['external_source']}</span>
+                    </div>
+                </td>
+                <td><span class="meta-text">{r['type'].upper()}</span></td>
+                <td><span class="meta-text">{r['chunks']}</span></td>
+                <td><span class="meta-text" title="{r['embedding']}">{model_name}</span></td>
+                <td><span class="badge {status_class}">{r['status']}</span></td>
+                <td style="text-align: right;"><span class="action-dots">⋮</span></td>
+            </tr>
+        """
 
-    st.markdown("<div style='display:flex; justify-content:space-between; align-items:center; margin-top:12px'>",
-                unsafe_allow_html=True)
-    st.markdown("<div class='small'>Page Size: <b>25</b></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='small'>1 to 25 of {len(table_rows)}</div>", unsafe_allow_html=True)
-    st.markdown(
-        "<div style='display:flex; gap:8px'><button class='btn-sync'>&lt;</button> <button class='btn-sync'>&gt;</button></div>",
-        unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    table_html = f"""
+    <table class="content-table">
+        <thead>
+            <tr>
+                <th style="width: 40%;">Source</th>
+                <th style="width: 10%;">Type</th>
+                <th style="width: 10%;">Chunks</th>
+                <th style="width: 20%;">Model</th>
+                <th style="width: 15%;">Status</th>
+                <th style="width: 5%; text-align: right;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {rows_html}
+        </tbody>
+    </table>
+    """
+    
+    st.html(table_html)
+
+    # Footer / Pagination
+    st.markdown("<div style='margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;'></div>", unsafe_allow_html=True)
+    st.caption(f"Total: {len(table_rows)} items")
 
 
 def render(services, settings, safe_rerun):

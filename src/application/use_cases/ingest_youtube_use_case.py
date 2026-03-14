@@ -214,7 +214,8 @@ class IngestYoutubeUseCase:
             external_source=video_id,
             title=title or cmd.title,
             language=cmd.language,
-            status=ContentSourceStatus.PENDING,
+            status=ContentSourceStatus.ACTIVE,
+            processing_status="pending"
         )
         logger.info("Content source created", context={"content_source_id": str(source.id), "external_source": video_id,
                                                        "subject_id": str(subject.id)})

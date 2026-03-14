@@ -24,6 +24,7 @@ class ChunkIndexModel(Base):
         nullable=False,
     )
     chunk_id = Column(Text, nullable=False)
+    content = Column(Text, nullable=True)
     chars = Column(Integer, nullable=False, server_default=text("0"))
     language = Column(Text, nullable=True)
     version_number = Column(Integer, nullable=False, server_default=text("1"))

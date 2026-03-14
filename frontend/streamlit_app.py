@@ -13,17 +13,84 @@ from src.config.settings import settings  # noqa: E402
 
 st.set_page_config(page_title="WhatYouSaid UI", layout="wide")
 
-# Styles for Source table (darkish)
+# Styles for a modern dashboard look
 TABLE_CSS = """<style>
-.table { width:100%; border-collapse: collapse; }
-.table th { text-align:left; padding:10px 8px; font-size:13px; color:#9aa4ad; border-bottom:1px solid rgba(255,255,255,0.04) }
-.table td { padding:12px 8px; border-bottom:1px solid rgba(255,255,255,0.02); vertical-align:middle; color:#e6eef7 }
-.badge { padding:4px 8px; border-radius:999px; font-size:12px; }
-.badge.green { background: rgba(16,185,129,0.12); color: #10b981; border: 1px solid rgba(16,185,129,0.18) }
-.badge.gray { background: rgba(255,255,255,0.02); color: #9aa4ad }
-.action-dots { color: #9aa4ad; font-size:20px; cursor:pointer }
-.small { font-size:14px; color:#9aa4ad }
-.btn-sync { background: transparent; border:1px solid rgba(255,255,255,0.06); color: #e6eef7; padding:6px 10px; border-radius:8px }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    
+    .main { font-family: 'Inter', sans-serif; }
+    
+    .content-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background: transparent;
+    }
+    
+    .content-table th {
+        text-align: left;
+        padding: 12px 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: #9aa4ad;
+        font-weight: 500;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .content-table td {
+        padding: 16px 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        vertical-align: middle;
+    }
+    
+    .content-table tr:hover {
+        background: rgba(255,255,255,0.02);
+    }
+    
+    .source-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .source-title {
+        font-weight: 500;
+        color: #e6eef7;
+        font-size: 0.9rem;
+        text-decoration: none !important;
+        margin-bottom: 2px;
+    }
+    
+    .source-sub {
+        color: #6a737d;
+        font-size: 0.75rem;
+    }
+    
+    .meta-text {
+        color: #9aa4ad;
+        font-size: 0.8rem;
+    }
+    
+    /* Modern Badges */
+    .badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: inline-block;
+        text-transform: capitalize;
+        white-space: nowrap;
+    }
+    .badge-done { background: rgba(16,185,129,0.1); color: #10b981; border: 1px solid rgba(16,185,129,0.2); }
+    .badge-processing { background: rgba(59,130,246,0.1); color: #3b82f6; border: 1px solid rgba(59,130,246,0.2); }
+    .badge-pending { background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+    .badge-error { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+    .badge-active { background: rgba(139,92,246,0.1); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
+    
+    .action-dots {
+        color: #4b5563;
+        font-size: 1.1rem;
+        text-align: right;
+    }
 </style>"""
 st.markdown(TABLE_CSS, unsafe_allow_html=True)
 
@@ -136,18 +203,20 @@ try:
 except Exception:
     pass
 
-# 2. Polling Fragment (Triggers rerun when a job finishes)
+# 2. Polling Fragment (Triggers rerun to keep UI updated)
 @st.fragment(run_every=3)
 def job_polling_fragment():
-    """Polls background jobs and triggers a full app rerun when any job finishes."""
+    """Polls background jobs and triggers a full app rerun while jobs are active or just finished."""
     try:
         from frontend.utils.background_jobs import list_jobs
         jobs = list_jobs()
         for jid, meta in jobs.items():
             status = meta.get("status")
-            # If we find a finished job that hasn't been notified yet, trigger a full rerun
-            if not meta.get("notified", False) and status in ("done", "error"):
+            # Trigger rerun if job is running (to update table status)
+            # OR if it just finished (to trigger the global toast notification)
+            if status == "running" or (not meta.get("notified", False) and status in ("done", "error")):
                 st.rerun()
+                break
     except Exception:
         pass
 

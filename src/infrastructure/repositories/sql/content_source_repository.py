@@ -17,12 +17,14 @@ class ContentSourceSQLRepository:
     def create(self, subject_id: Optional[UUID], source_type: str, external_source: str,
                title: Optional[str] = None, language: Optional[str] = None,
                embedding_model: Optional[str] = None, dimensions: Optional[int] = None,
-               status: Optional[str] = None, chunks: Optional[int] = None, chars: Optional[int] = None) -> UUID:
+               status: Optional[str] = None, processing_status: Optional[str] = None,
+               chunks: Optional[int] = None, chars: Optional[int] = None) -> UUID:
         with Connector() as session:
             try:
                 extra = {"subject_id": subject_id, "source_type": source_type, "external_source": external_source,
                          "title": title, "language": language, "embedding_model": embedding_model,
-                         "dimensions": dimensions, "status": status, "chunks": chunks, "chars": chars}
+                         "dimensions": dimensions, "status": status, "processing_status": processing_status,
+                         "chunks": chunks, "chars": chars}
                 logger.info("Creating ContentSource", context=extra)
                 cs = ContentSourceModel(
                     subject_id=subject_id,
@@ -33,12 +35,13 @@ class ContentSourceSQLRepository:
                     embedding_model=embedding_model,
                     dimensions=dimensions,
                     status=status or "active",
+                    processing_status=processing_status or "pending",
                     chunks=chunks or 0
                 )
                 session.add(cs)
                 session.commit()
                 session.refresh(cs)
-                logger.info("ContentSource created successfully", context={"id": cs.id})
+                logger.info("ContentSource created successfully", context={"id": cs.id, "processing_status": cs.processing_status})
 
                 return cast(UUID, cs.id)
             except Exception as e:
@@ -109,13 +112,16 @@ class ContentSourceSQLRepository:
                 if cs is None:
                     logger.warning("ContentSource not found for finishing ingestion", context=extra)
                     return
-                cs.processing_status = ContentSourceStatus.DONE.value
+                
+                # Explicitly update processing_status to 'done'
+                cs.processing_status = "done"
                 cs.ingested_at = datetime.now(timezone.utc)
                 cs.embedding_model = embedding_model
                 cs.dimensions = dimensions
                 cs.chunks = chunks
+                
                 session.commit()
-                logger.info("Ingestion finished successfully", context=extra)
+                logger.info("Ingestion finished successfully", context={"id": content_source_id, "new_status": "done"})
             except Exception as e:
                 logger.error("Error finishing ingestion for ContentSource", context={**extra, "error": str(e)})
                 session.rollback()
