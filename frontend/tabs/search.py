@@ -31,34 +31,59 @@ def render(init_full_services):
                         if not results:
                             st.info("No results found")
                         else:
-                            # Wrap results in a scrollable container
-                            with st.container(height=600, border=False):
-                                # Deduplicate results while preserving order. Use id when available,
-                                # fallback to (subject_id, external_source, content preview).
-                                seen = set()
-                                unique_results = []
-                                for r in results:
-                                    rid = getattr(r, "id", None)
-                                    if rid is None:
-                                        key = (
-                                            str(getattr(r, "subject_id", "")),
-                                            str(getattr(r, "external_source", "")),
-                                            (getattr(r, "content") or "")[:200],
-                                        )
-                                    else:
-                                        key = str(rid)
-                                    if key in seen:
-                                        continue
-                                    seen.add(key)
-                                    unique_results.append(r)
+                            # Fetch services needed for metadata
+                            basic_services = init_full_services().get("services", {})
+                            cs_service = basic_services.get("cs_service")
 
-                                if not unique_results:
-                                    st.info("No results found")
-                                else:
-                                    for r in unique_results:
-                                        st.markdown(r.content or "(no content)")
-                                        st.caption(f"subject_id: {r.subject_id} • external_source: {r.external_source}")
-                                        st.divider()
+                            # Deduplicate results while preserving order.
+                            seen = set()
+                            unique_results = []
+                            for r in results:
+                                rid = getattr(r, "id", None)
+                                # Fallback key if ID is missing
+                                key = str(rid) if rid else (str(getattr(r, "subject_id", "")), (getattr(r, "content") or "")[:200])
+                                
+                                if key in seen:
+                                    continue
+                                seen.add(key)
+                                unique_results.append(r)
+
+                            if not unique_results:
+                                st.info("No results found")
+                            else:
+                                st.markdown(f"Showing top {len(unique_results)} relevant chunks:")
+                                
+                                for r in unique_results:
+                                    # Try to fetch Content Source details for better identification
+                                    source_info_html = ""
+                                    if cs_service and hasattr(r, 'content_source_id'):
+                                        try:
+                                            source = cs_service.get_by_id(r.content_source_id)
+                                            if source:
+                                                stype = source.source_type.value if hasattr(source.source_type, 'value') else str(source.source_type)
+                                                source_info_html = f"""
+                                                    <div style="margin-bottom: 8px;">
+                                                        <span class="badge badge-active" style="text-transform: uppercase; font-size: 0.65rem;">{stype}</span>
+                                                        <span style="color: #e6eef7; font-weight: 600; font-size: 0.85rem; margin-left: 8px;">{source.title or 'Untitled Source'}</span>
+                                                        <br><span style="color: #71717a; font-size: 0.7rem; font-family: monospace;">{source.external_source}</span>
+                                                    </div>
+                                                """
+                                        except Exception:
+                                            pass
+
+                                    # Render as a card matching the Dashboard style
+                                    st.markdown(f"""
+                                        <div class="chunk-card">
+                                            {source_info_html}
+                                            <div class="chunk-content" style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                                                {r.content or "(no content)"}
+                                            </div>
+                                            <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="color: #3f3f46; font-size: 10px;">CHUNK ID: {str(r.id)[:18]}...</span>
+                                                <span class="chunk-meta" style="font-size: 9px;">Score: {getattr(r, 'score', 'N/A')}</span>
+                                            </div>
+                                        </div>
+                                    """, unsafe_allow_html=True)
                     except Exception as e:
                         st.error(f"Search error: {e}")
                         st.code(traceback.format_exc())
