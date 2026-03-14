@@ -269,12 +269,17 @@ with st.spinner("Iniciando modelos de IA e serviços..."):
         st.error(f"Erro ao carregar modelos: {startup_check.get('error')}")
         st.stop()
 
-# --- Sidebar (Left) - MOVED TO TOP OF LAYOUT LOGIC ---
-st.sidebar.header("Navigation")
-with st.sidebar.expander("Subjects", expanded=True):
+# --- Sidebar (Left) ---
+with st.sidebar:
+    st.title("🎙️ WhatYouSaid")
+    st.caption("Person-centric Knowledge Hub")
+    st.markdown("---")
+
+    st.subheader("📚 Subjects")
     services_for_sidebar = init_basic_services()
     sidebar_ks = services_for_sidebar["ks_service"]
     _side_subs = list_subjects(sidebar_ks)
+    
     if _side_subs:
         _options = [s.name for s in _side_subs]
         current_selected = st.session_state.get("sidebar_selected_subject")
@@ -283,26 +288,36 @@ with st.sidebar.expander("Subjects", expanded=True):
         except ValueError:
             default_index = 0
 
-        selected_name = st.selectbox("Select Subject", options=_options, index=default_index,
-                                     key="sidebar_selected_subject")
+        selected_name = st.selectbox(
+            "Current Context", 
+            options=_options, 
+            index=default_index,
+            key="sidebar_selected_subject",
+            label_visibility="collapsed"
+        )
         selected_subject_obj = next((s for s in _side_subs if s.name == selected_name), None)
         if selected_subject_obj:
             st.session_state["selected_subject_id"] = str(selected_subject_obj.id)
     else:
-        st.info("No subjects found")
+        st.info("No subjects found. Create one to get started.")
 
-st.sidebar.markdown("---")
+    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+    
+    try:
+        from frontend.dialogs.subject_dialog import open_create_subject
+    except Exception:
+        open_create_subject = None
 
-try:
-    from frontend.dialogs.subject_dialog import open_create_subject
-except Exception:
-    open_create_subject = None
+    if st.button("➕ New Subject", key="open_create_subject_btn", use_container_width=True):
+        if open_create_subject:
+            open_create_subject(sidebar_ks, safe_rerun)
 
-if st.sidebar.button("New Subject", key="open_create_subject_btn"):
-    if open_create_subject:
-        open_create_subject(sidebar_ks, safe_rerun)
+    st.markdown("---")
+    with st.expander("🛠️ Advanced Info"):
+        st.caption(f"Environment: {settings.app.env}")
+        st.caption(f"Vector Store: {settings.vector.store_type}")
+        st.code("streamlit run frontend/streamlit_app.py", language="bash")
 
-st.sidebar.markdown("Run: `streamlit run frontend/streamlit_app.py`")
 
 # --- Main Layout ---
 main_col, history_col = st.columns([4, 1])
