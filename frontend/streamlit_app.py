@@ -23,6 +23,10 @@ st.set_page_config(page_title="WhatYouSaid UI", layout="wide")
 # Inject Global Styles
 st.markdown(TABLE_CSS, unsafe_allow_html=True)
 
+# Process pending toasts from session state
+if "pending_toast" in st.session_state:
+    st.toast(st.session_state.pop("pending_toast"), icon="🚀")
+
 # Initialize session state for navigation
 if "main_view" not in st.session_state:
     st.session_state["main_view"] = "dashboard"

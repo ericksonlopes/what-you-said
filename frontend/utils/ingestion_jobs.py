@@ -51,8 +51,8 @@ def run_youtube_ingestion(get_services_func: Callable[[], dict[str, Any]], video
         )
         
         result = use_case.execute(cmd)
-        logger.info("Background YouTube ingestion completed successfully", context={"job_id": pre_job_id})
+        logger.info("Background YouTube ingestion completed successfully", context={"job_id": pre_job_id or "playlist_background_job"})
         return result
     except Exception as e:
-        logger.error(f"Error in background YouTube ingestion: {e}", context={"job_id": pre_job_id})
+        logger.error(f"Error in background YouTube ingestion: {e}", context={"job_id": pre_job_id or "playlist_background_job"})
         raise

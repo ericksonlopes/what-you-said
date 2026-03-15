@@ -21,7 +21,7 @@ class SQLConfig(BaseSettings):
         if self.type == "mysql":
             return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
-        return "sqlite:///app.sql"
+        return "sqlite:///app.sqlite"
 
 
 class VectorConfig(BaseSettings):
@@ -82,7 +82,7 @@ class App(BaseSettings):
 
 
 class ModelEmbedding(BaseSettings):
-    name: str = Field(default="all-MiniLM-L6-v2", description="Name of the embedding models to use")
+    name: str = Field(default="BAAI/bge-m3", description="Name of the embedding models to use")
 
 
 class Settings(BaseSettings):

@@ -333,7 +333,7 @@ def _render_chunks_view(source_id, source_title, services):
         st.error(f"Error loading chunks: {e}")
 
 
-@st.fragment(run_every="5s")
+@st.fragment(run_every="2s")
 def _table_fragment_internal(services, safe_rerun):
     # Determine view state inside fragment to ensure fragment is always in the execution path
     view_source_id = st.session_state.get("view_source_id")

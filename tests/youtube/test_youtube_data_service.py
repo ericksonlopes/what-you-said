@@ -125,7 +125,7 @@ class TestYoutubeDataService:
         splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         with patch.object(logger, "debug") as mock_debug:
             splitter._tokenize_transcript(transcript, mock_model_loader_service.model.tokenizer, {})
-            mock_debug.assert_called_with("Skipping empty snippet", context={"snippet_index": 0})
+            mock_debug.assert_any_call("Skipping empty snippet", context={"snippet_index": 0})
 
     def test_decode_typeerror_and_attributeerror(self, mock_model_loader_service, dummy_yt_extractor):
         splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)

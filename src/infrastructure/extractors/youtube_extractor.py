@@ -42,11 +42,26 @@ class YoutubeExtractor(IYoutubeExtractor):
     @staticmethod
     def extract_playlist_videos(playlist_url: str) -> list[str]:
         """Extracts all video URLs from a YouTube playlist using yt_dlp."""
+        import re
+        from urllib.parse import urlparse, parse_qs
+        
+        # Normalize the URL: if it contains a list=ID, use the standard playlist URL
+        try:
+            parsed = urlparse(playlist_url)
+            query = parse_qs(parsed.query)
+            if "list" in query:
+                playlist_id = query["list"][0]
+                playlist_url = f"https://www.youtube.com/playlist?list={playlist_id}"
+                logger.info("Normalizing playlist URL", context={"original": playlist_url, "normalized": playlist_url})
+        except Exception as e:
+            logger.warning(f"Could not normalize playlist URL: {e}")
+
         logger.info("Starting playlist extraction", context={"playlist_url": playlist_url})
         ydl_opts = {
             'extract_flat': True,
             'quiet': True,
             'no_warnings': True,
+            'ignore_unavailable': True,
             'logger': logger
         }
         try:

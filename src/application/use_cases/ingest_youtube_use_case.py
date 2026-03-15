@@ -62,6 +62,19 @@ class IngestYoutubeUseCase:
             },
         )
 
+        # Try to recover job context early for failure reporting
+        ingestion = None
+        source = None
+        if cmd.ingestion_job_id:
+            try:
+                from uuid import UUID
+                jid = UUID(cmd.ingestion_job_id) if isinstance(cmd.ingestion_job_id, str) else cmd.ingestion_job_id
+                ingestion = self.ingestion_service.get_by_id(jid)
+                if ingestion and ingestion.content_source_id:
+                    source = self.cs_service.get_by_id(ingestion.content_source_id)
+            except Exception as context_error:
+                logger.debug(f"Could not recover job context: {context_error}")
+
         try:
             subject = self._resolve_subject(cmd)
             logger.debug("KnowledgeSubject validated",
@@ -75,6 +88,7 @@ class IngestYoutubeUseCase:
                 video_list = YoutubeExtractor.extract_playlist_videos(playlist_url)
                 if not video_list:
                     logger.warning("No videos found in playlist", context={"playlist_url": playlist_url})
+                    raise ValueError(f"No videos found in playlist: {playlist_url}. Verify if the URL is a valid public playlist.")
             else:
                 # determine list of video URLs to process
                 if cmd.video_urls:
@@ -86,12 +100,20 @@ class IngestYoutubeUseCase:
 
             result = IngestYoutubeResult()
 
+            # For tracking the main job status in case of playlist, we update it to PROCESSING
+            if ingestion:
+                self._update_ingestion_processing(ingestion)
+
             for video_url in video_list:
                 try:
                     video_id = self._extract_video_id_from_url(video_url)
                     if not video_id:
                         raise ValueError(f"Unable to extract video id from url: {video_url}")
 
+                    # If this is the first video of a playlist and we have a job without a source,
+                    # we could link it here, but it's better to just process individually.
+                    # Individual videos create their own jobs and sources.
+                    
                     single_result = self._process_single_video(video_url, video_id, subject, cmd)
                     result.video_results.append(single_result)
                     if not single_result.get("skipped", False):
@@ -101,11 +123,34 @@ class IngestYoutubeUseCase:
                     logger.error(e, context={"video_url": video_url})
                     result.video_results.append({"video_url": video_url, "error": str(e)})
 
+            # Finish the main tracking job
+            if ingestion:
+                self._finish_job(ingestion)
+            
+            # Finish the parent source only if it exists (for single videos)
+            if cmd.data_type != YoutubeDataType.PLAYLIST and source:
+                self._finish_ingestion(source, result.created_chunks or 0)
+
+            logger.info("YouTube ingestion completed", context={"job_id": cmd.ingestion_job_id, "chunks": result.created_chunks})
             return result
 
         except Exception as e:
-            logger.error(e, context={"video_urls": getattr(cmd, "video_urls", None)})
-            raise
+            error_msg = str(e)
+            logger.error(error_msg, context={"video_urls": getattr(cmd, "video_urls", None)})
+            
+            if source:
+                try:
+                    self._fail_ingestion(source)
+                except Exception as ef:
+                    logger.error(f"Failed to mark source as FAILED: {ef}")
+            
+            if ingestion:
+                try:
+                    self._fail_job(ingestion, error_msg)
+                except Exception as ej:
+                    logger.error(f"Failed to mark job as FAILED: {ej}")
+            
+            raise e
 
     def _process_single_video(self, video_url: str, video_id: str, subject, cmd: IngestYoutubeCommand) -> Dict[
         str, Any]:
@@ -154,6 +199,9 @@ class IngestYoutubeUseCase:
             self._update_ingestion_processing(ingestion)
 
             docs = self._extract_and_split(cmd, video_id, yt_extractor=yt_extractor)
+            
+            if not docs:
+                raise ValueError(f"No transcript chunks generated for video {video_id}. It might be too short or have no available subtitles.")
 
             chunks = self._build_chunk_entities(docs, source, subject, cmd)
             self._persist_chunks(chunks)

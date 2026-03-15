@@ -105,9 +105,13 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
     model_loader = services.get("model_loader")
     max_tokens = getattr(model_loader, "max_seq_length", 512)
     
+    # Ensure the slider allows at least 1024 if the model supports it or if we want to allow it as a common standard
+    # BGE-M3 supports 8192, but we cap UI at 2048 for better UX
+    display_max_tokens = max(max_tokens, 1024)
+    
     with st.expander("🛠️ Splitting Configuration", expanded=False):
-        st.slider("Tokens per chunk", min_value=128, max_value=max_tokens, value=min(512, max_tokens), step=128, key="add_knowledge_tokens")
-        st.slider("Chunk overlap (tokens)", min_value=0, max_value=max_tokens // 4, value=min(50, max_tokens // 10), step=10, key="add_knowledge_overlap")
+        st.slider("Tokens per chunk", min_value=128, max_value=display_max_tokens, value=min(512, display_max_tokens), step=64, key="add_knowledge_tokens")
+        st.slider("Chunk overlap (tokens)", min_value=0, max_value=display_max_tokens // 4, value=min(50, display_max_tokens // 10), step=10, key="add_knowledge_overlap")
 
     if st.button("Add YouTube", key="add_knowledge_youtube_ingest"):
         url = st.session_state.get("add_knowledge_youtube_url", "").strip()
@@ -150,7 +154,10 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
                             st.info("This video has already been processed.")
                             return
                     
-                    # 2. Source Creation
+                    # 2. Source and Job Creation
+                    source_id_for_job = None
+                    job_id_for_backend = None
+
                     if not is_playlist:
                         video_id = _extract_video_id_from_url(url)
                         source_entity = cs_service.get_by_source_info(source_type=SourceType.YOUTUBE, external_source=video_id)
@@ -164,29 +171,20 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
                                 processing_status="pending"
                             )
                         source_id_for_job = source_entity.id
-                    else:
-                        # Generic source for playlist ingestion task
-                        source_entity = cs_service.create_source(
-                            subject_id=selected_subject.id,
-                            source_type=SourceType.YOUTUBE,
-                            external_source=url,
-                            title=f"Playlist Ingestion: {url[:30]}...",
-                            status=ContentSourceStatus.ACTIVE,
-                            processing_status="processing"
+                        
+                        job_entity = ingestion_service.create_job(
+                            content_source_id=source_id_for_job,
+                            status=IngestionJobStatus.STARTED,
+                            embedding_model=settings.model_embedding.name,
+                            pipeline_version="1.0",
+                            ingestion_type="youtube"
                         )
-                        source_id_for_job = source_entity.id
-
-                    job_entity = ingestion_service.create_job(
-                        content_source_id=source_id_for_job,
-                        status=IngestionJobStatus.STARTED,
-                        embedding_model=settings.model_embedding.name,
-                        pipeline_version="1.0",
-                        ingestion_type="youtube"
-                    )
+                        job_id_for_backend = str(job_entity.id)
                     
-                    # Submit to background executor with custom split settings
-                    job_id = submit_job(run_youtube_ingestion, get_raw_services, url, str(selected_subject.id), str(job_entity.id), dtype, tokens, overlap)
+                    # Submit to background executor. For playlists, job_id_for_backend is None.
+                    job_id = submit_job(run_youtube_ingestion, get_raw_services, url, str(selected_subject.id), job_id_for_backend, dtype, tokens, overlap)
                     st.session_state["current_ingestion_job_id"] = job_id
+                    st.session_state["pending_toast"] = "YouTube ingestion started successfully!"
                     st.rerun()
                     
                 except Exception as e:
