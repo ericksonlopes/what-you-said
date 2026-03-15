@@ -1,0 +1,23 @@
+{
+    "name": "WhatYouSaid Dev Environment",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "charliermarsh.ruff",
+                "ms-python.mypy-vscode"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+                "python.testing.pytestEnabled": true
+            }
+        }
+    },
+    "postCreateCommand": "uv sync --group dev",
+    "remoteUser": "vscode",
+    "forwardPorts": [8501, 8081]
+}

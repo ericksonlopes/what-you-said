@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    # Start the application automatically
+    command: uv run python main.py
+    environment:
+      - WEAVIATE_HOST=localhost
+      - WEAVIATE_PORT=8080
+      - WEAVIATE_GRPC_PORT=50051
+    network_mode: service:weaviate
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.35.9
+    ports:
+      - 8081:8080
+      - 50051:50051
+      - 8501:8501 # Streamlit port mapped through the network host
+    volumes:
+      - weaviate_dev_data:/var/lib/weaviate
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      ENABLE_MODULES: ''
+      CLUSTER_HOSTNAME: 'node1'
+
+volumes:
+  weaviate_dev_data:
