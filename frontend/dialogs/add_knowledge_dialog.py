@@ -61,7 +61,7 @@ def _render_subject_selector(services):
     return next((s for s in subjects if s.name == selected_subject_name), None) if selected_subject_name else None
 
 
-def _job_status_poller(job_id: str, safe_rerun):
+def _job_status_poller(job_id: str):
     """Show background job status. Auto-refresh is handled by the main app containers."""
     if not job_id:
         return
@@ -89,12 +89,12 @@ def _job_status_poller(job_id: str, safe_rerun):
             st.rerun()
 
 
-def _youtube_tab_body(services, safe_rerun, selected_subject):
+def _youtube_tab_body(services, selected_subject):
     """Render the YouTube ingestion tab body."""
     # Check if there's a job running for this session
     current_job_id = st.session_state.get("current_ingestion_job_id")
     if current_job_id:
-        _job_status_poller(current_job_id, safe_rerun)
+        _job_status_poller(current_job_id)
         return
 
     st.markdown("#### YouTube")
@@ -226,33 +226,33 @@ def _site_tab_body(selected_subject):
             raise NotImplementedError("TODO: Implement WebExtractor and WebProcessService")
 
 
-def _create_body(services, safe_rerun):
+def _create_body(services):
     """Top-level create body that delegates tab rendering to smaller helpers."""
     # Check if there's a job running for this session - if so, only show status poller
     current_job_id = st.session_state.get("current_ingestion_job_id")
     if current_job_id:
-        _job_status_poller(current_job_id, safe_rerun)
+        _job_status_poller(current_job_id)
         return
 
     selected_subject = _render_subject_selector(services)
     tabs = st.tabs(["YouTube", "Upload File", "Site"])
 
     with tabs[0]:
-        _youtube_tab_body(services, safe_rerun, selected_subject)
+        _youtube_tab_body(services, selected_subject)
     with tabs[1]:
         _upload_tab_body(selected_subject)
     with tabs[2]:
         _site_tab_body(selected_subject)
 
 
-def open_add_knowledge(services, safe_rerun):
+def open_add_knowledge(services):
     """Open the add-knowledge dialog."""
     if hasattr(st, "dialog"):
         @st.dialog("Add Knowledge")
         def _dialog():
-            _create_body(services, safe_rerun)
+            _create_body(services)
         return _dialog()
     else:
         with st.expander("Add Knowledge", expanded=True):
-            _create_body(services, safe_rerun)
+            _create_body(services)
             return None

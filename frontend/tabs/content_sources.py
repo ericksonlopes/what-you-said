@@ -7,7 +7,7 @@ import streamlit as st
 PAGE_SIZE = 10
 CHUNKS_PAGE_SIZE = 5
 
-def _render_header_and_button(services, safe_rerun):
+def _render_header_and_button(services):
     with st.container(horizontal=True):
         st.header("Content Sources")
         st.space("stretch")
@@ -18,7 +18,7 @@ def _render_header_and_button(services, safe_rerun):
         if st.button("Add Knowledge", key="add_knowledge_btn", type="primary"):
             try:
                 from frontend.dialogs.add_knowledge_dialog import open_add_knowledge
-                open_add_knowledge(services, safe_rerun)
+                open_add_knowledge(services)
             except Exception as e:
                 st.error(f"Error opening Add Knowledge dialog: {e}")
 
@@ -55,19 +55,20 @@ def _build_rows(content_sources):
             title = getattr(c, 'title', None) or getattr(c, 'external_source', None) or str(getattr(c, 'id', ''))
             ext_source = getattr(c, 'external_source', None) or ""
             
+            # Normalize Type
             stype = getattr(c, 'source_type', None)
             if stype is not None:
-                try:
-                    ctype = stype.value if hasattr(stype, 'value') else str(stype)
-                except Exception:
-                    ctype = str(stype)
+                ctype = stype.value if hasattr(stype, 'value') else str(stype)
             else:
-                ctype = getattr(c, 'mime_type', None) or "application/pdf"
+                ctype = getattr(c, 'mime_type', None) or "youtube"
                 
             chunks = getattr(c, 'chunks', 0)
             embedding = getattr(c, 'embedding_model', "N/A")
             dims = getattr(c, 'dimensions', 0)
-            status = getattr(c, 'processing_status', getattr(c, 'status', 'pending'))
+            
+            # Normalize Status
+            raw_status = getattr(c, 'processing_status', getattr(c, 'status', 'pending'))
+            status = raw_status.value if hasattr(raw_status, 'value') else str(raw_status)
             
             # Format date and time
             created_at = getattr(c, 'created_at', None)
@@ -76,7 +77,7 @@ def _build_rows(content_sources):
             table_rows.append({
                 "title": title,
                 "external_source": ext_source,
-                "type": ctype,
+                "type": str(ctype).lower(),
                 "chunks": chunks,
                 "embedding": embedding,
                 "dims": dims,
@@ -202,8 +203,10 @@ def _render_table(table_rows, source_ids, selected_subject_name):
                 st.markdown(f'<span class="meta-text">{r["dims"]}</span>', unsafe_allow_html=True)
             
             with c_status:
-                s_class = f"badge-{r['status']}" if r['status'] in ['done', 'processing', 'pending', 'error'] else "badge-active"
-                st.markdown(f'<span class="badge {s_class}">{r["status"]}</span>', unsafe_allow_html=True)
+                # Correctly map status to CSS class
+                s_key = r['status']
+                s_class = f"badge-{s_key}" if s_key in ['done', 'processing', 'pending', 'error', 'failed'] else "badge-active"
+                st.markdown(f'<span class="badge {s_class}">{s_key}</span>', unsafe_allow_html=True)
             
             with c_date:
                 st.markdown(f'<span class="meta-text">{r["date"]}</span>', unsafe_allow_html=True)
@@ -263,7 +266,11 @@ def _render_chunks_view(source_id, source_title, services):
         
         # Check source status first
         source_entity = cs_service.get_by_id(sid_uuid)
-        is_failed = source_entity and getattr(source_entity, 'processing_status', None) == 'failed'
+        
+        # Extract clean status string
+        raw_status = getattr(source_entity, 'processing_status', getattr(source_entity, 'status', None))
+        status_val = str(raw_status.value if hasattr(raw_status, 'value') else raw_status).lower()
+        is_failed = status_val in ['failed', 'error']
 
         # Pagination logic
         current_page = st.session_state.get("chunks_current_page", 1)
@@ -358,7 +365,7 @@ def render(services, safe_rerun):
 
     # Fixed Header (Only shown when NOT in chunks view)
     if not st.session_state.get("view_source_id"):
-        _render_header_and_button(services, safe_rerun)
+        _render_header_and_button(services)
     
     # Always call the fragment for the main content area
     _table_fragment_internal(services, safe_rerun)
