@@ -10,9 +10,9 @@ class DummyVectorService:
         self.last_top_k = None
         self.last_filters = None
 
-    def retriever(self, query: str, top_kn: int = 5, filters=None):
+    def retrieve(self, query: str, top_k: int = 5, filters=None):
         self.last_query = query
-        self.last_top_k = top_kn
+        self.last_top_k = top_k
         self.last_filters = filters
         # return dummy chunks as simple objects (avoid ChunkEntity validation in tests)
         return [SimpleNamespace(id=uuid.uuid4(), content="a", subject_id=uuid.uuid4())]

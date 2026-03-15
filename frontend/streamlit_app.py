@@ -54,7 +54,7 @@ if main_view == "dashboard":
     main_col, right_col = st.columns([4, 1.2])
     
     with main_col:
-        render_dashboard_view(safe_rerun, settings)
+        render_dashboard_view(safe_rerun)
         
     with right_col:
         st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
@@ -66,9 +66,9 @@ if main_view == "dashboard":
 
 elif main_view == "chat":
     render_chat_view()
-    # Hidden history fragment to maintain its ID/Timer state if needed, 
+    # Hidden history fragment to maintain its ID/Timer state if needed,
     # but since it's not rendered here, we usually just let it go.
-    # To TRULY stop the warning, we'd need to call it everywhere, 
+    # To TRULY stop the warning, we'd need to call it everywhere,
     # but let's first fix the most common transition.
 
 else:

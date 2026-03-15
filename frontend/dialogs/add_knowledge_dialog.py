@@ -99,9 +99,8 @@ def _youtube_tab_body(services, safe_rerun, selected_subject):
 
     st.markdown("#### YouTube")
     st.write("Paste the link to the YouTube video or playlist you want to ingest.")
-    
     st.text_input("YouTube URL", key="add_knowledge_youtube_url")
-    data_col1, data_col2 = st.columns(2)
+    data_col1, _ = st.columns(2)
     with data_col1:
         st.radio("Content Type", options=["Single Video", "Playlist"], horizontal=True, key="add_knowledge_youtube_type")
     

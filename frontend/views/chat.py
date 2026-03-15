@@ -80,7 +80,7 @@ def render_chat_view():
 
         # Assistant response
         if retrieved_context:
-            response = f"I found some information in your knowledge base that might help:\n\n(This is a preview of the RAG context. LLM generation is coming soon!)"
+            response = "I found some information in your knowledge base that might help:\n\n(This is a preview of the RAG context. LLM generation is coming soon!)"
         else:
             response = "I couldn't find any specific information in the selected knowledge bases."
 

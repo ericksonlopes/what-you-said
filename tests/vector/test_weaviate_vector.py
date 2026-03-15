@@ -16,6 +16,9 @@ class DummyClientContext:
     def __exit__(self, exc_type, exc, tb):
         self.exited_args = (exc_type, exc, tb)
 
+    def create_collection_if_not_exists(self, collection_name):
+        pass
+
 
 class DummyEmbedding:
     pass

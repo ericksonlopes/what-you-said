@@ -43,7 +43,7 @@ class ChunkVectorService:
 
         return entities
 
-    def list_by_source(self, external_source: str, filters: Optional[Any] = None) -> List[ChunkEntity]:
+    def list_by_source(self, filters: Optional[Any] = None) -> List[ChunkEntity]:
         """List chunks associated with a specific external source using the provided filters."""
         # Note: Implementation relies on the repository's filter logic
         models = self._repository.list_chunks(filters=filters)

@@ -108,17 +108,20 @@ class TestChunkRepository:
     def test_retriever_returns_models(self, monkeypatch):
         repo = make_repo()
 
-        # stub retriever to return Document-like objects
-        docs = [SimpleNamespace(page_content="hi", metadata={"source_type": "youtube", "external_source": "v1", "subject_id": str(uuid4()), "embedding_model": "m", "job_id": str(uuid4()), "content_source_id": str(uuid4())})]
+        # stub retriever to return Document-like objects with score
+        doc = SimpleNamespace(page_content="hi", metadata={"source_type": "youtube", "external_source": "v1", "subject_id": str(uuid4()), "embedding_model": "m", "job_id": str(uuid4()), "content_source_id": str(uuid4())})
+        docs_with_scores = [(doc, 0.9)]
+        
         class FakeVectorStore:
-            def as_retriever(self, search_kwargs):
-                return DummyRetriever(docs)
+            def similarity_search_with_score(self, query, k, filters=None):
+                return docs_with_scores
 
         repo.vector_store = DummyVectorCtx(FakeVectorStore())
         results = repo.retriever(query="q", top_kn=2)
         assert isinstance(results, list)
         assert len(results) == 1
         assert isinstance(results[0], ChunkModel)
+        assert results[0].score == 0.9
 
     def test_list_chunks_and_delete(self, monkeypatch):
         # prepare fake response object with objects

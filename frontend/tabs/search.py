@@ -91,7 +91,6 @@ def render(init_full_services):
                                         </div>
                                         <span style="color: #3f3f46; font-size: 10px;">CHUNK ID: {str(r.id)[:18]}...</span>
                                     </div>
-
                                 </div>
                             """).strip()
                             
