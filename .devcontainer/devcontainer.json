@@ -18,6 +18,7 @@
         }
     },
     "postCreateCommand": "uv sync --group dev",
+    "postStartCommand": "uv run python main.py",
     "remoteUser": "vscode",
     "forwardPorts": [8501, 8081]
 }

@@ -1,5 +1,15 @@
 import sys
 import os
+from pathlib import Path
+
+# Add project root to sys.path early
+root = Path(__file__).resolve().parent
+if str(root) not in sys.path:
+    sys.path.insert(0, str(root))
+
+# Set PYTHONPATH environment variable for subprocesses/threads
+os.environ["PYTHONPATH"] = str(root)
+
 from streamlit.web import cli as stcli
 
 

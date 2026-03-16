@@ -227,22 +227,22 @@ def _render_pagination_controls(total_count, current_page, state_key, page_size=
     
     with col1:
         if current_page > 1:
-            if st.button("← Previous", key=f"prev_{state_key}", use_container_width=True):
+            if st.button("← Previous", key=f"prev_{state_key}", width='stretch'):
                 st.session_state[state_key] = current_page - 1
                 st.rerun()
         else:
-            st.button("← Previous", key=f"prev_{state_key}_disabled", use_container_width=True, disabled=True)
+            st.button("← Previous", key=f"prev_{state_key}_disabled", width='stretch', disabled=True)
     
     with col2:
         st.markdown(f"<p style='text-align: center; color: #9aa4ad; font-size: 0.9rem; margin-top: 5px; font-weight: 500;'>Page {current_page} of {total_pages}<br><span style='font-size: 0.75rem; font-weight: 400;'>({total_count} total items)</span></p>", unsafe_allow_html=True)
         
     with col3:
         if current_page < total_pages:
-            if st.button("Next →", key=f"next_{state_key}", use_container_width=True):
+            if st.button("Next →", key=f"next_{state_key}", width='stretch'):
                 st.session_state[state_key] = current_page + 1
                 st.rerun()
         else:
-            st.button("Next →", key=f"next_{state_key}_disabled", use_container_width=True, disabled=True)
+            st.button("Next →", key=f"next_{state_key}_disabled", width='stretch', disabled=True)
 
 
 def _render_chunks_view(source_id, source_title, services):
@@ -322,7 +322,7 @@ def _render_chunks_view(source_id, source_title, services):
 
         # Bottom "Back to Sources" button for convenience
         st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-        if st.button("← Back to Sources", key="back_to_sources_bottom", use_container_width=True):
+        if st.button("← Back to Sources", key="back_to_sources_bottom", width='stretch'):
             st.session_state.pop("view_source_id", None)
             st.session_state.pop("view_source_title", None)
             st.session_state.pop("chunks_current_page", None)

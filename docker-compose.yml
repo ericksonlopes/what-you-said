@@ -1,4 +1,20 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8501:8501
+    environment:
+      - APP__ENV=production
+      - APP__LIST_LOG_LEVELS=INFO,WARNING,ERROR,CRITICAL
+      - VECTOR__STORE_TYPE=weaviate
+      - VECTOR__WEAVIATE_HOST=weaviate
+      - VECTOR__WEAVIATE_PORT=8080
+      - VECTOR__WEAVIATE_GRPC_PORT=50051
+    depends_on:
+      - weaviate
+
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.35.9
     ports:

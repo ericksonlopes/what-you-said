@@ -27,9 +27,17 @@ class IngestionJobService:
         assert entity is not None
         return entity
 
-    def update_job(self, job_id: UUID, status: IngestionJobStatus, error_message: Optional[str] = None) -> None:
-        """Update a job — accept IngestionJobStatus enum and persist its string value."""
-        self._repo.update_job(job_id=job_id, status=status.value, error_message=error_message)
+    def update_job(self, job_id: UUID, status: IngestionJobStatus, error_message: Optional[str] = None,
+                   status_message: Optional[str] = None, current_step: Optional[int] = None,
+                   total_steps: Optional[int] = None, chunks_count: Optional[int] = None) -> None:
+        """Update a job — accept IngestionJobStatus enum and progress info."""
+        self._repo.update_job(job_id=job_id, status=status.value, error_message=error_message,
+                             status_message=status_message, current_step=current_step, total_steps=total_steps,
+                             chunks_count=chunks_count)
+
+    def link_job_to_source(self, job_id: UUID, content_source_id: UUID) -> None:
+        """Link an existing job to a content source."""
+        self._repo.link_job_to_source(job_id=job_id, content_source_id=content_source_id)
 
     def get_by_id(self, job_id: UUID) -> Optional[IngestionJobEntity]:
         model = self._repo.get_by_id(job_id)

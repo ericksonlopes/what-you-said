@@ -6,9 +6,23 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
     ffmpeg \
     build-essential \
+    curl \
+    ca-certificates \
+    gnupg \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Docker CLI and Docker Compose
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && chmod a+r /etc/apt/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+       tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y docker-ce-cli docker-compose-plugin \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install uv for fast dependency management
+ENV UV_LINK_MODE=copy
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
     && mv /root/.local/bin/uv /usr/local/bin/uv \
     && mv /root/.local/bin/uvx /usr/local/bin/uvx

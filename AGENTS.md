@@ -65,9 +65,28 @@ This document provides essential knowledge for AI coding agents to be productive
 - Install dependencies:
   ```bash
   python -m pip install -e .
+  # Install project dependencies with uv (if you use uv to manage dependencies)
   uv sync
   uv sync --group dev
   ```
+
+### Running the Application
+
+#### Local Run (Manual)
+1. Ensure you have a vector database (like Weaviate) running and configured in `.env`.
+2. Start the Streamlit frontend:
+   ```bash
+   uv run python main.py
+   ```
+
+#### Docker Compose (Recommended for Dev)
+To run the entire stack (App + Weaviate) from your host machine:
+```bash
+docker compose -f .devcontainer/docker-compose.yml up --build
+```
+This will start:
+- **Frontend**: http://localhost:8501
+- **Weaviate**: http://localhost:8081
 
 ### Testing
 - Run all tests:
@@ -98,7 +117,9 @@ This document provides essential knowledge for AI coding agents to be productive
   ```
 
 ### Database Migrations
-- Create a migration:
+> ⚠️ When creating a new table, add the `if_not_exists=True` clause.
+
+# Create a migration:
   ```bash
   alembic revision --autogenerate -m "description"
   ```

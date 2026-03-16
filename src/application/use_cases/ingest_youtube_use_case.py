@@ -110,10 +110,6 @@ class IngestYoutubeUseCase:
                     if not video_id:
                         raise ValueError(f"Unable to extract video id from url: {video_url}")
 
-                    # If this is the first video of a playlist and we have a job without a source,
-                    # we could link it here, but it's better to just process individually.
-                    # Individual videos create their own jobs and sources.
-                    
                     single_result = self._process_single_video(video_url, video_id, subject, cmd)
                     result.video_results.append(single_result)
                     if not single_result.get("skipped", False):
@@ -123,13 +119,29 @@ class IngestYoutubeUseCase:
                     logger.error(e, context={"video_url": video_url})
                     result.video_results.append({"video_url": video_url, "error": str(e)})
 
-            # Finish the main tracking job
+            # 1. Determine overall status
+            any_failed = any("error" in r for r in result.video_results)
+            logger.debug("Overall ingestion result status", context={"any_failed": any_failed, "results_count": len(result.video_results)})
+
+            # 2. Update the parent Tracking Job
             if ingestion:
-                self._finish_job(ingestion)
+                if any_failed:
+                    # Collect error messages from failed videos
+                    errors = [r["error"] for r in result.video_results if "error" in r]
+                    error_summary = f"Ingestion failed for {len(errors)} items: " + "; ".join(errors)[:200]
+                    self._fail_job(ingestion, error_summary)
+                else:
+                    self._finish_job(ingestion, chunks_count=result.created_chunks)
             
-            # Finish the parent source only if it exists (for single videos)
-            if cmd.data_type != YoutubeDataType.PLAYLIST and source:
-                self._finish_ingestion(source, result.created_chunks or 0)
+            # 3. Update the parent Source
+            if source:
+                if any_failed:
+                    self._fail_ingestion(source)
+                elif cmd.data_type != YoutubeDataType.PLAYLIST:
+                    # For single videos, only finish if not already marked failed or done
+                    current_source = self.cs_service.get_by_id(source.id)
+                    if current_source and current_source.processing_status not in [ContentSourceStatus.FAILED, ContentSourceStatus.DONE]:
+                        self._finish_ingestion(source, result.created_chunks or 0)
 
             logger.info("YouTube ingestion completed", context={"job_id": cmd.ingestion_job_id, "chunks": result.created_chunks})
             return result
@@ -166,23 +178,7 @@ class IngestYoutubeUseCase:
         source = existing 
         ingestion = None
         try:
-            # Extract metadata to get the actual video title
-            yt_extractor = YoutubeExtractor(video_id=video_id, language=cmd.language)
-            metadata = yt_extractor.extract_metadata()
-            extracted_title = metadata.full_title or metadata.title or cmd.title
-            
-            if not extracted_title or not str(extracted_title).strip():
-                logger.warning("No title extracted for video, using fallback", context={"video_id": video_id})
-                extracted_title = f"YouTube Video {video_id}"
-
-            logger.debug("Video title determined", context={"video_id": video_id, "title": extracted_title})
-
-            if source is None:
-                source = self._create_content_source(subject, cmd, video_id, title=extracted_title)
-            else:
-                self.cs_service._repo.update_title(content_source_id=source.id, title=extracted_title)
-
-            # Reuse pre-created job if provided, otherwise create a new one
+            # 1. Reuse or create Ingestion Job EARLY (even before source exists)
             if cmd.ingestion_job_id:
                 try:
                     from uuid import UUID
@@ -195,21 +191,53 @@ class IngestYoutubeUseCase:
             else:
                 ingestion = self._create_ingestion_job(source)
 
-            self._mark_source_processing(source)
-            self._update_ingestion_processing(ingestion)
+            # 2. Extract metadata
+            yt_extractor = YoutubeExtractor(video_id=video_id, language=cmd.language)
+            metadata = yt_extractor.extract_metadata()
+            extracted_title = metadata.full_title or metadata.title or cmd.title
+            
+            if not extracted_title or not str(extracted_title).strip():
+                logger.warning("No title extracted for video, using fallback", context={"video_id": video_id})
+                extracted_title = f"YouTube Video {video_id}"
 
+            logger.debug("Video title determined", context={"video_id": video_id, "title": extracted_title})
+
+            self.ingestion_service.update_job(job_id=ingestion.id, status=IngestionJobStatus.PROCESSING, 
+                                             status_message="Downloading & splitting transcript...", current_step=1, total_steps=4)
+
+            # 3. Extract and split transcript (CRITICAL STEP)
+            # If this fails, the Source is NEVER created in the DB (unless it already existed).
             docs = self._extract_and_split(cmd, video_id, yt_extractor=yt_extractor)
             
             if not docs:
                 raise ValueError(f"No transcript chunks generated for video {video_id}. It might be too short or have no available subtitles.")
 
+            # 4. Now that we have data, ensure Source exists
+            if source is None:
+                source = self._create_content_source(subject, cmd, video_id, title=extracted_title)
+                # Link job to the newly created source
+                self.ingestion_service.link_job_to_source(job_id=ingestion.id, content_source_id=source.id)
+            else:
+                self.cs_service._repo.update_title(content_source_id=source.id, title=extracted_title)
+                if ingestion.content_source_id is None:
+                    self.ingestion_service.link_job_to_source(job_id=ingestion.id, content_source_id=source.id)
+
+            self._mark_source_processing(source)
+
+            # 5. Embed and Index
+            self.ingestion_service.update_job(job_id=ingestion.id, status=IngestionJobStatus.PROCESSING, 
+                                             status_message=f"Generating embeddings for {len(docs)} chunks...", current_step=3, total_steps=4)
             chunks = self._build_chunk_entities(docs, source, subject, cmd)
             self._persist_chunks(chunks)
 
+            self.ingestion_service.update_job(job_id=ingestion.id, status=IngestionJobStatus.PROCESSING, 
+                                             status_message="Indexing in vector store...", current_step=4, total_steps=4)
             created_ids = self._index_chunks(chunks)
 
+            self.ingestion_service.update_job(job_id=ingestion.id, status=IngestionJobStatus.FINISHED,
+                                             status_message="Ingestion complete!", current_step=4, total_steps=4,
+                                             chunks_count=len(chunks))
             self._finish_ingestion(source, len(chunks))
-            self._finish_job(ingestion)
 
             return {"video_url": video_url, "video_id": video_id, "skipped": False, "created_chunks": len(chunks),
                     "vector_ids": created_ids, "source_id": source.id}
@@ -305,14 +333,16 @@ class IngestYoutubeUseCase:
         logger.debug("Content source created", context={"content_source_id": str(source.id), "external_source": video_id})
         return source
 
-    def _create_ingestion_job(self, source):
+    def _create_ingestion_job(self, source: Optional[Any] = None):
+        source_id = source.id if source else None
         ingestion = self.ingestion_service.create_job(
-            content_source_id=source.id,
+            content_source_id=source_id,
             status=IngestionJobStatus.STARTED,
             embedding_model=self.model_loader_service.model_name,
             pipeline_version="1.0",
+            ingestion_type=SourceType.YOUTUBE.value,
         )
-        logger.debug("Ingestion job created", context={"job_id": str(ingestion.id)})
+        logger.debug("Ingestion job created", context={"job_id": str(ingestion.id), "content_source_id": str(source_id)})
         return ingestion
 
     def _mark_source_processing(self, source) -> None:
@@ -380,6 +410,6 @@ class IngestYoutubeUseCase:
         logger.info("Ingestion finished",
                     context={"content_source_id": str(source.id), "chunks": num_chunks})
 
-    def _finish_job(self, ingestion) -> None:
-        self.ingestion_service.update_job(job_id=ingestion.id, status=IngestionJobStatus.FINISHED)
-        logger.debug("Ingestion job marked as FINISHED", context={"job_id": str(ingestion.id)})
+    def _finish_job(self, ingestion, chunks_count: Optional[int] = None) -> None:
+        self.ingestion_service.update_job(job_id=ingestion.id, status=IngestionJobStatus.FINISHED, chunks_count=chunks_count)
+        logger.debug("Ingestion job marked as FINISHED", context={"job_id": str(ingestion.id), "chunks": chunks_count})

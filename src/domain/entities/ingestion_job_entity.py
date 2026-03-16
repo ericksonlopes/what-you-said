@@ -14,6 +14,9 @@ class IngestionJobEntity(BaseModel):
     finished_at: Optional[datetime] = None
     status: IngestionJobStatus = Field(default=IngestionJobStatus.STARTED)
     error_message: Optional[str] = None
+    status_message: Optional[str] = None
+    current_step: Optional[int] = None
+    total_steps: Optional[int] = None
     ingestion_type: Optional[str] = None
     chunks_count: Optional[int] = None
     embedding_model: Optional[str] = None

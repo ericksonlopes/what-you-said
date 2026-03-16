@@ -42,5 +42,5 @@ def show_source_chunks_dialog(source_id, source_title, chunk_service):
     except Exception as e:
         st.error(f"Erro ao carregar chunks: {e}")
 
-    if st.button("Fechar", use_container_width=True):
+    if st.button("Fechar", width='stretch'):
         st.rerun()

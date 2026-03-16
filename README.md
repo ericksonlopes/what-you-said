@@ -15,59 +15,87 @@
 
 </div>
 
-WhatYouSaid is a person-centric vectorized data hub designed to extract, process, and index information about
-people from any source of content — video, audio, and text — and enable powerful semantic search and Retrieval-Augmented
-Generation (RAG) workflows.
+WhatYouSaid is a person-centric vectorized data hub designed to extract, process, and index information about people from any source of content — video, audio, and text — and enable powerful semantic search and Retrieval-Augmented Generation (RAG) workflows.
 
-This repository provides modular extractors, splitting utilities, embedding integration, and vector-store-friendly
-artifacts so you can build scalable, searchable profiles and knowledge bases about individuals.
+This repository provides modular extractors, splitting utilities, embedding integration, and vector-store-friendly artifacts so you can build scalable, searchable profiles and knowledge bases about individuals.
 
-Features
+---
 
-- Multi-source extraction: ingest data from video (YouTube), audio transcripts, and plain text sources.
-- Transcript processing and temporal splitting: break long transcripts into semantically coherent chunks suitable for
-  embeddings and dense retrieval.
-- Embeddings and model loader: abstracted model loading so you can swap embedding providers easily.
-- Vector-store agnostic: produce embeddings and documents ready to index into your vector database of choice (FAISS,
-  Pinecone, Weaviate, etc.).
-- Built for RAG: designed to support retrieval-augmented generation workflows and semantic search over people-centric
-  data.
+## 🖥️ User Interface
 
-Quickstart
+![WhatYouSaid Interface](docs/whatyousaid_ui.png)
 
-Prerequisites:
+The intuitive Streamlit-based interface provides a comprehensive dashboard to manage your knowledge base:
+- **Subjects Management**: Create and manage different subjects (e.g., people of interest) and their respective content.
+- **Content Sources**: View and sync data sources (YouTube videos, text, etc.), monitor their processing status, chunk counts, embedding models used, and dimensionality.
+- **Search & RAG**: Built-in tabs to search through processed data and interact via Chat.
+- **Activity Monitor**: Keep track of background ingestion and processing jobs in real-time.
 
+---
+
+## 🚀 Features
+
+- **Multi-source extraction**: ingest data from video (YouTube), audio transcripts, and plain text sources.
+- **Transcript processing and temporal splitting**: break long transcripts into semantically coherent chunks suitable for embeddings and dense retrieval.
+- **Embeddings and model loader**: abstracted model loading so you can swap embedding providers easily.
+- **Vector-store agnostic**: produce embeddings and documents ready to index into your vector database of choice (FAISS, Pinecone, Weaviate, etc.).
+- **Built for RAG**: designed to support retrieval-augmented generation workflows and semantic search over people-centric data.
+
+---
+
+## 🛠️ Quickstart
+
+### 1. Local Setup
+
+**Prerequisites:**
 - Python 3.12+
-- A Python virtual environment (recommended)
+- [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
-Install the package (editable mode):
-
+**Install dependencies:**
 ```bash
-python -m pip install -e .
-
-# Install project dependencies with uv
+# Using uv (recommended)
 uv sync
-
-# Install development dependencies (testing, linting, etc.)
 uv sync --group dev
+
+# Using pip (editable mode)
+python -m pip install -e .
 ```
 
-Dependencies are declared in `pyproject.toml`. Core dependencies are in the main list, while development tools like `pytest`, `ruff`, `mypy`, and `bandit` are managed in the `dev` group.
+**Run locally:**
+1. Ensure you have a vector database (like Weaviate) running.
+2. Run the application:
+```bash
+uv run python main.py
+```
 
-Run tests:
+### 2. Docker Setup (Recommended)
+
+To run the complete environment (Application + Weaviate) using Docker Compose from your host:
 
 ```bash
-pytest -v
+docker compose -f .devcontainer/docker-compose.yml up --build
 ```
 
-Architecture
+- **Frontend**: [http://localhost:8501](http://localhost:8501)
+- **Weaviate**: [http://localhost:8081](http://localhost:8081)
 
-- src/infrastructure/extractors: code to fetch raw content (e.g., YouTube transcripts, audio-to-text pipelines).
-- src/infrastructure/services: processing and orchestration (splitting, model loading, embedding preparation).
-- src/config: environment and settings management.
-- tests/: unit and integration tests with coverage settings in pytest.ini.
+### 3. Running Tests
+```bash
+uv run pytest -v
+```
 
-Contributing
+---
+
+## 🏗️ Architecture
+
+- `src/infrastructure/extractors`: code to fetch raw content (e.g., YouTube transcripts, audio-to-text pipelines).
+- `src/infrastructure/services`: processing and orchestration (splitting, model loading, embedding preparation).
+- `src/config`: environment and settings management.
+- `tests/`: unit and integration tests with coverage settings in pytest.ini.
+
+---
+
+## 🤝 Contributing
 
 Contributions are welcome. Please:
 
@@ -75,11 +103,15 @@ Contributions are welcome. Please:
 - Create a branch for your feature or fix, add tests, and submit a pull request.
 - Keep code style consistent and run tests locally before submitting.
 
-License
+---
+
+## 📄 License
 
 This project includes a LICENSE file; see it for licensing details.
 
-Acknowledgements
+---
+
+## 🙏 Acknowledgements
 
 Built to be an extensible foundation for building searchable, vectorized person profiles and RAG-enabled applications.
 
@@ -89,4 +121,3 @@ Built to be an extensible foundation for building searchable, vectorized person 
 [![LinkedIn|150](https://img.shields.io/badge/LinkedIn-Erickson_Lopes-blue)](https://www.linkedin.com/in/ericksonlopes/)
 
 </div>
-

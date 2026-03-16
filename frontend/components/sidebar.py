@@ -17,7 +17,7 @@ def render_sidebar(safe_rerun):
 
         # Top Navigation: Chat
         chat_active = st.session_state.get("main_view") == "chat"
-        if st.button("💬 Chat", key="sidebar_chat_btn", use_container_width=True, type="primary" if chat_active else "secondary"):
+        if st.button("💬 Chat", key="sidebar_chat_btn", width='stretch', type="primary" if chat_active else "secondary"):
             st.session_state["main_view"] = "chat"
             st.rerun()
 
@@ -66,13 +66,13 @@ def render_sidebar(safe_rerun):
         
         # Content Sources Button (formerly Dashboard)
         dash_active = st.session_state.get("main_view") == "dashboard"
-        if st.button("📊 Content Sources", key="sidebar_dashboard_btn", use_container_width=True, type="primary" if dash_active else "secondary"):
+        if st.button("📊 Content Sources", key="sidebar_dashboard_btn", width='stretch', type="primary" if dash_active else "secondary"):
             st.session_state["main_view"] = "dashboard"
             st.rerun()
 
         from frontend.dialogs.subject_dialog import open_create_subject
 
-        if st.button("➕ New Subject", key="open_create_subject_btn", use_container_width=True):
+        if st.button("➕ New Subject", key="open_create_subject_btn", width='stretch'):
             if callable(open_create_subject):
                 open_create_subject(sidebar_ks, safe_rerun)
 
@@ -80,6 +80,6 @@ def render_sidebar(safe_rerun):
 
         # Settings Button
         settings_active = st.session_state.get("main_view") == "settings"
-        if st.button("⚙️ Settings", key="sidebar_settings_btn", use_container_width=True, type="primary" if settings_active else "secondary"):
+        if st.button("⚙️ Settings", key="sidebar_settings_btn", width='stretch', type="primary" if settings_active else "secondary"):
             st.session_state["main_view"] = "settings"
             st.rerun()

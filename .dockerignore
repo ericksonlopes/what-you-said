@@ -1,0 +1,41 @@
+# Virtual environments
+.venv/
+venv/
+env/
+bin/
+lib/
+lib64/
+include/
+
+# Version control
+.git/
+.gitignore
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local configuration
+.env
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+.devcontainer/
+
+# Logs and databases
+*.log
+*.sqlite
