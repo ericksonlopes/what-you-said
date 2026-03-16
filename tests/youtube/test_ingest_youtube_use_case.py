@@ -52,10 +52,10 @@ def make_cs_service(existing: bool = False):
 
 def make_ingestion_service():
     class IS:
-        def create_job(self, content_source_id, status, embedding_model, pipeline_version):
-            return SimpleNamespace(id=uuid.uuid4())
+        def create_job(self, content_source_id, status, embedding_model, pipeline_version, **kwargs):
+            return SimpleNamespace(id=uuid.uuid4(), content_source_id=content_source_id)
 
-        def update_job(self, job_id, status, error_message=None):
+        def update_job(self, job_id, status, error_message=None, **kwargs):
             # noop for tests
             return None
 
