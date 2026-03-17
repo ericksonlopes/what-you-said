@@ -15,7 +15,7 @@
 
 </div>
 
-WhatYouSaid is a person-centric vectorized data hub designed to extract, process, and index information about people from any source of content — video, audio, and text — and enable powerful semantic search and Retrieval-Augmented Generation (RAG) workflows.
+WhatYouSaid is a vectorized data hub designed to explore any topic or knowledge domain, extracting, processing, and indexing content from video, audio, and text to enable advanced semantic search and Retrieval-Augmented Generation (RAG) workflows.
 
 This repository provides modular extractors, splitting utilities, embedding integration, and vector-store-friendly artifacts so you can build scalable, searchable profiles and knowledge bases about individuals.
 
