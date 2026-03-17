@@ -22,7 +22,7 @@ export type IngestionTask = {
 export type ContentSource = {
   id: string;
   title: string;
-  type: 'video' | 'transcript' | 'article';
+  type: string;
   date: string;
   subjectId: string;
   duration?: string;

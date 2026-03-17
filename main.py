@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.config.logger import Logger
+from src.config.logger import setup_logging
 from src.presentation.api.routes import (
     chunk_router,
     ingest_router,
@@ -13,7 +13,7 @@ from src.presentation.api.routes import (
     subject_router,
 )
 
-logger = Logger()
+logger = setup_logging()
 
 
 @asynccontextmanager
@@ -69,5 +69,6 @@ if __name__ == '__main__':
         "main:app",
         host="localhost",
         port=5000,
-        reload=True
+        reload=True,
+        log_config=None
     )

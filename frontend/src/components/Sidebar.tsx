@@ -31,7 +31,6 @@ export function Sidebar() {
     { id: 'chat', label: 'RAG Chat', icon: MessageSquare },
     { id: 'search', label: 'Search', icon: Search },
     { id: 'sources', label: 'Content Sources', icon: Database },
-    { id: 'database', label: 'Chunks Viewer', icon: Database },
     { id: 'activity', label: 'Activity Monitor', icon: ActivityIcon },
   ] as const;
 
@@ -147,18 +146,23 @@ export function Sidebar() {
         <div className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const isSourcesGroup = item.id === 'sources';
+            const isActive = currentView === item.id || (isSourcesGroup && currentView === 'database');
+            
             return (
               <button
                 key={item.id}
                 onClick={() => setCurrentView(item.id)}
-                className={`group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  currentView === item.id
+                className={`group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                  isActive
                     ? 'bg-emerald-500/10 text-emerald-400 font-medium border border-emerald-500/20'
                     : 'text-zinc-400 hover:bg-panel-hover hover:text-zinc-200 border border-transparent'
                 }`}
               >
-                <Icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${currentView === item.id ? 'scale-110' : ''}`} />
-                {item.label}
+                <Icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'scale-110' : ''}`} />
+                <span className="truncate">
+                  {isSourcesGroup && currentView === 'database' ? 'Sources > Chunks' : item.label}
+                </span>
               </button>
             );
           })}

@@ -136,7 +136,7 @@ export function SourcesTable({
                 className="hover:bg-panel-hover cursor-pointer transition-colors group"
               >
                 <td className="px-6 py-4 font-medium text-zinc-200 flex items-center gap-3">
-                  {source.type === 'video' ? (
+                  {['video', 'youtube'].includes(source.type.toLowerCase()) ? (
                     <Video className="w-4 h-4 text-zinc-500 group-hover:text-blue-400 transition-colors" />
                   ) : (
                     <FileText className="w-4 h-4 text-zinc-500 group-hover:text-amber-400 transition-colors" />

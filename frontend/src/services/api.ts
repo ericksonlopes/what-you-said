@@ -26,7 +26,7 @@ export const api = {
     return data.map((s: any) => ({
       id: s.id,
       title: s.title || `Source ${s.id.substring(0, 8)}`,
-      type: s.source_type.toLowerCase() === 'youtube' ? 'video' : 'article',
+      type: s.source_type.toLowerCase(),
       date: s.created_at,
       subjectId: s.subject_id,
       chunkCount: s.chunks || 0,

@@ -52,9 +52,14 @@ class ChunkWeaviateRepository(IVectorRepository):
                     if meta.get(uuid_key):
                         meta[uuid_key] = str(meta[uuid_key])
                 
-                # Convert datetime to ISO string
+                # Convert datetime to ISO string (RFC3339)
                 if isinstance(meta.get("created_at"), datetime):
-                    meta["created_at"] = meta["created_at"].isoformat()
+                    dt = meta["created_at"]
+                    # If naive, assume UTC. Format with 'Z' suffix.
+                    if dt.tzinfo is None:
+                        meta["created_at"] = dt.isoformat() + "Z"
+                    else:
+                        meta["created_at"] = dt.isoformat().replace("+00:00", "Z")
                 
                 # Serialize 'extra' dict to a JSON string if it exists
                 if "extra" in meta:

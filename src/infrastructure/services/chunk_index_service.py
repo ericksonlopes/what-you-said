@@ -50,6 +50,13 @@ class ChunkIndexService:
         temp = [self._mapper.model_to_entity(m) for m in models]
         return [e for e in temp if e is not None]
 
+    def get_by_id(self, chunk_id: UUID) -> Optional[ChunkEntity]:
+        """Retrieve a single chunk by its ID."""
+        model = self._repo.get_by_id(chunk_id)
+        if model is None:
+            return None
+        return self._mapper.model_to_entity(model)
+
     def list_chunks(
             self,
             limit: int = 100,
