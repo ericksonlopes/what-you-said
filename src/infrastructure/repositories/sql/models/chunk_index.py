@@ -4,7 +4,17 @@ ORM models for chunk_index table.
 
 import uuid
 
-from sqlalchemy import Column, Text, DateTime, Integer, func, ForeignKey, text, UUID, Index
+from sqlalchemy import (
+    Column,
+    Text,
+    DateTime,
+    Integer,
+    func,
+    ForeignKey,
+    text,
+    UUID,
+    Index,
+)
 from sqlalchemy.orm import relationship
 
 from src.infrastructure.repositories.sql.connector import Base
@@ -30,7 +40,9 @@ class ChunkIndexModel(Base):
     tokens_count = Column(Integer, nullable=True)
     language = Column(Text, nullable=True)
     version_number = Column(Integer, nullable=False, server_default=text("1"))
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    created_at = Column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
+    )
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

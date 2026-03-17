@@ -32,7 +32,7 @@ def setup_logging():
         "starlette": logging.WARNING,
         "sqlalchemy.engine": logging.WARNING,
         "httpcore": logging.WARNING,
-        "httpx": logging.WARNING
+        "httpx": logging.WARNING,
     }
 
     # Configure root and main loggers
@@ -53,4 +53,3 @@ def setup_logging():
         logging_logger.setLevel(level)
 
     return custom_logger
-

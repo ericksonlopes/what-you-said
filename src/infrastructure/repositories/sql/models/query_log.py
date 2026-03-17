@@ -4,7 +4,7 @@ ORM models for query_logs table.
 
 import uuid
 
-from sqlalchemy import Column, Text, DateTime, Integer, func, ForeignKey, UUID, Index
+from sqlalchemy import Column, Text, DateTime, Integer, func, ForeignKey, UUID
 from sqlalchemy.orm import relationship
 
 from src.infrastructure.repositories.sql.connector import Base
