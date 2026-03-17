@@ -30,3 +30,8 @@ class IVectorRepository(ABC):
     ) -> List[ChunkModel]:
         """List chunks matching query and filters without vector search."""
         raise NotImplementedError
+
+    @abstractmethod
+    def is_ready(self) -> bool:
+        """Check if the vector store is ready and live."""
+        raise NotImplementedError

@@ -26,6 +26,7 @@ class IngestionJobService:
         embedding_model: Optional[str] = None,
         pipeline_version: Optional[str] = None,
         ingestion_type: Optional[str] = None,
+        vector_store_type: Optional[str] = None,
     ) -> IngestionJobEntity:
         """Create an ingestion job. Accepts IngestionJobStatus enum and persists its string value."""
         job_id = self._repo.create_job(
@@ -34,6 +35,7 @@ class IngestionJobService:
             embedding_model=embedding_model,
             pipeline_version=pipeline_version,
             ingestion_type=ingestion_type,
+            vector_store_type=vector_store_type,
         )
         model = self._repo.get_by_id(job_id)
         entity = IngestionJobMapper.model_to_entity(model)

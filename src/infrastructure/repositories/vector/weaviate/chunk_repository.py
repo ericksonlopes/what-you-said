@@ -226,3 +226,7 @@ class ChunkWeaviateRepository(IVectorRepository):
                 "Error listing chunks", context={"filters": filters, "error": str(e)}
             )
             raise e
+
+    def is_ready(self) -> bool:
+        with self._weaviate_client as client:
+            return client.is_ready()

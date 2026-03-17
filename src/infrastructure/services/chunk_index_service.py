@@ -33,6 +33,7 @@ class ChunkIndexService:
                     "tokens_count": e.tokens_count,
                     "language": e.language,
                     "version_number": e.version_number,
+                    "vector_store_type": e.extra.get("vector_store_type") if hasattr(e, "extra") else None,
                 }
             )
         return self._repo.create_chunks(rows)

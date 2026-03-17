@@ -1,5 +1,6 @@
 import logging
 from typing import List, Annotated, Optional
+from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
 
 from pydantic import field_validator, Field
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -27,13 +28,13 @@ class SQLConfig(BaseSettings):
 
 
 class VectorConfig(BaseSettings):
-    store_type: str = Field(
-        default="chroma",
-        description="Type of vector store to use (e.g., 'chroma', 'weaviate')",
+    store_type: VectorStoreType = Field(
+        default=VectorStoreType.CHROMA,
+        description="Type of vector store to use (CHROMA, WEAVIATE, FAISS)",
     )
     vector_index_path: str = Field(
         default="./vector_index",
-        description="Path to store vector index files (for Chroma)",
+        description="Path to store vector index files (for Chroma and FAISS)",
     )
 
     weaviate_host: str = Field(

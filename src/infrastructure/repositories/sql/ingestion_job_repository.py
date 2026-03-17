@@ -20,6 +20,7 @@ class IngestionJobSQLRepository:
         embedding_model: Optional[str] = None,
         pipeline_version: Optional[str] = None,
         ingestion_type: Optional[str] = None,
+        vector_store_type: Optional[str] = None,
     ) -> UUID:
         with Connector() as session:
             try:
@@ -29,6 +30,7 @@ class IngestionJobSQLRepository:
                     "embedding_model": embedding_model,
                     "pipeline_version": pipeline_version,
                     "ingestion_type": ingestion_type,
+                    "vector_store_type": vector_store_type,
                 }
                 logger.debug("Creating ingestion job", context=extra)
                 job = IngestionJobModel(
@@ -37,6 +39,7 @@ class IngestionJobSQLRepository:
                     embedding_model=embedding_model,
                     pipeline_version=pipeline_version,
                     ingestion_type=ingestion_type,
+                    vector_store_type=vector_store_type,
                 )
                 session.add(job)
                 session.commit()

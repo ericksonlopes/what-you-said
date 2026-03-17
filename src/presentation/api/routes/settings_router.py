@@ -5,8 +5,8 @@ import sqlalchemy
 from src.config.settings import Settings
 
 from fastapi import Depends, APIRouter, HTTPException
-from src.presentation.api.dependencies import get_weaviate_client, get_settings
-from src.infrastructure.repositories.vector.weaviate.weaviate_client import WeaviateClient
+from src.presentation.api.dependencies import get_vector_repository, get_settings
+from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.presentation.api.schemas.settings_schemas import (
     SettingsResponse, 
     AppSettingsSchema, 
@@ -46,7 +46,7 @@ def get_current_settings(settings: Annotated[Settings, Depends(get_settings)]):
 @router.get("/check/{component}", response_model=HealthCheckResponse)
 def check_component_health(
     component: str,
-    weaviate_client: Annotated[WeaviateClient, Depends(get_weaviate_client)]
+    vector_repo: Annotated[IVectorRepository, Depends(get_vector_repository)]
 ):
     """Perform health check for a specific component"""
     start_time = time.time()
@@ -63,12 +63,11 @@ def check_component_health(
             return HealthCheckResponse(status="success", latency_ms=latency, message="SQL connection successful")
             
         elif component == "vector":
-            with weaviate_client as client:
-                if client.is_ready():
-                    latency = int((time.time() - start_time) * 1000)
-                    return HealthCheckResponse(status="success", latency_ms=latency, message="Weaviate is ready")
-                else:
-                    return HealthCheckResponse(status="error", message="Weaviate is not ready")
+            if vector_repo.is_ready():
+                latency = int((time.time() - start_time) * 1000)
+                return HealthCheckResponse(status="success", latency_ms=latency, message="Vector store is ready")
+            else:
+                return HealthCheckResponse(status="error", message="Vector store is not ready")
                     
         elif component == "model":
             # For now, we just assume it's okay if it loaded correctly at startup

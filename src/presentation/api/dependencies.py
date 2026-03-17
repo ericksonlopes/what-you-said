@@ -2,10 +2,10 @@ from fastapi import Depends
 
 from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
 
-# Import Use Cases
 from src.application.use_cases.search_chunks_use_case import SearchChunksUseCase
 
 # Import services and repositories
+from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
 from src.config.settings import Settings
 from src.infrastructure.repositories.sql.chunk_index_repository import (
     ChunkIndexSQLRepository,
@@ -19,12 +19,16 @@ from src.infrastructure.repositories.sql.ingestion_job_repository import (
 from src.infrastructure.repositories.sql.knowledge_subject_repository import (
     KnowledgeSubjectSQLRepository,
 )
+from src.infrastructure.repositories.vector.faiss.chunk_repository import (
+    ChunkFAISSRepository,
+)
 from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
     ChunkWeaviateRepository,
 )
 from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
     WeaviateClient,
 )
+from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.content_source_service import ContentSourceService
@@ -77,17 +81,28 @@ def get_weaviate_client(settings: Settings = Depends(get_settings)) -> WeaviateC
     return WeaviateClient(settings.vector)
 
 
-def get_weaviate_repo(
+def get_vector_repository(
     settings: Settings = Depends(get_settings),
-    client: WeaviateClient = Depends(get_weaviate_client),
     model_loader: ModelLoaderService = Depends(get_model_loader),
-) -> ChunkWeaviateRepository:
+) -> IVectorRepository:
     emb_service = EmbeddingService(model_loader_service=model_loader)
-    return ChunkWeaviateRepository(
-        weaviate_client=client,
-        embedding_service=emb_service,
-        collection_name=settings.vector.weaviate_collection_name_chunks,
-    )
+    
+    if settings.vector.store_type == VectorStoreType.WEAVIATE:
+        client = WeaviateClient(settings.vector)
+        return ChunkWeaviateRepository(
+            weaviate_client=client,
+            embedding_service=emb_service,
+            collection_name=settings.vector.weaviate_collection_name_chunks,
+        )
+    
+    if settings.vector.store_type == VectorStoreType.FAISS:
+        return ChunkFAISSRepository(
+            embedding_service=emb_service,
+            index_path=settings.vector.vector_index_path,
+            index_name="chunks",
+        )
+    
+    raise ValueError(f"Unsupported vector store type: {settings.vector.store_type}")
 
 
 def get_ks_service(
@@ -109,7 +124,7 @@ def get_job_service(
 
 
 def get_chunk_vector_service(
-    vector_repo: ChunkWeaviateRepository = Depends(get_weaviate_repo),
+    vector_repo: IVectorRepository = Depends(get_vector_repository),
 ) -> ChunkVectorService:
     return ChunkVectorService(
         vector_repo
@@ -123,7 +138,7 @@ def get_chunk_index_service(
 
 
 def get_youtube_vector_service(
-    vector_repo: ChunkWeaviateRepository = Depends(get_weaviate_repo),
+    vector_repo: IVectorRepository = Depends(get_vector_repository),
 ) -> YouTubeVectorService:
     return YouTubeVectorService(vector_repo)
 
@@ -144,6 +159,7 @@ def get_ingest_youtube_use_case(
     embed_svc: EmbeddingService = Depends(get_embedding_service),
     chunk_svc: ChunkIndexService = Depends(get_chunk_index_service),
     yt_vector_svc: YouTubeVectorService = Depends(get_youtube_vector_service),
+    settings: Settings = Depends(get_settings),
 ) -> IngestYoutubeUseCase:
     return IngestYoutubeUseCase(
         ks_service=ks_svc,
@@ -153,4 +169,5 @@ def get_ingest_youtube_use_case(
         embedding_service=embed_svc,
         chunk_service=chunk_svc,
         vector_service=yt_vector_svc,
+        vector_store_type=settings.vector.store_type.value,
     )

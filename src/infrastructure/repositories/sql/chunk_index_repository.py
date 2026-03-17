@@ -34,6 +34,7 @@ class ChunkIndexSQLRepository:
                         tokens_count=ch.get("tokens_count"),
                         language=ch.get("language"),
                         version_number=ch.get("version_number", 1),
+                        vector_store_type=ch.get("vector_store_type"),
                     )
                     session.add(obj)
                     orm_objs.append(obj)

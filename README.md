@@ -38,7 +38,7 @@ The intuitive Streamlit-based interface provides a comprehensive dashboard to ma
 - **Multi-source extraction**: ingest data from video (YouTube), audio transcripts, and plain text sources.
 - **Transcript processing and temporal splitting**: break long transcripts into semantically coherent chunks suitable for embeddings and dense retrieval.
 - **Embeddings and model loader**: abstracted model loading so you can swap embedding providers easily.
-- **Vector-store agnostic**: produce embeddings and documents ready to index into your vector database of choice (FAISS, Pinecone, Weaviate, etc.).
+- **Vector-store agnostic**: support for Weaviate and FAISS (local file-based) out of the box, with tracking in SQL.
 - **Built for RAG**: designed to support retrieval-augmented generation workflows and semantic search over people-centric data.
 
 ---
@@ -62,7 +62,11 @@ python -m pip install -e .
 ```
 
 **Run locally:**
-1. Ensure you have a vector database (like Weaviate) running.
+1. Configure your vector store in `.env`. You can choose `weaviate` (requires Docker) or `faiss` (local files).
+   ```env
+   VECTOR__STORE_TYPE=faiss
+   VECTOR__VECTOR_INDEX_PATH=./vector_index
+   ```
 2. Run the application:
 ```bash
 uv run python main.py

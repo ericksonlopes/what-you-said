@@ -47,6 +47,7 @@ class IngestYoutubeUseCase:
         embedding_service: EmbeddingService,
         chunk_service: ChunkIndexService,
         vector_service: YouTubeVectorService,
+        vector_store_type: str,
     ) -> None:
         self.ks_service = ks_service
         self.cs_service = cs_service
@@ -55,6 +56,7 @@ class IngestYoutubeUseCase:
         self.embedding_service = embedding_service
         self.chunk_service = chunk_service
         self.vector_service = vector_service
+        self.vector_store_type = vector_store_type
 
     def execute(self, cmd: IngestYoutubeCommand) -> IngestYoutubeResult:
         logger.info(
@@ -246,6 +248,7 @@ class IngestYoutubeUseCase:
                     embedding_model=self.model_loader_service.model_name,
                     pipeline_version="1.0",
                     ingestion_type=SourceType.YOUTUBE.value,
+                    vector_store_type=self.vector_store_type,
                 )
                 self.ingestion_service.update_job(
                     job_id=failed_job.id,
@@ -546,6 +549,7 @@ class IngestYoutubeUseCase:
             embedding_model=self.model_loader_service.model_name,
             pipeline_version="1.0",
             ingestion_type=SourceType.YOUTUBE.value,
+            vector_store_type=self.vector_store_type,
         )
         logger.debug(
             "Ingestion job created",
@@ -616,7 +620,7 @@ class IngestYoutubeUseCase:
                 subject_id=subject.id,
                 content=doc.page_content,
                 tokens_count=doc.metadata.get("token_count"),
-                extra=doc.metadata,
+                extra={**doc.metadata, "vector_store_type": self.vector_store_type},
                 language=cmd.language,
                 embedding_model=self.model_loader_service.model_name,
                 created_at=datetime.now(timezone.utc),

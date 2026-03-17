@@ -144,14 +144,16 @@ This will start:
 - Example:
   ```env
   APP__ENV=development
-  VECTOR__STORE_TYPE=weaviate
-  VECTOR__WEAVIATE_HOST=localhost
-  VECTOR__WEAVIATE_PORT=8081
+  VECTOR__STORE_TYPE=faiss
+  VECTOR__VECTOR_INDEX_PATH=./vector_index
+  # If using weaviate:
+  # VECTOR__STORE_TYPE=weaviate
+  # VECTOR__WEAVIATE_HOST=localhost
+  # VECTOR__WEAVIATE_PORT=8081
   ```
 
-### Vector Store Integration
 Adapters for vector databases are in `src/infrastructure/repositories/vector/` (with subfolders for each backend).
-Examples include Weaviate, FAISS, and Pinecone.
+Supported backends: `weaviate`, `faiss`.
 
 ### Logging
 - Configured in `src/config/logger.py`.
