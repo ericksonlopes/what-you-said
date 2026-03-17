@@ -55,10 +55,14 @@ The intuitive Streamlit-based interface provides a comprehensive dashboard to ma
 ```bash
 # Using uv (recommended)
 uv sync
+uv sync --extra weaviate  # For Weaviate support
+uv sync --extra faiss     # For FAISS support
 uv sync --group dev
 
 # Using pip (editable mode)
 python -m pip install -e .
+python -m pip install -e ".[weaviate]" # For Weaviate support
+python -m pip install -e ".[faiss]"    # For FAISS support
 ```
 
 **Run locally:**

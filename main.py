@@ -41,7 +41,6 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Configure CORS for React frontend (defaulting to localhost:3000 or 5173)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https?://localhost(:\d+)?",

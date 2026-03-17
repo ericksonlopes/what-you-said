@@ -1,8 +1,6 @@
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
-from weaviate.collections.classes.filters import Filter
-from weaviate.collections.classes.filters import _Filters as Filters
 
 from src.application.dtos.results.search_chunks_result import SearchChunksResult
 from src.config.logger import Logger
@@ -42,9 +40,8 @@ class SearchChunksUseCase:
         if subject_id and subject_name:
             raise ValueError("Provide only one of subject_id or subject_name")
 
-        filters: Optional[Filters] = None
-        filters_list = []
 
+        filters: Optional[Any] = None
         # Resolve subject_name to ID if provided
         if subject_name:
             logger.debug(
@@ -62,10 +59,7 @@ class SearchChunksUseCase:
             subject_id = subject.id
 
         if subject_id is not None:
-            filters_list.append(Filter.by_property("subject_id").equal(str(subject_id)))
-
-        if filters_list:
-            filters = Filter.all_of(filters_list)
+            filters = {"subject_id": str(subject_id)}
 
         # Execute retrieval
         logger.debug(

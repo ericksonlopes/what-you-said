@@ -1,7 +1,6 @@
-import weaviate
+
 from src.config.logger import Logger
 from src.config.settings import VectorConfig
-from weaviate.classes.init import Auth
 
 logger = Logger()
 
@@ -13,6 +12,8 @@ class WeaviateClient:
         self._client = None
 
     def _create_client(self):
+        import weaviate
+        from weaviate.classes.init import Auth
         try:
             if self._env == "testing":
                 logger.debug(

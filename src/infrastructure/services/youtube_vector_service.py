@@ -1,6 +1,4 @@
-from typing import List, Optional
-
-from weaviate.collections.classes.filters import _Filters as Filters, Filter
+from typing import Any, List, Optional
 
 from src.config.logger import Logger
 from src.domain.entities.chunk_entity import ChunkEntity
@@ -28,7 +26,7 @@ class YouTubeVectorService:
         return result
 
     def search(
-        self, query: str, top_k: int = 5, filters: Optional[Filters] = None
+        self, query: str, top_k: int = 5, filters: Optional[Any] = None
     ) -> List[ChunkEntity]:
         if not query:
             raise ValueError("Query must be provided for search")
@@ -43,18 +41,19 @@ class YouTubeVectorService:
         return entities
 
     def search_by_video_id(
-        self, video_id: str, filters: Optional[Filters] = None
+        self, video_id: str, filters: Optional[Any] = None
     ) -> List[ChunkEntity]:
         if not video_id:
             raise ValueError("video_id must be provided")
 
-        filters_list: List[Filters] = [
-            Filter.by_property("external_source").equal(video_id)
-        ]
-        if filters is not None:
-            filters_list.append(filters)
-
-        combined_filters: Filters = Filter.all_of(filters_list)
+        combined_filters = {"external_source": video_id}
+        if filters:
+            if isinstance(filters, dict):
+                combined_filters.update(filters)
+            else:
+                # If it's already a specialized filter object from another repo, 
+                # we just pass it through, but we prefer dicts now.
+                combined_filters = filters
 
         models: List[ChunkModel] = self._repository.list_chunks(
             filters=combined_filters
@@ -69,9 +68,7 @@ class YouTubeVectorService:
         if not video_id:
             raise ValueError("video_id must be provided")
 
-        filters: Filters = Filter.all_of(
-            [Filter.by_property("external_source").equal(video_id)]
-        )
+        filters = {"external_source": video_id}
 
         result = self._repository.delete(filters=filters)
 

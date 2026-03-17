@@ -1,18 +1,19 @@
-from typing import List, Optional, Any
+from typing import List, Optional, Any, TYPE_CHECKING
 from uuid import UUID
-
-from weaviate.collections.classes.filters import _Filters as Filters
 
 from src.config.logger import Logger
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.domain.mappers.chunk_mapper import ChunkMapper
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
-from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
-    WeaviateClient,
-)
-from src.infrastructure.repositories.vector.weaviate.weaviate_vector import (
-    WeaviateVector,
-)
+
+if TYPE_CHECKING:
+    from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
+        WeaviateClient,
+    )
+    from src.infrastructure.repositories.vector.weaviate.weaviate_vector import (
+        WeaviateVector,
+    )
+
 from src.infrastructure.services.embeddding_service import EmbeddingService
 
 logger = Logger()
@@ -21,17 +22,20 @@ logger = Logger()
 class ChunkWeaviateRepository(IVectorRepository):
     def __init__(
         self,
-        weaviate_client: WeaviateClient,
+            weaviate_client: 'WeaviateClient',
         embedding_service: EmbeddingService,
         collection_name: str,
         text_key: str = "content",
     ):
-        self._weaviate_client: WeaviateClient = weaviate_client
+        from src.infrastructure.repositories.vector.weaviate.weaviate_vector import (
+            WeaviateVector,
+        )
+        self._weaviate_client = weaviate_client
         self._collection_name = collection_name
         self._embedding_service = embedding_service
         self._text_key = text_key
 
-        self.vector_store: WeaviateVector = WeaviateVector(
+        self.vector_store = WeaviateVector(
             client=weaviate_client,
             embedding_service=embedding_service,
             index_name=collection_name,
@@ -112,17 +116,36 @@ class ChunkWeaviateRepository(IVectorRepository):
             raise e
 
     def retriever(
-        self, query: str, top_kn: int = 5, filters: Optional[Filters] = None
+            self, query: str, top_kn: int = 5, filters: Optional[Any] = None
     ) -> List[ChunkModel]:
+        # Deferred import for optional dependency
+        from weaviate.collections.classes.filters import Filter
+
+        # Convert dictionary filters to Weaviate filters if necessary
+        weaviate_filters = filters
+        if isinstance(filters, dict):
+            weaviate_filters_list = []
+            for k, v in filters.items():
+                if k == "id":
+                    weaviate_filters_list.append(Filter.by_id().equal(v))
+                else:
+                    weaviate_filters_list.append(Filter.by_property(k).equal(v))
+
+            if weaviate_filters_list:
+                if len(weaviate_filters_list) == 1:
+                    weaviate_filters = weaviate_filters_list[0]
+                else:
+                    weaviate_filters = Filter.all_of(weaviate_filters_list)
+        
         logger.debug(
             "Retrieving with scores",
-            context={"filters": filters, "query": query, "top_kn": top_kn},
+            context={"filters": weaviate_filters, "query": query, "top_kn": top_kn},
         )
 
         try:
             with self.vector_store as vector_store:
                 docs_with_scores = vector_store.similarity_search_with_score(
-                    query, k=top_kn, filters=filters
+                    query, k=top_kn, filters=weaviate_filters
                 )
 
                 mapper = ChunkMapper()
@@ -159,12 +182,30 @@ class ChunkWeaviateRepository(IVectorRepository):
             )
             raise e
 
-    def delete(self, filters: Optional[Filters]) -> int:
-        logger.debug("Deleting documents", context={"filters": filters})
+    def delete(self, filters: Optional[Any]) -> int:
+        from weaviate.collections.classes.filters import Filter
+
+        # Convert dictionary filters to Weaviate filters if necessary
+        weaviate_filters = filters
+        if isinstance(filters, dict):
+            weaviate_filters_list = []
+            for k, v in filters.items():
+                if k == "id":
+                    weaviate_filters_list.append(Filter.by_id().equal(v))
+                else:
+                    weaviate_filters_list.append(Filter.by_property(k).equal(v))
+
+            if weaviate_filters_list:
+                if len(weaviate_filters_list) == 1:
+                    weaviate_filters = weaviate_filters_list[0]
+                else:
+                    weaviate_filters = Filter.all_of(weaviate_filters_list)
+
+        logger.debug("Deleting documents", context={"filters": weaviate_filters})
         try:
             with self._weaviate_client as client:
                 collection = client.collections.get(self._collection_name)
-                result = collection.data.delete_many(where=filters)
+                result = collection.data.delete_many(where=weaviate_filters)
 
                 deleted = result.matches if result is not None else 0
 
@@ -194,8 +235,27 @@ class ChunkWeaviateRepository(IVectorRepository):
                     context={"filters": filters, "limit": limit},
                 )
 
+                # Deferred import for optional dependency
+                from weaviate.collections.classes.filters import Filter
+
+                # Convert dictionary filters to Weaviate filters if necessary
+                weaviate_filters = filters
+                if isinstance(filters, dict):
+                    weaviate_filters_list = []
+                    for k, v in filters.items():
+                        if k == "id":
+                            weaviate_filters_list.append(Filter.by_id().equal(v))
+                        else:
+                            weaviate_filters_list.append(Filter.by_property(k).equal(v))
+
+                    if weaviate_filters_list:
+                        if len(weaviate_filters_list) == 1:
+                            weaviate_filters = weaviate_filters_list[0]
+                        else:
+                            weaviate_filters = Filter.all_of(weaviate_filters_list)
+
                 response = collection.query.fetch_objects(
-                    filters=filters, limit=limit, include_vector=True
+                    filters=weaviate_filters, limit=limit, include_vector=True
                 )
 
                 chunks = []

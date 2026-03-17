@@ -1,4 +1,4 @@
-from langchain_weaviate import WeaviateVectorStore
+
 
 from src.config.logger import Logger
 from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
@@ -33,6 +33,8 @@ class WeaviateVector:
 
         # Open the connection and store the low-level client
         self._active_client = self._client_wrapper.__enter__()
+
+        from langchain_weaviate import WeaviateVectorStore
 
         return WeaviateVectorStore(
             client=self._active_client,

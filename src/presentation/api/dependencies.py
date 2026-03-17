@@ -1,3 +1,4 @@
+from typing import Any
 from fastapi import Depends
 
 from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
@@ -18,15 +19,6 @@ from src.infrastructure.repositories.sql.ingestion_job_repository import (
 )
 from src.infrastructure.repositories.sql.knowledge_subject_repository import (
     KnowledgeSubjectSQLRepository,
-)
-from src.infrastructure.repositories.vector.faiss.chunk_repository import (
-    ChunkFAISSRepository,
-)
-from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
-    ChunkWeaviateRepository,
-)
-from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
-    WeaviateClient,
 )
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
@@ -77,7 +69,10 @@ def get_embedding_service(
     return EmbeddingService(model_loader_service=model_loader)
 
 
-def get_weaviate_client(settings: Settings = Depends(get_settings)) -> WeaviateClient:
+def get_weaviate_client(settings: Settings = Depends(get_settings)) -> Any:
+    from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
+        WeaviateClient,
+    )
     return WeaviateClient(settings.vector)
 
 
@@ -88,6 +83,12 @@ def get_vector_repository(
     emb_service = EmbeddingService(model_loader_service=model_loader)
     
     if settings.vector.store_type == VectorStoreType.WEAVIATE:
+        from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
+            ChunkWeaviateRepository,
+        )
+        from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
+            WeaviateClient,
+        )
         client = WeaviateClient(settings.vector)
         return ChunkWeaviateRepository(
             weaviate_client=client,
@@ -96,6 +97,9 @@ def get_vector_repository(
         )
     
     if settings.vector.store_type == VectorStoreType.FAISS:
+        from src.infrastructure.repositories.vector.faiss.chunk_repository import (
+            ChunkFAISSRepository,
+        )
         return ChunkFAISSRepository(
             embedding_service=emb_service,
             index_path=settings.vector.vector_index_path,

@@ -4,8 +4,6 @@ from datetime import datetime
 from typing import List, Optional, Any
 from uuid import UUID
 
-from langchain_community.vectorstores import FAISS
-
 from src.config.logger import Logger
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.domain.mappers.chunk_mapper import ChunkMapper
@@ -25,11 +23,12 @@ class ChunkFAISSRepository(IVectorRepository):
         self._embedding_service = embedding_service
         self._index_path = index_path
         self._index_name = index_name
-        self._vector_store: Optional[FAISS] = None
+        self._vector_store: Optional[Any] = None
         self._load_or_create()
 
     def _load_or_create(self):
         """Load the FAISS index from disk or create a new one if it doesn't exist."""
+        from langchain_community.vectorstores import FAISS
         if os.path.exists(os.path.join(self._index_path, f"{self._index_name}.faiss")):
             logger.debug(f"Loading existing FAISS index from {self._index_path}")
             try:
@@ -80,6 +79,7 @@ class ChunkFAISSRepository(IVectorRepository):
                 metadatas.append(meta)
 
             if not self._vector_store:
+                from langchain_community.vectorstores import FAISS
                 self._vector_store = FAISS.from_texts(
                     texts=texts,
                     embedding=self._embedding_service,
@@ -115,10 +115,6 @@ class ChunkFAISSRepository(IVectorRepository):
             return []
 
         try:
-            # LangChain FAISS supports filtering via a callable 'filter'
-            # We need to translate the filters if possible.
-            # For now, we'll implement simple attribute matching for filters if it's a dict.
-
             filter_callable = None
             if isinstance(filters, dict):
                 def filter_func(metadata: dict) -> bool:
@@ -155,9 +151,6 @@ class ChunkFAISSRepository(IVectorRepository):
             return 0
 
         try:
-            # FAISS doesn't have a direct 'delete_many' with filters like Weaviate.
-            # We can use 'delete' which takes a list of IDs.
-            # We first need to find the IDs that match the filters.
 
             if not filters:
                 logger.warning("Delete called without filters in FAISS, skipping for safety.")
