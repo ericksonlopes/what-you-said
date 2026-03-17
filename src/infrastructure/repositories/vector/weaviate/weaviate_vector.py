@@ -5,7 +5,7 @@ from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
     WeaviateClient,
 )
 
-from src.infrastructure.services.embeddding_service import EmbeddingService
+from src.infrastructure.services.embedding_service import EmbeddingService
 
 logger = Logger()
 

@@ -47,9 +47,9 @@ class VectorConfig(BaseSettings):
     weaviate_grpc_port: int = Field(
         default=50051, description="WeaviateConfig gRPC port for local connections"
     )
-    weaviate_collection_name_chunks: str = Field(
+    collection_name_chunks: str = Field(
         default="chunks",
-        description="WeaviateConfig collection name for YouTube transcripts",
+        description="Collection name for YouTube transcripts (used by vector stores like Weaviate)",
     )
 
     @property

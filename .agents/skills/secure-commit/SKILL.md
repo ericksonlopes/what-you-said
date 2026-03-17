@@ -27,11 +27,17 @@ When triggered, follow these steps in order. If any step fails, stop immediately
 - Run `bandit -r src/` to scan for common security vulnerabilities in the source code.
 - Ensure no high-severity issues are present.
 
-### 5. Automated Testing (Pytest)
+### 5. Test Presence Validation (New)
+- Identify all staged files in `src/` using `git diff --cached --name-only`.
+- For each file in `src/application/`, `src/infrastructure/`, or `src/presentation/`, verify if a corresponding test file exists in `tests/` (e.g., `src/path/file.py` -> `tests/path/test_file.py`).
+- **Exemptions**: `__init__.py`, and files inside `domain/entities/`, `dtos/`, `schemas/`, `mappers/` are exempt from this mandatory check.
+- If a required test file is missing, inform the user and ask for confirmation or a test creation before proceeding.
+
+### 6. Automated Testing (Pytest)
 - Run `pytest` to execute the full test suite.
 - Ensure all tests pass.
 
-### 6. Final Commit
+### 7. Final Commit
 - Only if all previous steps passed, perform the git commit.
 - Use a clear, concise, and descriptive commit message that follows the project's established style.
 - Confirm the successful commit with `git status`.

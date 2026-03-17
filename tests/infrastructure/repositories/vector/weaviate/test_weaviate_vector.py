@@ -1,4 +1,6 @@
+import sys
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -20,7 +22,6 @@ class DummyClientContext:
         self.exited_args = (exc_type, exc, tb)
 
     def create_collection_if_not_exists(self, collection_name):
-        # Mock method: no implementation needed for this specific test case
         pass
 
 
@@ -43,13 +44,13 @@ class TestWeaviateVector:
                 captured["embedding"] = embedding
                 captured["use_multi_tenancy"] = use_multi_tenancy
 
-            def as_retriever(self, search_kwargs):
+            def as_retriever(self, **kwargs):
                 return SimpleNamespace(invoke=lambda q: [])
 
-        monkeypatch.setattr(
-            "src.infrastructure.repositories.vector.weaviate.weaviate_vector.WeaviateVectorStore",
-            FakeWeaviateVectorStore,
-        )
+        # Mock the lazy-loaded module
+        mock_langchain_weaviate = MagicMock()
+        mock_langchain_weaviate.WeaviateVectorStore = FakeWeaviateVectorStore
+        monkeypatch.setitem(sys.modules, "langchain_weaviate", mock_langchain_weaviate)
 
         client_ctx = DummyClientContext()
         ev = WeaviateVector(
@@ -60,7 +61,8 @@ class TestWeaviateVector:
             use_multi_tenancy=False,
         )
 
-        with ev:
+        with ev as store:
+            assert isinstance(store, FakeWeaviateVectorStore)
             # ensure FakeWeaviateVectorStore was constructed with the low-level client returned by __enter__
             assert captured["client"] is client_ctx
             assert captured["index_name"] == "idx"
@@ -68,5 +70,4 @@ class TestWeaviateVector:
             assert captured["use_multi_tenancy"] is False
 
         # __exit__ should call DummyClientContext.__exit__ (no exception)
-        ev.__exit__(None, None, None)
         assert client_ctx.exited_args == (None, None, None)

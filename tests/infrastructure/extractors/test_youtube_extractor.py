@@ -128,3 +128,73 @@ class TestYoutubeExtractor:
                 assert metadata.uploader is None
                 assert metadata.uploader_id is None
                 assert metadata.uploader_url is None
+
+    @pytest.mark.PlaylistExtraction
+    def test_extract_playlist_videos_success(self):
+        playlist_url = "https://www.youtube.com/playlist?list=PL123"
+        dummy_playlist_info = {
+            "entries": [
+                {"url": "https://youtube.com/watch?v=video1"},
+                {"webpage_url": "https://youtube.com/watch?v=video2"},
+                {"id": "video3"},
+                None,
+            ]
+        }
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
+        ) as mock_ytdlp:
+            mock_instance = mock_ytdlp.return_value.__enter__.return_value
+            mock_instance.extract_info.return_value = dummy_playlist_info
+
+            extractor = YoutubeExtractor("dummy")
+            urls = extractor.extract_playlist_videos(playlist_url)
+
+            assert len(urls) == 3
+            assert urls[0] == "https://youtube.com/watch?v=video1"
+            assert urls[1] == "https://youtube.com/watch?v=video2"
+            assert urls[2] == "https://www.youtube.com/watch?v=video3"
+
+    @pytest.mark.PlaylistExtraction
+    def test_extract_playlist_videos_empty_entries(self):
+        playlist_url = "https://www.youtube.com/playlist?list=PL123"
+        dummy_playlist_info = {"entries": []}
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
+        ) as mock_ytdlp:
+            mock_instance = mock_ytdlp.return_value.__enter__.return_value
+            mock_instance.extract_info.return_value = dummy_playlist_info
+
+            extractor = YoutubeExtractor("dummy")
+            urls = extractor.extract_playlist_videos(playlist_url)
+            assert urls == []
+
+    @pytest.mark.PlaylistExtraction
+    def test_extract_playlist_videos_error(self):
+        playlist_url = "https://www.youtube.com/playlist?list=PL123"
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
+        ) as mock_ytdlp:
+            mock_instance = mock_ytdlp.return_value.__enter__.return_value
+            mock_instance.extract_info.side_effect = Exception("Playlist Error")
+
+            extractor = YoutubeExtractor("dummy")
+            urls = extractor.extract_playlist_videos(playlist_url)
+            assert urls == []
+
+    @pytest.mark.PlaylistExtraction
+    def test_extract_playlist_videos_normalization(self):
+        playlist_url = "https://www.youtube.com/watch?v=video1&list=PL123"
+        dummy_playlist_info = {"entries": [{"id": "video1"}]}
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
+        ) as mock_ytdlp:
+            mock_instance = mock_ytdlp.return_value.__enter__.return_value
+            mock_instance.extract_info.return_value = dummy_playlist_info
+
+            extractor = YoutubeExtractor("dummy")
+            extractor.extract_playlist_videos(playlist_url)
+
+            # verify it normalized the URL passed to extract_info
+            mock_instance.extract_info.assert_called_once_with(
+                "https://www.youtube.com/playlist?list=PL123", download=False
+            )

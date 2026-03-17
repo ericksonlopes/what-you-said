@@ -40,6 +40,18 @@ class ChunkIndexSQLRepository:
                     orm_objs.append(obj)
 
                 session.commit()
+                
+                # Update ContentSource count (increment by the number of chunks added)
+                if orm_objs:
+                    # Collect content_source_ids to update
+                    source_ids = {o.content_source_id for o in orm_objs if o.content_source_id}
+                    for sid in source_ids:
+                        count = sum(1 for o in orm_objs if o.content_source_id == sid)
+                        session.query(ContentSourceModel).filter_by(id=sid).update(
+                            {"chunks": ContentSourceModel.chunks + count}
+                        )
+                    session.commit()
+
                 logger.debug(
                     "Created chunk index rows", context={"count": len(orm_objs)}
                 )
@@ -106,6 +118,12 @@ class ChunkIndexSQLRepository:
                     .filter_by(content_source_id=content_source_id)
                     .delete(synchronize_session=False)
                 )
+                
+                # Update ContentSource count to 0
+                session.query(ContentSourceModel).filter_by(id=content_source_id).update(
+                    {"chunks": 0}
+                )
+                
                 session.commit()
                 return int(deleted)
             except Exception as e:
@@ -128,7 +146,11 @@ class ChunkIndexSQLRepository:
                 )
             )
             if isinstance(filters, dict):
-                q = q.filter_by(**filters)
+                for key, value in filters.items():
+                    if hasattr(ChunkIndexModel, key):
+                        q = q.filter(getattr(ChunkIndexModel, key) == value)
+                    elif hasattr(ContentSourceModel, key):
+                        q = q.filter(getattr(ContentSourceModel, key) == value)
             if query:
                 pattern = f"%{query}%"
                 q = q.filter(
@@ -141,9 +163,23 @@ class ChunkIndexSQLRepository:
     def delete_chunk(self, chunk_id: UUID) -> bool:
         with Connector() as session:
             try:
-                result = session.query(ChunkIndexModel).filter_by(id=chunk_id).delete()
+                # 1. Get content_source_id before deleting
+                chunk = session.query(ChunkIndexModel).filter_by(id=chunk_id).first()
+                if not chunk:
+                    return False
+                
+                content_source_id = chunk.content_source_id
+                
+                # 2. Delete the chunk
+                session.delete(chunk)
+                
+                # 3. Decrement count in ContentSource
+                session.query(ContentSourceModel).filter_by(id=content_source_id).update(
+                    {"chunks": ContentSourceModel.chunks - 1}
+                )
+                
                 session.commit()
-                return result > 0
+                return True
             except Exception as e:
                 session.rollback()
                 logger.error(

@@ -24,7 +24,7 @@ from src.domain.interfaces.repository.retriver_repository import IVectorReposito
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.content_source_service import ContentSourceService
-from src.infrastructure.services.embeddding_service import EmbeddingService
+from src.infrastructure.services.embedding_service import EmbeddingService
 from src.infrastructure.services.ingestion_job_service import IngestionJobService
 from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
@@ -93,7 +93,7 @@ def get_vector_repository(
         return ChunkWeaviateRepository(
             weaviate_client=client,
             embedding_service=emb_service,
-            collection_name=settings.vector.weaviate_collection_name_chunks,
+            collection_name=settings.vector.collection_name_chunks,
         )
     
     if settings.vector.store_type == VectorStoreType.FAISS:

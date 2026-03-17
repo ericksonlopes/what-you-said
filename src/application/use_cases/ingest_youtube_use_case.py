@@ -18,7 +18,7 @@ from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.content_source_service import ContentSourceService
-from src.infrastructure.services.embeddding_service import EmbeddingService
+from src.infrastructure.services.embedding_service import EmbeddingService
 from src.infrastructure.services.ingestion_job_service import IngestionJobService
 from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
@@ -551,10 +551,11 @@ class IngestYoutubeUseCase:
             ingestion_type=SourceType.YOUTUBE.value,
             vector_store_type=self.vector_store_type,
         )
-        logger.debug(
-            "Ingestion job created",
-            context={"job_id": str(ingestion.id), "content_source_id": str(source_id)},
-        )
+        if ingestion:
+            logger.debug(
+                "Ingestion job created",
+                context={"job_id": str(ingestion.id), "content_source_id": str(source_id)},
+            )
         return ingestion
 
     def _mark_source_processing(self, source) -> None:

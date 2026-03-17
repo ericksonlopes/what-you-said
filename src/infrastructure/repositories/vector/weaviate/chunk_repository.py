@@ -14,7 +14,7 @@ if TYPE_CHECKING:
         WeaviateVector,
     )
 
-from src.infrastructure.services.embeddding_service import EmbeddingService
+from src.infrastructure.services.embedding_service import EmbeddingService
 
 logger = Logger()
 

@@ -1,4 +1,4 @@
-from src.infrastructure.services.embeddding_service import EmbeddingService
+from src.infrastructure.services.embedding_service import EmbeddingService
 import pytest
 
 

@@ -28,11 +28,11 @@ def get_current_settings(settings: Annotated[Settings, Depends(get_settings)]):
             log_levels=", ".join(settings.app.list_log_levels)
         ),
         vector=VectorSettingsSchema(
-            store_type=settings.vector.store_type,
+            store_type=settings.vector.store_type.value,
             weaviate_host=settings.vector.weaviate_host,
             weaviate_port=settings.vector.weaviate_port,
             weaviate_grpc_port=settings.vector.weaviate_grpc_port,
-            weaviate_collection=settings.vector.weaviate_collection_name_chunks
+            weaviate_collection=settings.vector.collection_name_chunks
         ),
         model=ModelSettingsSchema(
             name=settings.model_embedding.name
@@ -43,7 +43,13 @@ def get_current_settings(settings: Annotated[Settings, Depends(get_settings)]):
         )
     )
 
-@router.get("/check/{component}", response_model=HealthCheckResponse)
+@router.get(
+    "/check/{component}",
+    response_model=HealthCheckResponse,
+    responses={
+        400: {"description": "Unknown component provided"}
+    }
+)
 def check_component_health(
     component: str,
     vector_repo: Annotated[IVectorRepository, Depends(get_vector_repository)]

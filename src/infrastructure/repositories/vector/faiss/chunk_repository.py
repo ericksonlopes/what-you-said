@@ -8,7 +8,7 @@ from src.config.logger import Logger
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.domain.mappers.chunk_mapper import ChunkMapper
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
-from src.infrastructure.services.embeddding_service import EmbeddingService
+from src.infrastructure.services.embedding_service import EmbeddingService
 
 logger = Logger()
 

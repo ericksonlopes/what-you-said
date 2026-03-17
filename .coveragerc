@@ -1,14 +1,19 @@
 [run]
 omit =
     */tests/*
-    */domain/*
+    */entities/*
     */models/*
     */dtos/*
+    */schemas/*
+    */mappers/*
     __init__.py
+    main.py
 
 [report]
 exclude_lines =
     if __name__ == .__main__.:
+    pragma: no cover
+    raise NotImplementedError
 
 [html]
 directory = ./tests/coverage_html_report
