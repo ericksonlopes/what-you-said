@@ -122,5 +122,17 @@ export const api = {
     const response = await fetch(`${API_BASE_URL}/sources/model`);
     if (!response.ok) throw new Error('Failed to fetch model info');
     return response.json();
+  },
+  
+  async fetchSettings(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/settings`);
+    if (!response.ok) throw new Error('Failed to fetch settings');
+    return response.json();
+  },
+  
+  async checkHealth(component: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/settings/check/${component}`);
+    if (!response.ok) throw new Error(`Health check failed for ${component}`);
+    return response.json();
   }
 };

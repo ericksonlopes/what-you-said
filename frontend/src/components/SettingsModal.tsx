@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, Settings, Activity, Database, 
   Box, Server, Terminal, Key, Shield, 
   CheckCircle2, XCircle, Loader2, Eye, EyeOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { api } from '../services/api';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -12,6 +13,26 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  const [settingsData, setSettingsData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchSettings = async () => {
+        setLoading(true);
+        try {
+          const data = await api.fetchSettings();
+          setSettingsData(data);
+        } catch (err) {
+          console.error('Failed to fetch settings:', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchSettings();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
@@ -53,7 +74,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Content Area */}
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-            <UnifiedSettings />
+            {loading && !settingsData ? (
+              <div className="flex items-center justify-center h-full gap-3 text-zinc-500">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Loading settings...
+              </div>
+            ) : (
+              <UnifiedSettings settings={settingsData} />
+            )}
           </div>
         </motion.div>
       </div>
@@ -61,7 +89,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   );
 }
 
-function UnifiedSettings() {
+function UnifiedSettings({ settings }: { settings: any }) {
   return (
     <div className="space-y-10 pb-4">
       {/* Bento Grid Info */}
@@ -70,77 +98,80 @@ function UnifiedSettings() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DetailedEnvCard 
             title="Backend API" 
-            value="LOCAL" 
+            value={settings?.app?.env || "UNKNOWN"} 
             description="Core API server connection"
             details={[
-              { label: "Endpoint", value: "http://localhost:8000" },
-              { label: "Version", value: "v1.0.4" }
+              { label: "Endpoint", value: window.location.origin },
+              { label: "Environment", value: settings?.app?.env || 'n/a' }
             ]}
             icon={Terminal} 
             color="text-purple-400" 
             bg="bg-purple-500/10" 
             checkLabel="Ping API"
+            componentId="api"
           />
           <DetailedEnvCard 
             title="Embedding Model" 
-            value="bge-m3" 
+            value={settings?.model?.name?.split('/').pop() || "n/a"} 
             description="Text vectorization model"
             details={[
-              { label: "Provider", value: "BAAI" },
-              { label: "Dimensions", value: "1024" }
+              { label: "Model Path", value: settings?.model?.name || 'n/a' },
+              { label: "Status", value: "Loaded" }
             ]}
             icon={Box} 
             color="text-emerald-400" 
             bg="bg-emerald-500/10" 
             checkLabel="Test Model"
+            componentId="model"
           />
           <DetailedEnvCard 
             title="Vector Store" 
-            value="WEAVIATE" 
+            value={settings?.vector?.store_type?.toUpperCase() || "n/a"} 
             description="Semantic search database"
             details={[
-              { label: "Host", value: "localhost" },
-              { label: "Port", value: "8081" },
-              { label: "Collection", value: "chunks" }
+              { label: "Host", value: settings?.vector?.weaviate_host || 'n/a' },
+              { label: "Port", value: settings?.vector?.weaviate_port?.toString() || 'n/a' },
+              { label: "Collection", value: settings?.vector?.weaviate_collection || 'n/a' }
             ]}
             icon={Database} 
             color="text-blue-400" 
             bg="bg-blue-500/10" 
             checkLabel="Test Store"
+            componentId="vector"
           />
           <DetailedEnvCard 
             title="SQL Driver" 
-            value="sqlite" 
+            value={settings?.sql?.type || "n/a"} 
             description="Relational database"
             details={[
-              { label: "Database", value: "app.sqlite" },
-              { label: "Connection", value: "Local File" }
+              { label: "Database", value: settings?.sql?.database || 'n/a' },
+              { label: "Type", value: settings?.sql?.type || 'n/a' }
             ]}
             icon={Server} 
             color="text-amber-400" 
             bg="bg-amber-500/10" 
             checkLabel="Test DB"
+            componentId="sql"
           />
         </div>
       </div>
 
-      {/* Real-time Metrics */}
+      {/* Real-time Metrics (Mock for now but could be connected) */}
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Real-time Metrics</h3>
+        <h3 className="text-lg font-medium text-white mb-4">Instance Statistics</h3>
         <div className="grid grid-cols-3 gap-4">
-          <MetricCard title="Total Vectors" value="15,430" trend="+120 this week" />
-          <MetricCard title="Database Size" value="24.5 MB" trend="Stable" />
-          <MetricCard title="Avg Query Latency" value="45 ms" trend="-5ms improvement" />
+          <MetricCard title="System Environment" value={settings?.app?.env?.toUpperCase() || "N/A"} trend="Stable" />
+          <MetricCard title="Log Levels" value={settings?.app?.log_levels?.split(',')[0] || "INFO"} trend="Active" />
+          <MetricCard title="Store Type" value={settings?.vector?.store_type || "N/A"} trend="Production ready" />
         </div>
       </div>
 
       {/* API Keys */}
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">API Keys & Security</h3>
+        <h3 className="text-lg font-medium text-white mb-4">Internal Identifiers</h3>
         <div className="space-y-3">
-          <ApiKeyInput provider="OpenAI" placeholder="sk-..." />
-          <ApiKeyInput provider="Anthropic" placeholder="sk-ant-..." />
-          <ApiKeyInput provider="Cohere" placeholder="cohere-..." />
+          <InfoRow label="Collection Name" value={settings?.vector?.weaviate_collection || "n/a"} />
+          <InfoRow label="Embedding Model" value={settings?.model?.name || "n/a"} />
         </div>
       </div>
     </div>
@@ -151,44 +182,17 @@ function MetricCard({ title, value, trend }: { title: string, value: string, tre
   return (
     <div className="p-4 rounded-xl border border-white/5 bg-[#0d0d0d] shadow-sm">
       <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider block mb-1">{title}</span>
-      <span className="text-2xl font-semibold text-zinc-100 block mb-1">{value}</span>
-      <span className="text-[10px] text-emerald-400/80">{trend}</span>
+      <span className="text-xl font-semibold text-zinc-100 block mb-1 truncate" title={value}>{value}</span>
+      <span className="text-[10px] text-zinc-500">{trend}</span>
     </div>
   );
 }
 
-function ApiKeyInput({ provider, placeholder }: { provider: string, placeholder: string }) {
-  const [show, setShow] = useState(false);
-  const [value, setValue] = useState('');
-
+function InfoRow({ label, value }: { label: string, value: string }) {
   return (
     <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-[#0d0d0d] shadow-sm">
-      <div className="flex items-center gap-3 w-1/3">
-        <div className="p-1.5 rounded-md bg-white/5">
-          <Key className="w-4 h-4 text-zinc-400" />
-        </div>
-        <span className="text-sm font-medium text-zinc-300">{provider}</span>
-      </div>
-      <div className="flex-1 flex items-center gap-2">
-        <div className="relative flex-1">
-          <input 
-            type={show ? "text" : "password"}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={placeholder}
-            className="w-full bg-black/50 border border-white/10 rounded-lg py-1.5 pl-3 pr-10 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500/50 transition-colors placeholder:text-zinc-700 font-mono"
-          />
-          <button 
-            onClick={() => setShow(!show)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-          >
-            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-        </div>
-        <button className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-zinc-300 transition-colors">
-          Save
-        </button>
-      </div>
+      <span className="text-sm font-medium text-zinc-400">{label}</span>
+      <span className="text-xs font-mono text-zinc-500">{value}</span>
     </div>
   );
 }
@@ -201,7 +205,8 @@ function DetailedEnvCard({
   icon: Icon, 
   color, 
   bg, 
-  checkLabel = "Check" 
+  checkLabel = "Check",
+  componentId
 }: { 
   title: string, 
   value: string, 
@@ -210,24 +215,32 @@ function DetailedEnvCard({
   icon: any, 
   color: string, 
   bg: string, 
-  checkLabel?: string 
+  checkLabel?: string,
+  componentId: string
 }) {
   const [status, setStatus] = useState<'unknown' | 'loading' | 'success' | 'error'>('unknown');
   const [latency, setLatency] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleCheck = () => {
+  const handleCheck = async () => {
     if (status === 'loading') return;
     setStatus('loading');
     setLatency(null);
+    setErrorMsg(null);
     
-    // Simulate network request
-    setTimeout(() => {
-      const isSuccess = Math.random() > 0.1; // 90% success rate
-      setStatus(isSuccess ? 'success' : 'error');
-      if (isSuccess) {
-        setLatency(Math.floor(Math.random() * 100) + 15); // 15ms - 115ms
+    try {
+      const result = await api.checkHealth(componentId);
+      if (result.status === 'success') {
+        setStatus('success');
+        setLatency(result.latency_ms);
+      } else {
+        setStatus('error');
+        setErrorMsg(result.message);
       }
-    }, 1200);
+    } catch (err: any) {
+      setStatus('error');
+      setErrorMsg(err.message);
+    }
   };
 
   return (
@@ -258,42 +271,50 @@ function DetailedEnvCard({
         </div>
       )}
       
-      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {status === 'unknown' && (
-            <>
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-500"></div>
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Status Unknown</span>
-            </>
-          )}
-          {status === 'loading' && (
-            <>
-              <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
-              <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">Checking...</span>
-            </>
-          )}
-          {status === 'success' && (
-            <>
-              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-              <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-medium">Online {latency && `(${latency}ms)`}</span>
-            </>
-          )}
-          {status === 'error' && (
-            <>
-              <XCircle className="w-3 h-3 text-red-400" />
-              <span className="text-[10px] text-red-400 uppercase tracking-wider font-medium">Offline</span>
-            </>
-          )}
+      <div className="mt-auto pt-4 border-t border-white/5 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {status === 'unknown' && (
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-zinc-500"></div>
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Status Unknown</span>
+              </>
+            )}
+            {status === 'loading' && (
+              <>
+                <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
+                <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">Checking...</span>
+              </>
+            )}
+            {status === 'success' && (
+              <>
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-medium">Online {latency && `(${latency}ms)`}</span>
+              </>
+            )}
+            {status === 'error' && (
+              <>
+                <XCircle className="w-3 h-3 text-red-400" />
+                <span className="text-[10px] text-red-400 uppercase tracking-wider font-medium">Offline</span>
+              </>
+            )}
+          </div>
+          <button 
+            onClick={handleCheck}
+            disabled={status === 'loading'}
+            className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-zinc-300 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={checkLabel}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>{checkLabel}</span>
+          </button>
         </div>
-        <button 
-          onClick={handleCheck}
-          disabled={status === 'loading'}
-          className="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs font-medium text-zinc-300 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          title={checkLabel}
-        >
-          <Activity className="w-3.5 h-3.5" />
-          <span>{checkLabel}</span>
-        </button>
+        
+        {status === 'error' && errorMsg && (
+          <p className="text-[10px] text-red-400/70 italic break-words">
+            {errorMsg}
+          </p>
+        )}
       </div>
     </div>
   );

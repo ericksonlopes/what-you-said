@@ -1,6 +1,6 @@
 from typing import Annotated, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Depends, HTTPException, APIRouter
 
 from src.config.logger import Logger
 from src.infrastructure.services.content_source_service import ContentSourceService

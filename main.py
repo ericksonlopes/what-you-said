@@ -9,6 +9,7 @@ from src.presentation.api.routes import (
     ingest_router,
     job_router,
     search_router,
+    settings_router,
     source_router,
     subject_router,
 )
@@ -55,6 +56,7 @@ app.include_router(ingest_router.router, prefix="/rest/ingest", tags=["Ingestion
 app.include_router(subject_router.router, prefix="/rest/subjects", tags=["Subjects"])
 app.include_router(source_router.router, prefix="/rest/sources", tags=["Sources"])
 app.include_router(job_router.router, prefix="/rest/jobs", tags=["Jobs"])
+app.include_router(settings_router.router, prefix="/rest/settings", tags=["Settings"])
 app.include_router(chunk_router.router, prefix="/rest/chunks", tags=["Chunks"])
 
 
