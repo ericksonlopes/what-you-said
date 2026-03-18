@@ -34,7 +34,9 @@ async def lifespan(app: FastAPI):
         from src.infrastructure.services.model_loader_service import ModelLoaderService
 
         _settings = Settings()
-        app.state.model_loader = ModelLoaderService(model_name=_settings.model_embedding.name)
+        app.state.model_loader = ModelLoaderService(
+            model_name=_settings.model_embedding.name
+        )
         logger.info("Embedding model pre-loaded successfully.")
     except Exception as e:
         logger.error(f"Error pre-loading embedding model: {e}")
