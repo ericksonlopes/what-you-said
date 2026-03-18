@@ -56,7 +56,6 @@ def mock_faiss(monkeypatch):
             return new_ids
 
         def similarity_search_with_score(self, query, k=5, filter=None, **kwargs):
-            results = []
             # Simple keyword matching for mock
             matching_docs = []
             stop_words = {"what", "is", "the", "a", "an", "this", "about"}

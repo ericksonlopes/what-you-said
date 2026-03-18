@@ -55,7 +55,7 @@ class TestIngestYoutubeUseCaseEdgeCases:
             subject_id=str(uuid.uuid4()),
             data_type=YoutubeDataType.VIDEO,
         )
-        with pytest.raises(ValueError, match="No video_url\(s\) provided in command"):
+        with pytest.raises(ValueError, match=r"No video_url\(s\) provided in command"):
             use_case.execute(cmd)
 
     def test_execute_any_failed_with_ingestion(self, use_case, mock_services):
@@ -151,9 +151,6 @@ class TestIngestYoutubeUseCaseEdgeCases:
         mock_services["ks_service"].get_subject_by_id.side_effect = Exception(
             "General Failure"
         )
-
-        source = MagicMock()
-        ingestion = MagicMock()
 
         # Mocking to reach the error handlers at the end of execute
         with patch.object(
