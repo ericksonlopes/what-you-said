@@ -17,8 +17,8 @@ interface AppState {
   refreshSubjects: () => Promise<void>;
   addSubject: (subject: Omit<Subject, 'id' | 'sourceCount'>) => void;
   isSourcesLoaded: boolean;
-  isJobsLoaded: boolean;
   refreshSources: () => Promise<void>;
+  sources: ContentSource[];
   jobs: IngestionTask[];
   refreshJobs: () => Promise<void>;
   addOptimisticJob: (title: string) => void;
@@ -39,7 +39,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [jobs, setJobs] = useState<IngestionTask[]>([]);
   const [isJobsLoaded, setIsJobsLoaded] = useState(false);
   const [currentView, setCurrentView] = useState<ViewState>(() => {
-    return (localStorage.getItem('currentView') as ViewState) || 'search';
+    const saved = localStorage.getItem('currentView') as ViewState;
+    const validViews: ViewState[] = ['chat', 'search', 'sources', 'activity', 'database'];
+    const initial = validViews.includes(saved) ? saved : 'search';
+    return initial;
   });
   const [selectedSourceIdForDb, setSelectedSourceIdForDb] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -49,7 +52,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const data = await api.fetchSubjects();
       setSubjects(data);
-      
+
       // If we have persisted selection, restore it
       const savedIdsStr = localStorage.getItem('selectedSubjectIds');
       if (savedIdsStr) {
@@ -174,7 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
-    
+
     // Auto remove after 4 seconds
     setTimeout(() => {
       removeToast(id);
@@ -186,10 +189,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newSubject = await api.createSubject(subjectData.name, subjectData.description, subjectData.icon);
       setSubjects((prev) => [...prev, newSubject]);
       setSelectedSubjects([newSubject]); // Auto-select the newly created subject
-      addToast(`Knowledge Base "${newSubject.name}" created!`, 'success');
+      addToast(t('notifications.subject.created', { name: newSubject.name }), 'success');
     } catch (err) {
       console.error('Error creating subject:', err);
-      addToast('Failed to create Knowledge Base.', 'error');
+      addToast(t('notifications.subject.error'), 'error');
     }
   }, [addToast]);
 

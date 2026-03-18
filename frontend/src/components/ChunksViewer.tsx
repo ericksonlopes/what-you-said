@@ -15,10 +15,12 @@ import {
   X
 } from 'lucide-react';
 import {useAppContext} from '../store/AppContext';
+import { useTranslation } from 'react-i18next';
 import {AnimatePresence, motion} from 'motion/react';
 import {api} from '../services/api';
 
 export function ChunksViewer() {
+  const { t } = useTranslation();
   const { subjects, selectedSubjects, selectedSourceIdForDb, setSelectedSourceIdForDb, sources, addToast, setCurrentView } = useAppContext();
   const [chunks, setChunks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,6 @@ export function ChunksViewer() {
 
   useEffect(() => {
     const loadData = async () => {
-      console.log('ChunksViewer: loading chunks for source:', selectedSourceIdForDb);
       setLoading(true);
       try {
         const chunksData = await api.fetchChunks(
@@ -50,7 +51,6 @@ export function ChunksViewer() {
           0,
           searchQuery
         );
-        console.log('ChunksViewer: received chunks count:', chunksData.length);
         setChunks(chunksData);
       } catch (err) {
         console.error('Error loading chunks:', err);
@@ -73,7 +73,6 @@ export function ChunksViewer() {
   // We now use chunks directly from the server-side filtered results
   const totalPages = Math.ceil(chunks.length / pageSize);
   const paginatedChunks = chunks.slice((page - 1) * pageSize, page * pageSize);
-  console.log('ChunksViewer: rendering page', page, 'with', paginatedChunks.length, 'chunks');
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this chunk?')) {
@@ -102,10 +101,10 @@ export function ChunksViewer() {
       setChunks(chunks.map(c => c.id === selectedChunk.id ? { ...c, content: editContent } : c));
       setIsModalOpen(false);
       setSelectedChunk(null);
-      addToast('Knowledge chunk updated successfully!', 'success');
+      addToast(t('notifications.chunk.updated'), 'success');
     } catch (err) {
       console.error('Error updating chunk:', err);
-      addToast('Failed to update chunk.', 'error');
+      addToast(t('notifications.chunk.error'), 'error');
     } finally {
       setIsSaving(false);
     }
@@ -136,9 +135,9 @@ export function ChunksViewer() {
         <div className="flex flex-col">
           <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
             <Database className="w-3 h-3" />
-            <span>{currentSubject?.name || 'Knowledge Base'}</span>
+            <span>{currentSubject?.name || t('sidebar.contexts.title')}</span>
             <ChevronRight className="w-3 h-3" />
-            <span className="text-emerald-500">Chunks Explorer</span>
+            <span className="text-emerald-500">{t('sidebar.operations.chunks')}</span>
           </div>
           <h2 className="text-2xl font-bold text-white tracking-tight mt-0.5">
             {currentSource?.title || 'Unknown Source'}
@@ -149,7 +148,7 @@ export function ChunksViewer() {
       <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <p className="text-zinc-400 text-sm">Managing segments stored in vector index.</p>
+            <p className="text-zinc-400 text-sm">{t('sources.chunks.subtitle')}</p>
             {currentSource?.origin && (
               <span className="px-2 py-0.5 rounded bg-zinc-800/50 border border-zinc-700/50 text-[10px] text-zinc-500 font-mono truncate max-w-[200px]">
                 {currentSource.origin}
@@ -161,7 +160,7 @@ export function ChunksViewer() {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
           <input 
             type="text" 
-            placeholder="Search in these chunks..." 
+            placeholder={`${t('common.actions.search')}...`} 
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             className="w-full bg-black/40 border border-border-subtle rounded-xl pl-9 pr-4 py-2 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500/50 transition-colors"
@@ -173,7 +172,7 @@ export function ChunksViewer() {
         <div className="overflow-y-auto flex-1 custom-scrollbar space-y-4 pr-2">
           {paginatedChunks.length === 0 ? (
             <div className="p-12 text-center text-zinc-500 bg-[#121212] border border-border-subtle rounded-2xl">
-              No chunks found matching your criteria.
+              {t('search.results.none')}
             </div>
           ) : (
             paginatedChunks.map((chunk, index) => (
@@ -221,7 +220,7 @@ export function ChunksViewer() {
         {chunks.length > 0 && (
           <div className="pt-4 mt-4 border-t border-border-subtle flex items-center justify-between shrink-0">
             <span className="text-xs text-zinc-500">
-              Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, chunks.length)} of {chunks.length} chunks
+              {t('sources.chunks.pagination', { start: (page - 1) * pageSize + 1, end: Math.min(page * pageSize, chunks.length), total: chunks.length })}
             </span>
             <div className="flex items-center gap-2">
               <button 
@@ -232,7 +231,7 @@ export function ChunksViewer() {
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <span className="text-xs font-medium text-zinc-300 px-2">
-                Page {page} of {Math.max(1, totalPages)}
+                {t('sources.chunks.page', { current: page, total: Math.max(1, totalPages) })}
               </span>
               <button 
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
@@ -270,7 +269,7 @@ export function ChunksViewer() {
                     <Edit2 className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white tracking-tight">Edit Knowledge Chunk</h3>
+                    <h3 className="text-lg font-bold text-white tracking-tight">{t('common.actions.save')}</h3>
                     <p className="text-xs text-zinc-500 mt-0.5 font-mono">ID: {selectedChunk.id}</p>
                   </div>
                 </div>
@@ -306,20 +305,20 @@ export function ChunksViewer() {
                 <div className="flex-1 flex flex-col">
                   <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-2">
                     <FileText className="w-3 h-3" />
-                    Content
+                    {t('sources.chunks.content_label')}
                   </label>
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     className="flex-1 bg-black/50 border border-border-subtle rounded-xl p-4 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all resize-none custom-scrollbar font-serif leading-relaxed"
-                    placeholder="Enter chunk content..."
+                    placeholder={t('sources.chunks.content_placeholder')}
                   />
                 </div>
 
                 <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex items-start gap-3">
                   <Info className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                   <p className="text-[11px] text-emerald-500/80 leading-relaxed">
-                    Editing this content will trigger a re-indexing in the vector database (Weaviate). This ensures that future semantic searches will reflect the updated text.
+                    {t('sources.chunks.edit_warning')}
                   </p>
                 </div>
               </div>
@@ -327,14 +326,14 @@ export function ChunksViewer() {
               {/* Footer */}
               <div className="p-6 border-t border-border-subtle bg-black/20 flex items-center justify-between">
                 <div className="text-xs text-zinc-500">
-                  Characters: <span className="text-zinc-300 font-medium">{editContent.length}</span>
+                  {t('sources.chunks.chars')}: <span className="text-zinc-300 font-medium">{editContent.length}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <button 
                     onClick={() => setIsModalOpen(false)}
                     className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors"
                   >
-                    Cancel
+                    {t('common.actions.cancel')}
                   </button>
                   <button 
                     onClick={handleSave}
@@ -344,12 +343,12 @@ export function ChunksViewer() {
                     {isSaving ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Saving...
+                        {t('common.actions.syncing')}
                       </>
                     ) : (
                       <>
                         <Save className="w-4 h-4" />
-                        Save Changes
+                        {t('common.actions.save')}
                       </>
                     )}
                   </button>

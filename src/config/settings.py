@@ -18,6 +18,9 @@ class SQLConfig(BaseSettings):
 
     @property
     def url(self) -> str:
+        if not self.type:
+            return "sqlite:///./data/app/app.sqlite"
+
         if self.type == "postgres":
             return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
@@ -30,7 +33,7 @@ class SQLConfig(BaseSettings):
         if self.type == "mssql":
             return f"mssql+pytds://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
-        return "sqlite:////data/app/app.sqlite"
+        return "sqlite:///./data/app/app.sqlite"
 
 
 class VectorConfig(BaseSettings):
@@ -39,7 +42,7 @@ class VectorConfig(BaseSettings):
         description="Type of vector store to use (CHROMA, WEAVIATE, FAISS)",
     )
     vector_index_path: str = Field(
-        default="/data/app/vector_index",
+        default="./data/app/vector_index",
         description="Path to store vector index files (for Chroma and FAISS)",
     )
 

@@ -24,8 +24,8 @@ def get_sources(cs_service: Annotated[ContentSourceService, Depends(get_cs_servi
         sources = cs_service.list_all()
         return sources
     except Exception as e:
-        logger.error(f"Error fetching sources: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Error fetching sources: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get(

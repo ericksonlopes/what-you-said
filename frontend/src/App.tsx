@@ -1,23 +1,16 @@
-import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { 
-  Plus, RefreshCw, Search, ChevronLeft, ChevronRight, 
-  Database, FileText, Video, Activity as ActivityIcon, 
-  MessageSquare, ArrowUpDown, Lock, Clock, Languages, 
-  Cpu, Hash, Calendar, Check, Copy, X 
-} from 'lucide-react';
-import { AppProvider, useAppContext } from './store/AppContext';
-import { Sidebar } from './components/Sidebar';
-import { TaskCard } from './components/TaskCard';
-import { SourcesTable } from './components/SourcesTable';
-import { AddContentModal } from './components/AddContentModal';
-import { ToastContainer } from './components/ToastContainer';
-import { ChatView } from './components/ChatView';
-import { SearchView } from './components/SearchView';
-import { ChunksViewer } from './components/ChunksViewer';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { IngestionTask, ContentSource } from './types';
-import { api } from './services/api';
+import React, {useState} from 'react';
+import {useTranslation} from 'react-i18next';
+import {ChevronLeft, ChevronRight, Plus, RefreshCw, Search} from 'lucide-react';
+import {AppProvider, useAppContext} from './store/AppContext';
+import {Sidebar} from './components/Sidebar';
+import {TaskCard} from './components/TaskCard';
+import {SourcesTable} from './components/SourcesTable';
+import {AddContentModal} from './components/AddContentModal';
+import {ToastContainer} from './components/ToastContainer';
+import {SearchView} from './components/SearchView';
+import {ChunksViewer} from './components/ChunksViewer';
+import {ErrorBoundary} from './components/ErrorBoundary';
+import {ContentSource} from './types';
 
 function ActivityMonitorView() {
   const { jobs = [], refreshJobs, isJobsLoaded } = useAppContext();
@@ -272,14 +265,15 @@ function MainContent() {
     
     try {
       await refreshSubjects();
-      addToast(t('common.actions.sync'), 'success');
+      addToast(t('notifications.sync.success'), 'success');
     } catch (err) {
-      addToast(t('common.actions.sync'), 'error');
+      addToast(t('notifications.sync.error'), 'error');
     } finally {
       setIsSyncing(false);
     }
   };
 
+  // @ts-ignore
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bg-dark relative">
       {/* Topbar Context Indicator & Global Actions */}

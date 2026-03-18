@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Brain, Briefcase, ChefHat, Cpu, Landmark, Lightbulb, Activity, Hash } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 
@@ -19,6 +20,7 @@ const ICONS = [
 ];
 
 export function AddSubjectModal({ isOpen, onClose }: AddSubjectModalProps) {
+  const { t } = useTranslation();
   const { addSubject } = useAppContext();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -52,7 +54,7 @@ export function AddSubjectModal({ isOpen, onClose }: AddSubjectModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border-subtle bg-black/20">
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">New Knowledge Base</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">{t('contexts.new')}</h2>
             <p className="text-xs text-zinc-500 mt-1">Create a new context to organize your data</p>
           </div>
           <button 
@@ -122,7 +124,7 @@ export function AddSubjectModal({ isOpen, onClose }: AddSubjectModalProps) {
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
             >
-              Cancel
+              {t('common.actions.cancel')}
             </button>
             <button
               type="submit"

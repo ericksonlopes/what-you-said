@@ -129,7 +129,7 @@ export function SourcesTable({
               <th className="px-6 py-3 font-medium text-right">{t('sources.table.chunks')}</th>
               <th className="px-6 py-3 font-medium text-center">{t('sources.table.status')}</th>
               <th className="px-6 py-3 font-medium">{t('sources.table.model')}</th>
-              <th className="px-6 py-3 font-medium">Dimensions</th>
+              <th className="px-6 py-3 font-medium">{t('sources.table.dimensions')}</th>
               <th className="px-6 py-3 font-medium">{t('sources.table.date')}</th>
             </tr>
           </thead>
@@ -185,7 +185,7 @@ export function SourcesTable({
             <ChevronLeft className="w-4 h-4" />
           </button>
           <span className="text-xs font-medium text-zinc-400 px-2">
-            Page {page} of {totalPages}
+            {t('sources.chunks.page', { current: page, total: totalPages })}
           </span>
           <button 
             onClick={() => onPageChange(page + 1)}

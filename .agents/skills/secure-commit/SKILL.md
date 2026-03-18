@@ -38,7 +38,8 @@ When triggered, follow these steps in order. If any step fails, stop immediately
 - Ensure all tests pass.
 
 ## Final Commit
-- **ZERO TOLERANCE**: Only if ALL previous steps passed with **zero remaining issues** (0 ruff errors, 0 mypy errors, 100% pytest success), perform the git commit.
+- **USER PERMISSION REQUIRED**: NEVER perform the git commit automatically. Even if all checks pass, you MUST ask the user for explicit permission to commit.
+- **ZERO TOLERANCE**: Only if ALL previous steps passed with **zero remaining issues** (0 ruff errors, 0 mypy errors, 100% pytest success), and after receiving user approval, perform the git commit.
 - Use a clear, concise, and descriptive commit message that follows the project's established style.
 - Confirm the successful commit with `git status`.
 

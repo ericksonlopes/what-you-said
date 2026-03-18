@@ -62,12 +62,12 @@ export function SearchView() {
 
       const mappedResults: SearchResult[] = data.results.map((res: any) => ({
         id: res.id,
-        source: sourceMap.get(res.external_source) || res.external_source || 'Unknown Source',
+        source: sourceMap.get(res.external_source) || res.external_source || t('common.status.unknown'),
         text: res.content || '',
         score: res.score || 0,
         timestamp: res.extra?.timestamp || '',
         type: res.source_type?.toLowerCase() === 'youtube' ? 'video' : 'article',
-        context: res.extra?.subject_name || 'General',
+        context: res.extra?.subject_name || t('sidebar.contexts.none'),
         tokensCount: res.tokens_count,
         language: res.language,
         embeddingModel: res.embedding_model,
@@ -102,7 +102,7 @@ export function SearchView() {
       <div className="p-8 pb-4 max-w-5xl mx-auto w-full flex-shrink-0">
         <div className="mb-8 text-center">
           <h2 className="text-3xl font-bold text-white tracking-tight mb-3">{t('search.title')}</h2>
-          <p className="text-zinc-400 max-w-xl mx-auto">
+          <p className="text-zinc-400">
             {t('search.subtitle')}
           </p>
         </div>
@@ -256,7 +256,7 @@ export function SearchView() {
                 <Lock className="w-3 h-3 ml-1" />
               </button>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-[10px] text-zinc-300 text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-10">
-                Maximal Marginal Relevance (Diversity) is coming soon.
+                {t('ingestion.coming_soon.title')} (MMR)
               </div>
             </div>
           </div>
@@ -338,15 +338,11 @@ export function SearchView() {
                             {searchMode === 'bm25'
                               ? `BM25: ${result.score.toFixed(2)}`
                               : searchMode === 'hybrid'
-                              ? `${(result.score * 100).toFixed(1)}% HYBRID`
-                              : `${(result.score * 100).toFixed(1)}% MATCH`
+                              ? `${(result.score * 100).toFixed(1)}% ${t('search.results.hybrid_label')}`
+                              : `${(result.score * 100).toFixed(1)}% ${t('search.results.match')}`
                             }
                           </span>
                         </div>
-                        <span className="text-xs text-zinc-500 flex items-center gap-1.5 font-medium">
-                          <Database className="w-3.5 h-3.5" />
-                          {result.context}
-                        </span>
                         {result.language && (
                           <span className="text-[10px] text-zinc-400 bg-zinc-800/50 px-2 py-0.5 rounded border border-zinc-700/50 uppercase font-mono">
                             {result.language}
@@ -437,7 +433,7 @@ export function SearchView() {
                     setTimeout(() => setCopied(false), 2000);
                   }}
                   className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-                  title="Copy Text"
+                  title={t('common.actions.copy')}
                 >
                   {copied ? <Check className="w-5 h-5 text-emerald-400" /> : <Copy className="w-5 h-5" />}
                 </button>
@@ -451,7 +447,7 @@ export function SearchView() {
             </div>
 
             {/* Modal Metadata Sub-header */}
-            <div className="flex flex-wrap items-center gap-4 px-5 py-3 border-b border-zinc-800/50 bg-black/20 overflow-x-auto no-scrollbar">
+            <div className="flex flex-wrap items-center gap-4 px-5 py-3 border-b border-zinc-800/50 bg-black/20">
               <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-950 border border-white/10 flex-shrink-0">
                 <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${
                   searchMode === 'bm25' ? 'bg-sky-400' : searchMode === 'hybrid' ? 'bg-violet-400' : 'bg-emerald-500'
@@ -467,10 +463,7 @@ export function SearchView() {
                   }
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-zinc-400 flex-shrink-0">
-                <Database className="w-3.5 h-3.5" />
-                {selectedResult.context}
-              </div>
+              
               {selectedResult.timestamp && (
                 <div className="flex items-center gap-1.5 text-xs text-emerald-500/80 font-mono bg-emerald-500/10 px-2 py-0.5 rounded flex-shrink-0 border border-emerald-500/20">
                   <Clock className="w-3.5 h-3.5" />
@@ -498,39 +491,39 @@ export function SearchView() {
             <div className="p-5 border-t border-zinc-800 bg-zinc-950">
               <h4 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <span className="w-1 h-3 bg-emerald-500 rounded-full" />
-                System Metadata
+                {t('search.results.metadata')}
               </h4>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-600">Source Type</span>
+                  <span className="text-[10px] text-zinc-600">{t('search.results.type')}</span>
                   <span className="text-xs text-zinc-300 flex items-center gap-1.5 capitalize">
                     {selectedResult.type === 'video' ? <PlayCircle className="w-3.5 h-3.5 text-zinc-500" /> : <FileText className="w-3.5 h-3.5 text-zinc-500" />}
                     {selectedResult.sourceType?.toLowerCase() || 'Unknown'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-600">Embedding Model</span>
+                  <span className="text-[10px] text-zinc-600">{t('search.results.model')}</span>
                   <span className="text-xs text-zinc-300 flex items-center gap-1.5">
                     <Cpu className="w-3.5 h-3.5 text-zinc-500" />
                     {selectedResult.embeddingModel || 'Unknown'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-600">Tokens Count</span>
+                  <span className="text-[10px] text-zinc-600">{t('search.results.tokens')}</span>
                   <span className="text-xs text-zinc-300 flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-zinc-500" />
                     {selectedResult.tokensCount || 'N/A'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-600">Ingested At</span>
+                  <span className="text-[10px] text-zinc-600">{t('search.results.date')}</span>
                   <span className="text-xs text-zinc-300 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-zinc-500" />
                     {selectedResult.createdAt ? new Date(selectedResult.createdAt).toLocaleDateString() : 'N/A'}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[10px] text-zinc-600">Chunk ID</span>
+                  <span className="text-[10px] text-zinc-600">{t('search.results.chunk_id')}</span>
                   <span className="text-xs text-zinc-400 font-mono truncate" title={selectedResult.id}>
                     {selectedResult.id.substring(0, 8)}...
                   </span>

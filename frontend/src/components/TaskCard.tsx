@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { IngestionTask } from '../types';
 import { CheckCircle2, CircleDashed, Loader2, XCircle, ExternalLink } from 'lucide-react';
 import { ErrorDetailModal } from './ErrorDetailModal';
@@ -12,6 +13,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
+  const { t } = useTranslation();
   const [isErrorModalOpen, setIsErrorModalOpen] = React.useState(false);
   const statusConfig = {
     pending: {
@@ -19,7 +21,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-zinc-400',
       bgColor: 'bg-zinc-500/10',
       borderColor: 'border-zinc-500/20',
-      label: 'Pending',
+      label: t('common.status.pending'),
       spin: false,
     },
     started: {
@@ -27,7 +29,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-zinc-400',
       bgColor: 'bg-zinc-500/10',
       borderColor: 'border-zinc-500/20',
-      label: 'Started',
+      label: t('common.status.started'),
       spin: false,
     },
     processing: {
@@ -35,7 +37,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-blue-400',
       bgColor: 'bg-blue-500/10',
       borderColor: 'border-blue-500/20',
-      label: 'Processing',
+      label: t('common.status.processing'),
       spin: true,
     },
     finished: {
@@ -43,7 +45,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-emerald-400',
       bgColor: 'bg-emerald-500/10',
       borderColor: 'border-emerald-500/20',
-      label: 'Completed',
+      label: t('common.status.completed'),
       spin: false,
     },
     done: {
@@ -51,7 +53,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-emerald-400',
       bgColor: 'bg-emerald-500/10',
       borderColor: 'border-emerald-500/20',
-      label: 'Completed',
+      label: t('common.status.completed'),
       spin: false,
     },
     failed: {
@@ -59,7 +61,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-rose-400',
       bgColor: 'bg-rose-500/10',
       borderColor: 'border-rose-500/20',
-      label: 'Failed',
+      label: t('common.status.failed'),
       spin: false,
     },
     error: {
@@ -67,7 +69,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-rose-400',
       bgColor: 'bg-rose-500/10',
       borderColor: 'border-rose-500/20',
-      label: 'Failed',
+      label: t('common.status.failed'),
       spin: false,
     },
     cancelled: {
@@ -75,7 +77,7 @@ export function TaskCard({ task }: TaskCardProps) {
       textColor: 'text-zinc-500',
       bgColor: 'bg-zinc-500/10',
       borderColor: 'border-zinc-500/20',
-      label: 'Cancelled',
+      label: t('common.status.cancelled'),
       spin: false,
     },
   };

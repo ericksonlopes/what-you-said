@@ -18,7 +18,14 @@
       "processing": "PROCESSANDO",
       "done": "CONCLUÍDO",
       "error": "ERRO",
-      "unknown": "DESCONHECIDO"
+      "unknown": "DESCONHECIDO",
+      "loaded": "CARREGADO",
+      "online": "Online",
+      "offline": "Offline",
+      "started": "INICIADO",
+      "completed": "CONCLUÍDO",
+      "failed": "FALHOU",
+      "cancelled": "CANCELADO"
     }
   },
   "sidebar": {
@@ -27,10 +34,13 @@
       "subtitle": "Hub de Dados Vetoriais"
     },
     "contexts": {
-      "title": "Contextos de Conhecimento",
+      "title": "Bases de Conhecimento",
       "placeholder": "Filtrar contextos...",
       "none": "Nenhum contexto encontrado.",
-      "only": "Apenas"
+      "only": "Apenas",
+      "new": "Nova Base de Conhecimento",
+      "create": "Criar novo contexto",
+      "toggle": "Clique para alternar"
     },
     "operations": {
       "title": "Operações",
@@ -42,7 +52,7 @@
     },
     "profile": {
       "name": "Usuário",
-      "plan": "Plano Pro"
+      "plan": "Rodando Localmente"
     }
   },
   "search": {
@@ -65,7 +75,15 @@
       "none": "Nenhum resultado encontrado para sua busca.",
       "score": "Score",
       "source": "Fonte",
-      "id": "ID"
+      "id": "ID",
+      "match": "CORRESPONDÊNCIA",
+      "hybrid_label": "HÍBRIDO",
+      "metadata": "Metadados do Sistema",
+      "type": "Tipo de Fonte",
+      "model": "Modelo de Embedding",
+      "tokens": "Contagem de Tokens",
+      "date": "Ingerido em",
+      "chunk_id": "ID do Chunk"
     }
   },
   "sources": {
@@ -82,7 +100,24 @@
       "status": "Status",
       "model": "Modelo",
       "origin": "Origem",
-      "none": "Nenhuma fonte encontrada."
+      "dimensions": "Dimensões",
+      "none": "Nenhuma fonte encontrada.",
+      "types": {
+        "all": "Todos os Tipos",
+        "video": "Vídeos",
+        "article": "Artigos",
+        "transcript": "Transcrições"
+      }
+    },
+    "chunks": {
+      "title": "Fontes > Chunks",
+      "subtitle": "Gerenciando segmentos armazenados no índice vetorial.",
+      "pagination": "Mostrando {{start}} a {{end}} de {{total}} resultados",
+      "page": "Página {{current}} de {{total}}",
+      "chars": "Caracteres",
+      "content_label": "Conteúdo",
+      "content_placeholder": "Digite o conteúdo do fragmento...",
+      "edit_warning": "Editar este conteúdo disparará uma re-indexação no banco de dados vetorial. Isso garante que as futuras buscas semânticas reflitam o texto atualizado."
     }
   },
   "activity": {
@@ -95,10 +130,147 @@
   },
   "settings": {
     "title": "Configurações",
+    "subtitle": "Gerencie as configurações do seu ambiente local",
+    "tabs": {
+      "api": "API",
+      "model": "Modelo",
+      "vector": "Vetorial",
+      "sql": "SQL",
+      "processing": "Processamento"
+    },
+    "sections": {
+      "statistics": "Estatísticas da Instância",
+      "environment": "Ambiente do Sistema",
+      "identifiers": "Identificadores Internos",
+      "details": "Detalhes do Ambiente"
+    },
+    "labels": {
+      "log_levels": "Níveis de Log",
+      "store_type": "Tipo de Store",
+      "production_ready": "Pronto para produção",
+      "collection_name": "Nome da Coleção",
+      "embedding_model": "Modelo de Embedding",
+      "status_stable": "Estável",
+      "status_active": "Ativo",
+      "model_desc": "Modelo de vetorização de texto",
+      "api_desc": "Conexão com o servidor de API",
+      "sql_desc": "Banco de dados relacional",
+      "endpoint": "Endpoint",
+      "environment": "Ambiente",
+      "model_path": "Caminho do Modelo",
+      "host": "Host",
+      "port": "Porta",
+      "collection": "Coleção",
+      "database": "Banco de Dados",
+      "type": "Tipo"
+    },
+    "checks": {
+      "test_db": "Testar DB",
+      "test_model": "Testar Modelo",
+      "test_store": "Testar Store",
+      "ping_api": "Ping API"
+    },
     "language": {
       "title": "Idioma da Interface",
       "en": "Inglês",
       "pt-BR": "Português (Brasil)"
+    }
+  },
+  "ingestion": {
+    "title": "Adicionar à Base de Conhecimento",
+    "subtitle": "Importe novo conteúdo para sua base vetorial",
+    "url": {
+      "label": "URL do YouTube",
+      "placeholder": "https://www.youtube.com/watch?v=..."
+    },
+    "subject": {
+      "label": "Base de Conhecimento Alvo",
+      "placeholder": "Selecione um contexto..."
+    },
+    "sources": {
+      "wikipedia": "Artigos e História",
+      "web": "Extrair qualquer URL",
+      "youtube": "Vídeo e Áudio",
+      "notion": "Sincronização Notion",
+      "file": "Arquivos Locais"
+    },
+    "coming_soon": {
+      "title": "Integração em Breve",
+      "description": "Estamos construindo a pipeline de dados para {{name}}. Estará disponível em uma atualização futura."
+    },
+    "options": {
+      "title": "Opções Avançadas",
+      "strategy": "Estratégia",
+      "optimized": "Otimizado",
+      "max_tokens": "Máximo de Tokens",
+      "tokens_fragment": "Máximo de tokens por fragmento",
+      "context_overlap": "Sobreposição de Contexto",
+      "shared_context": "Contexto compartilhado entre chunks",
+      "model_limit": "Limite do Modelo",
+      "tokens_label": "Tokens",
+      "strategies": {
+        "balanced": {
+          "name": "Equilibrado",
+          "description": "RAG de propósito geral",
+          "long_description": "Cobre a maioria dos casos de uso com boa precisão."
+        },
+        "granular": {
+          "name": "Granular",
+          "description": "Busca de fatos precisos",
+          "long_description": "Ideal para documentos técnicos e fatos específicos."
+        },
+        "context": {
+          "name": "Contexto Profundo",
+          "description": "Compreensão de textos longos",
+          "long_description": "Excelente para manter o fluxo narrativo."
+        },
+        "custom": {
+          "name": "Personalizado",
+          "name_label": "entrada personalizada",
+          "description": "Ajuste manual ativo para requisitos específicos",
+          "long_description": "Ajuste manual ativo para requisitos específicos."
+        }
+      },
+      "types": {
+        "video": "Vídeo",
+        "playlist": "Playlist",
+        "playlist_url": "URL da Playlist",
+        "video_url": "URL do Vídeo",
+        "playlist_desc": "Todos os vídeos da playlist serão extraídos, transcritos e divididos em blocos semânticos.",
+        "video_desc": "O áudio será automaticamente extraído, transcrito e dividido em blocos semânticos.",
+        "drag_drop": "Arraste e solte seu arquivo aqui",
+        "file_support": "Suporta PDF, TXT, CSV até 50MB",
+        "browse": "Procurar Arquivos",
+        "status": {
+          "chunking": "Dividindo texto...",
+          "vectorizing": "Vetorizando ({{model}})..."
+        }
+      }
+    },
+    "messages": {
+      "success": "Ingestão iniciada com sucesso!",
+      "error": "Falha ao iniciar a ingestão.",
+      "duplicate": "Esta fonte já existe neste contexto."
+    }
+  },
+  "notifications": {
+    "sync": {
+      "success": "Base de conhecimento sincronizada!",
+      "error": "Falha ao sincronizar base de conhecimento."
+    },
+    "subject": {
+      "created": "Base de Conhecimento \"{{name}}\" criada!",
+      "error": "Falha ao criar Base de Conhecimento."
+    },
+    "ingestion": {
+      "started": "Iniciado processamento de {{type}} para \"{{name}}\"...",
+      "complete": "Ingestão concluída para \"{{name}}\"!",
+      "duplicate": "Este conteúdo já foi ingerido. Pulando.",
+      "error": "Erro ao conectar com o servidor de ingestão."
+    },
+    "chunk": {
+      "updated": "Fragmento de conhecimento atualizado com sucesso!",
+      "error": "Falha ao atualizar fragmento."
     }
   },
   "chat": {

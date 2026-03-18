@@ -21,6 +21,7 @@ import {
     Zap
 } from 'lucide-react';
 import {useAppContext} from '../store/AppContext';
+import { useTranslation } from 'react-i18next';
 import {useIngestion} from '../hooks/useIngestion';
 
 interface AddContentModalProps {
@@ -38,14 +39,6 @@ interface SourceOption {
     enabled: boolean;
 }
 
-const SOURCES: SourceOption[] = [
-    {id: 'youtube', name: 'YouTube', description: 'Video & Audio', icon: Youtube, enabled: true},
-    {id: 'wikipedia', name: 'Wikipedia', description: 'Articles & History', icon: BookOpen, enabled: false},
-    {id: 'web', name: 'Web Article', description: 'Scrape any URL', icon: Globe, enabled: false},
-    {id: 'notion', name: 'Notion', description: 'Workspace Sync', icon: Database, enabled: false},
-    {id: 'file', name: 'Local Files', description: 'PDF, TXT, CSV', icon: FileUp, enabled: true},
-];
-
 interface Strategy {
     id: string;
     name: string;
@@ -54,33 +47,6 @@ interface Strategy {
     overlap: number;
     icon: React.ElementType;
 }
-
-const STRATEGIES: Strategy[] = [
-    {
-        id: 'balanced',
-        name: 'Balanced',
-        description: 'General purpose RAG',
-        tokens: 512,
-        overlap: 50,
-        icon: Zap
-    },
-    {
-        id: 'granular',
-        name: 'Granular',
-        description: 'Precise fact retrieval',
-        tokens: 300,
-        overlap: 30,
-        icon: Scissors
-    },
-    {
-        id: 'context',
-        name: 'Deep Context',
-        description: 'Long-form understanding',
-        tokens: 800,
-        overlap: 100,
-        icon: Layers
-    },
-];
 
 interface ProcessingStrategyProps {
     tokensPerChunk: number;
@@ -101,16 +67,24 @@ function ProcessingStrategy({
                                 setActiveStrategy,
                                 modelInfo
                             }: ProcessingStrategyProps) {
+    const { t } = useTranslation();
+    
+    const STRATEGIES: Strategy[] = [
+        { id: 'balanced', name: t('ingestion.options.strategies.balanced.name'), description: t('ingestion.options.strategies.balanced.description'), tokens: 512, overlap: 50, icon: Zap },
+        { id: 'granular', name: t('ingestion.options.strategies.granular.name'), description: t('ingestion.options.strategies.granular.description'), tokens: 300, overlap: 30, icon: Scissors },
+        { id: 'context', name: t('ingestion.options.strategies.context.name'), description: t('ingestion.options.strategies.context.description'), tokens: 800, overlap: 100, icon: Layers },
+    ];
+
     return (
         <div className="space-y-5">
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                     <Settings2 className="w-3.5 h-3.5 text-emerald-400"/>
-                    <h4 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Strategy</h4>
+                    <h4 className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">{t('ingestion.options.strategy')}</h4>
                 </div>
                 <span
                     className="text-[9px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-full font-medium border border-emerald-500/20">
-          Optimized
+          {t('ingestion.options.optimized')}
         </span>
             </div>
 
@@ -155,21 +129,21 @@ function ProcessingStrategy({
                         <div className="space-y-1">
                             <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1.5">
                                 <Scissors className="w-3 h-3 text-emerald-500"/>
-                                Maximum Tokens
+                                {t('ingestion.options.max_tokens')}
                                 {modelInfo?.max_seq_length && (
                                     <span
                                         className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded border border-zinc-700/50 ml-auto font-mono">
-                    Model Limit: {modelInfo.max_seq_length}
+                    {t('ingestion.options.model_limit')}: {modelInfo.max_seq_length}
                   </span>
                                 )}
                             </label>
-                            <p className="text-[10px] text-zinc-500 leading-tight">Maximum tokens per fragment</p>
+                            <p className="text-[10px] text-zinc-500 leading-tight">{t('ingestion.options.tokens_fragment')}</p>
                         </div>
                         <div className="flex items-baseline gap-1">
                             <span
                                 className="text-base font-mono font-bold text-emerald-400 leading-none">{tokensPerChunk}</span>
                             <span
-                                className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">Tokens</span>
+                                className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">{t('ingestion.options.tokens_label')}</span>
                         </div>
                     </div>
                     <input
@@ -192,15 +166,15 @@ function ProcessingStrategy({
                         <div className="space-y-1">
                             <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1.5">
                                 <Layers className="w-3 h-3 text-emerald-500"/>
-                                Context Overlap
+                                {t('ingestion.options.context_overlap')}
                             </label>
-                            <p className="text-[10px] text-zinc-500 leading-tight">Shared context between chunks</p>
+                            <p className="text-[10px] text-zinc-500 leading-tight">{t('ingestion.options.shared_context')}</p>
                         </div>
                         <div className="flex items-baseline gap-1">
                             <span
                                 className="text-base font-mono font-bold text-emerald-400 leading-none">{tokensOverlap}</span>
                             <span
-                                className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">Tokens</span>
+                                className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">{t('ingestion.options.tokens_label')}</span>
                         </div>
                     </div>
                     <input
@@ -223,13 +197,13 @@ function ProcessingStrategy({
                 <Activity className="w-3.5 h-3.5 text-emerald-500/50 flex-shrink-0 animate-pulse"/>
                 <div className="flex-1">
                     <p className="text-[9px] text-zinc-500 italic leading-tight">
-                        Optimized for <span
-                        className="text-emerald-500/80 font-bold">{activeStrategy === 'custom' ? 'custom input' : activeStrategy}</span> retrieval.
+                        {t('ingestion.options.optimized')} for <span
+                        className="text-emerald-500/80 font-bold">{activeStrategy === 'custom' ? t('ingestion.options.strategies.custom.name') : activeStrategy}</span> retrieval.
                         <span className="block mt-0.5 opacity-60">
-               {activeStrategy === 'balanced' && 'Covers most use cases with good accuracy.'}
-                            {activeStrategy === 'granular' && 'Best for technical docs and specific facts.'}
-                            {activeStrategy === 'context' && 'Excellent for maintaining narrative flow.'}
-                            {activeStrategy === 'custom' && 'Manual override active for specific requirements.'}
+               {activeStrategy === 'balanced' && t('ingestion.options.strategies.balanced.long_description')}
+                            {activeStrategy === 'granular' && t('ingestion.options.strategies.granular.long_description')}
+                            {activeStrategy === 'context' && t('ingestion.options.strategies.context.long_description')}
+                            {activeStrategy === 'custom' && t('ingestion.options.strategies.custom.long_description')}
              </span>
                     </p>
                 </div>
@@ -239,8 +213,18 @@ function ProcessingStrategy({
 }
 
 export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
+    const { t } = useTranslation();
     const {subjects, selectedSubjects, modelInfo} = useAppContext();
     const {startIngestion} = useIngestion();
+    
+    const SOURCES: SourceOption[] = [
+        {id: 'youtube', name: 'YouTube', description: 'Video & Audio', icon: Youtube, enabled: true},
+        {id: 'wikipedia', name: 'Wikipedia', description: t('ingestion.sources.wikipedia'), icon: BookOpen, enabled: false},
+        {id: 'web', name: 'Web Article', description: t('ingestion.sources.web'), icon: Globe, enabled: false},
+        {id: 'notion', name: 'Notion', description: 'Workspace Sync', icon: Database, enabled: false},
+        {id: 'file', name: 'Local Files', description: 'PDF, TXT, CSV', icon: FileUp, enabled: true},
+    ];
+
     const [contentType, setContentType] = useState<ContentType>('youtube');
     const [inputValue, setInputValue] = useState('');
     const [targetSubjectId, setTargetSubjectId] = useState(selectedSubjects[0]?.id || subjects[0]?.id);
@@ -358,16 +342,16 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-border-subtle bg-black/20">
                     <div>
-                        <h2 className="text-lg font-semibold text-zinc-100">Add to Knowledge Base</h2>
+                        <h2 className="text-lg font-semibold text-zinc-100">{t('ingestion.title')}</h2>
                         <div className="text-xs text-zinc-500 mt-1 flex items-center gap-2 relative">
-                            Target Context:
+                            {t('ingestion.subject.label')}:
                             <button
                                 type="button"
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className="flex items-center gap-2 bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 hover:border-zinc-600 rounded-lg px-2.5 py-1.5 text-emerald-400 font-medium transition-colors"
                             >
                                 <span
-                                    className="truncate max-w-[180px]">{selectedTarget?.name || 'Select context...'}</span>
+                                    className="truncate max-w-[180px]">{selectedTarget?.name || t('ingestion.subject.placeholder')}</span>
                                 <ChevronDown className="w-3.5 h-3.5 opacity-70"/>
                             </button>
 
@@ -383,7 +367,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                 <input
                                                     type="text"
                                                     autoFocus
-                                                    placeholder="Search contexts..."
+                                                    placeholder={t('sidebar.contexts.placeholder')}
                                                     value={subjectSearch}
                                                     onChange={e => setSubjectSearch(e.target.value)}
                                                     className="w-full bg-black/40 border border-zinc-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500/50 transition-colors"
@@ -392,8 +376,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                         </div>
                                         <div className="max-h-[200px] overflow-y-auto p-1 custom-scrollbar">
                                             {filteredSubjects.length === 0 ? (
-                                                <div className="p-3 text-xs text-zinc-500 text-center">No contexts
-                                                    found</div>
+                                                <div className="p-3 text-xs text-zinc-500 text-center">{t('sidebar.contexts.none')}</div>
                                             ) : (
                                                 filteredSubjects.map(s => (
                                                     <button
@@ -431,8 +414,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                     {/* Left Sidebar: Source Selection */}
                     <div
                         className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-border-subtle bg-black/20 p-4 flex flex-col gap-2 overflow-y-auto">
-                        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">Data
-                            Sources</h3>
+                        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">{t('sidebar.operations.sources')}</h3>
                         {SOURCES.map((source) => {
                             const Icon = source.icon;
                             const isSelected = contentType === source.id;
@@ -486,7 +468,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                     }`}
                                 >
                                     <Zap className="w-3.5 h-3.5"/>
-                                    Source
+                                    {t('search.results.source')}
                                 </button>
                                 <button
                                     type="button"
@@ -498,7 +480,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                     }`}
                                 >
                                     <Settings2 className="w-3.5 h-3.5"/>
-                                    Processing
+                                    {t('settings.tabs.processing')}
                                 </button>
                             </div>
 
@@ -510,7 +492,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                     </div>
                                     <div>
                                         <h3 className="text-sm font-medium text-zinc-200">
-                                            Configure {selectedSource.name}
+                                            {t('common.actions.addData')} {selectedSource.name}
                                         </h3>
                                         <p className="text-[11px] text-zinc-500">
                                             {selectedSource.description}
@@ -539,7 +521,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                             }`}
                                                         >
                                                             <Youtube className="w-3.5 h-3.5"/>
-                                                            Video
+                                                            {t('ingestion.options.types.video')}
                                                         </button>
                                                         <button
                                                             type="button"
@@ -549,21 +531,19 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                             }`}
                                                         >
                                                             <ListVideo className="w-3.5 h-3.5"/>
-                                                            Playlist
+                                                            {t('ingestion.options.types.playlist')}
                                                         </button>
                                                     </div>
 
                                                     <label className="text-sm font-medium text-zinc-300">
-                                                        {youtubeDataType === 'playlist' ? 'Playlist URL' : 'Video URL'}
+                                                        {youtubeDataType === 'playlist' ? t('ingestion.options.types.playlist_url') : t('ingestion.url.label')}
                                                     </label>
                                                     <input
                                                         type="url"
                                                         required
                                                         value={inputValue}
                                                         onChange={(e) => setInputValue(e.target.value)}
-                                                        placeholder={youtubeDataType === 'playlist'
-                                                            ? 'https://youtube.com/playlist?list=...'
-                                                            : 'https://youtube.com/watch?v=...'}
+                                                        placeholder={youtubeDataType === 'playlist' ? t('ingestion.options.types.playlist_url') : t('ingestion.url.placeholder')}
                                                         className="w-full bg-black/40 border border-border-subtle rounded-xl px-4 py-3 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-zinc-600 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
                                                     />
                                                     <div
@@ -572,8 +552,8 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                             className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0"/>
                                                         <p className="text-xs text-zinc-400 leading-relaxed">
                                                             {youtubeDataType === 'playlist'
-                                                                ? 'All videos from the playlist will be extracted, transcribed, and chunked into semantic blocks for the selected context.'
-                                                                : 'The audio will be automatically extracted, transcribed, and chunked into semantic blocks for the selected context.'}
+                                                                ? t('ingestion.options.types.playlist_desc')
+                                                                : t('ingestion.coming_soon.description', { name: 'YouTube' })}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -591,13 +571,12 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                         >
                                                             <UploadCloud
                                                                 className={`w-10 h-10 mb-3 ${isDragging ? 'text-emerald-400' : 'text-zinc-500'}`}/>
-                                                            <p className="text-sm font-medium text-zinc-300 mb-1">Drag
-                                                                and drop your file here</p>
+                                                            <p className="text-sm font-medium text-zinc-300 mb-1">{t('ingestion.coming_soon.title')}</p>
                                                             <p className="text-xs text-zinc-500 mb-4">Supports PDF, TXT,
                                                                 CSV up to 50MB</p>
                                                             <label
                                                                 className="cursor-pointer px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium rounded-lg transition-colors border border-zinc-700">
-                                                                Browse Files
+                                                                {t('common.actions.addData')}
                                                                 <input type="file" className="hidden"
                                                                        accept=".pdf,.txt,.csv"
                                                                        onChange={handleFileChange}/>
@@ -630,7 +609,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                                     <div
                                                                         className="flex justify-between text-xs font-medium">
                                   <span className={uploadStatus === 'chunking' ? 'text-emerald-400' : 'text-zinc-400'}>
-                                    {uploadStatus === 'chunking' ? 'Chunking text...' : uploadStatus === 'vectorizing' ? 'Vectorizing (bge-m3)...' : 'Done!'}
+                                    {uploadStatus === 'chunking' ? t('common.actions.syncing') : uploadStatus === 'vectorizing' ? t('common.actions.syncing') : t('common.status.done')}
                                   </span>
                                                                         <span
                                                                             className="text-zinc-400">{progress}%</span>
@@ -652,11 +631,9 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                             <div
                                                 className="flex flex-col items-center justify-center text-center p-6 border border-dashed border-zinc-800 rounded-xl bg-black/20 animate-in fade-in duration-300">
                                                 <Lock className="w-8 h-8 text-zinc-600 mb-3"/>
-                                                <h4 className="text-sm font-medium text-zinc-300">Integration Coming
-                                                    Soon</h4>
+                                                <h4 className="text-sm font-medium text-zinc-300">{t('ingestion.coming_soon.title')}</h4>
                                                 <p className="text-xs text-zinc-500 mt-2 max-w-[250px]">
-                                                    We are currently building the data pipeline
-                                                    for {selectedSource?.name}. It will be available in a future update.
+                                                    {t('ingestion.coming_soon.description', { name: selectedSource?.name })}
                                                 </p>
                                             </div>
                                         )
@@ -676,14 +653,14 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                     onClick={onClose}
                                     className="px-4 py-2.5 text-sm font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
                                 >
-                                    Cancel
+                                    {t('common.actions.cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={!selectedSource?.enabled || (contentType === 'youtube' && !inputValue.trim()) || (contentType === 'file' && !selectedFile) || uploadStatus !== 'idle'}
                                     className="px-6 py-2.5 text-sm font-medium text-black bg-emerald-500 rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.15)] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                                 >
-                                    Start Ingestion
+                                    {t('common.actions.addData')}
                                 </button>
                             </div>
                         </form>

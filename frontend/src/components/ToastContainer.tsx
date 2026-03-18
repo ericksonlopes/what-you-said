@@ -19,11 +19,10 @@ export function ToastContainer() {
         const borderColor = isSuccess ? 'border-emerald-500/20' : isError ? 'border-rose-500/20' : 'border-blue-500/20';
 
         return (
-          <div 
-            key={toast.id} 
-            className="pointer-events-auto flex items-start gap-3 p-4 rounded-xl border border-border-subtle bg-[#18181b] shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300 max-w-sm w-full"
-          >
-            <div className={`p-1.5 rounded-lg ${bgColor} ${borderColor} border flex-shrink-0 mt-0.5`}>
+          <div
+            key={toast.id}
+            className="pointer-events-auto flex items-center gap-3 p-4 rounded-xl border border-border-subtle bg-[#18181b] shadow-2xl animate-in slide-in-from-bottom-5 fade-in duration-300 max-w-sm w-full"
+          >            <div className={`p-1.5 rounded-lg ${bgColor} ${borderColor} border flex-shrink-0 mt-0.5`}>
               <Icon className={`w-4 h-4 ${iconColor}`} />
             </div>
             <div className="flex-1 min-w-0">

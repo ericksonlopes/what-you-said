@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../store/AppContext';
 import { Subject } from '../types';
 import { api } from '../services/api';
 
 export function useIngestion() {
+  const { t } = useTranslation();
   const { addToast, addOptimisticJob, refreshJobs } = useAppContext();
 
   const startIngestion = useCallback(async (
@@ -17,7 +19,7 @@ export function useIngestion() {
     if (!targetSubject) return;
 
     // 1. Feedback imediato para o usuário
-    addToast(`Started processing ${type} for "${targetSubject.name}"...`, 'info');
+    addToast(t('notifications.ingestion.started', { type, name: targetSubject.name }), 'info');
     
     // 2. Add optimistic job card immediately in Activity Monitor
     addOptimisticJob(`Ingesting ${type} for "${targetSubject.name}"...`);
@@ -32,16 +34,16 @@ export function useIngestion() {
       });
 
       if (response && response.job_id) {
-        addToast(`Ingestion complete for "${targetSubject.name}"!`, 'success');
+        addToast(t('notifications.ingestion.complete', { name: targetSubject.name }), 'success');
       } else {
-        addToast(`Ingestion complete for "${targetSubject.name}"!`, 'success');
+        addToast(t('notifications.ingestion.complete', { name: targetSubject.name }), 'success');
       }
     } catch (error: any) {
       console.error('Ingestion error:', error);
       if (error?.message === 'DUPLICATE_SOURCE') {
-        addToast('This content has already been ingested. Skipping.', 'error');
+        addToast(t('notifications.ingestion.duplicate'), 'error');
       } else {
-        addToast('Error connecting to the ingestion server.', 'error');
+        addToast(t('notifications.ingestion.error'), 'error');
       }
     } finally {
       // 3. Refresh jobs to replace optimistic card with real server data

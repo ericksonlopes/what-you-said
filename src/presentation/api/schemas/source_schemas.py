@@ -7,8 +7,8 @@ from pydantic import BaseModel, ConfigDict
 class SourceResponse(BaseModel):
     id: UUID
     title: Optional[str] = None
-    status: str
-    processing_status: str
+    status: Optional[str] = "active"
+    processing_status: Optional[str] = "pending"
     source_type: str
     subject_id: UUID
     external_source: Optional[str] = None

@@ -58,13 +58,13 @@ export function Sidebar() {
       {/* Context Selector (Subjects) */}
       <div className="flex flex-col flex-1 min-h-0 border-b border-border-subtle">
         <div className="p-4 pb-2 flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-2">
+          <h2 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-2 whitespace-nowrap overflow-hidden text-ellipsis">
             {t('sidebar.contexts.title')}
           </h2>
           <button 
             onClick={() => setIsAddSubjectModalOpen(true)}
             className="group p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-            title="Create new context"
+            title={t('sidebar.contexts.create')}
           >
             <Plus className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" />
           </button>
@@ -102,7 +102,7 @@ export function Sidebar() {
                       ? 'bg-zinc-800 text-white font-medium shadow-sm'
                       : 'text-zinc-400 hover:bg-panel-hover hover:text-zinc-200'
                   }`}
-                  title="Click to toggle"
+                  title={t('sidebar.contexts.toggle')}
                 >
                   <div className="flex items-center gap-3 truncate pr-8">
                     {isSelected ? (

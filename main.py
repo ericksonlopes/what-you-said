@@ -20,14 +20,6 @@ logger = setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up WhatYouSaid API...")
-    try:
-        from src.infrastructure.repositories.sql.connector import Base, engine
-
-        # In development, auto-create tables if they don't exist.
-        Base.metadata.create_all(bind=engine)
-        logger.info("Database tables verified/created.")
-    except Exception as e:
-        logger.error(f"Error initializing database: {e}")
 
     try:
         from src.config.settings import Settings
@@ -92,4 +84,4 @@ def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="localhost", port=5000, reload=True, log_config=None)
+    uvicorn.run("main:app", host="127.0.0.1", port=5000, reload=True, log_config=None)

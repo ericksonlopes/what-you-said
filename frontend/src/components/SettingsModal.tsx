@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Languages } from 'lucide-react';
 import { 
   X, Settings, Activity, Database, 
   Box, Server, Terminal, Key, Shield, 
-  CheckCircle2, XCircle, Loader2, Eye, EyeOff
+  CheckCircle2, XCircle, Loader2, Eye, EyeOff,
+  Languages
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../services/api';
@@ -64,7 +64,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white tracking-tight">{t('settings.title')}</h2>
-                <p className="text-xs text-zinc-500">Manage your local environment configurations</p>
+                <p className="text-xs text-zinc-500">{t('settings.subtitle')}</p>
               </div>
             </div>
             <button
@@ -108,7 +108,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </div>
 
             {loading && !settingsData ? (
-              <div className="flex items-center justify-center h-full gap-3 text-zinc-500">
+              <div className="flex items-center justify-center h-full gap-3 text-zinc-500 py-20">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 {t('activity.loading')}
               </div>
@@ -123,88 +123,89 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 }
 
 function UnifiedSettings({ settings }: { settings: any }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-10 pb-4">
       {/* Bento Grid Info */}
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Environment Details</h3>
+        <h3 className="text-lg font-medium text-white mb-4">{t('settings.sections.environment')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <DetailedEnvCard 
-            title="Backend API" 
+            title={t('settings.tabs.api')} 
             value={settings?.app?.env || "UNKNOWN"} 
-            description="Core API server connection"
+            description={t('settings.labels.api_desc')}
             details={[
-              { label: "Endpoint", value: window.location.origin },
-              { label: "Environment", value: settings?.app?.env || 'n/a' }
+              { label: t('settings.labels.endpoint'), value: window.location.origin },
+              { label: t('settings.labels.environment'), value: settings?.app?.env || 'n/a' }
             ]}
             icon={Terminal} 
             color="text-purple-400" 
             bg="bg-purple-500/10" 
-            checkLabel="Ping API"
+            checkLabel={t('settings.checks.ping_api')}
             componentId="api"
           />
           <DetailedEnvCard 
-            title="Embedding Model" 
+            title={t('settings.labels.embedding_model')} 
             value={settings?.model?.name?.split('/').pop() || "n/a"} 
-            description="Text vectorization model"
+            description={t('settings.labels.model_desc')}
             details={[
-              { label: "Model Path", value: settings?.model?.name || 'n/a' },
-              { label: "Status", value: "Loaded" }
+              { label: t('settings.labels.model_path'), value: settings?.model?.name || 'n/a' },
+              { label: t('sources.table.status'), value: "Loaded" }
             ]}
             icon={Box} 
             color="text-emerald-400" 
             bg="bg-emerald-500/10" 
-            checkLabel="Test Model"
+            checkLabel={t('settings.checks.test_model')}
             componentId="model"
           />
           <DetailedEnvCard 
-            title="Vector Store" 
+            title={t('settings.labels.store_type')} 
             value={settings?.vector?.store_type?.toUpperCase() || "n/a"} 
-            description="Semantic search database"
+            description={t('settings.labels.production_ready')}
             details={[
-              { label: "Host", value: settings?.vector?.weaviate_host || 'n/a' },
-              { label: "Port", value: settings?.vector?.weaviate_port?.toString() || 'n/a' },
-              { label: "Collection", value: settings?.vector?.weaviate_collection || 'n/a' }
+              { label: t('settings.labels.host'), value: settings?.vector?.weaviate_host || 'n/a' },
+              { label: t('settings.labels.port'), value: settings?.vector?.weaviate_port?.toString() || 'n/a' },
+              { label: t('settings.labels.collection'), value: settings?.vector?.weaviate_collection || 'n/a' }
             ]}
             icon={Database} 
             color="text-blue-400" 
             bg="bg-blue-500/10" 
-            checkLabel="Test Store"
+            checkLabel={t('settings.checks.test_store')}
             componentId="vector"
           />
           <DetailedEnvCard 
-            title="SQL Driver" 
+            title={t('settings.labels.sql_desc')} 
             value={settings?.sql?.type || "n/a"} 
-            description="Relational database"
+            description={t('settings.labels.sql_desc')}
             details={[
-              { label: "Database", value: settings?.sql?.database || 'n/a' },
-              { label: "Type", value: settings?.sql?.type || 'n/a' }
+              { label: t('settings.labels.database'), value: settings?.sql?.database || 'n/a' },
+              { label: t('settings.labels.type'), value: settings?.sql?.type || 'n/a' }
             ]}
             icon={Server} 
             color="text-amber-400" 
             bg="bg-amber-500/10" 
-            checkLabel="Test DB"
+            checkLabel={t('settings.checks.test_db')}
             componentId="sql"
           />
         </div>
       </div>
 
-      {/* Real-time Metrics (Mock for now but could be connected) */}
+      {/* Real-time Metrics */}
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Instance Statistics</h3>
+        <h3 className="text-lg font-medium text-white mb-4">{t('settings.sections.statistics')}</h3>
         <div className="grid grid-cols-3 gap-4">
-          <MetricCard title="System Environment" value={settings?.app?.env?.toUpperCase() || "N/A"} trend="Stable" />
-          <MetricCard title="Log Levels" value={settings?.app?.log_levels?.split(',')[0] || "INFO"} trend="Active" />
-          <MetricCard title="Store Type" value={settings?.vector?.store_type || "N/A"} trend="Production ready" />
+          <MetricCard title={t('settings.sections.environment')} value={settings?.app?.env?.toUpperCase() || "N/A"} trend={t('settings.labels.status_stable')} />
+          <MetricCard title={t('settings.labels.log_levels')} value={settings?.app?.log_levels?.split(',')[0] || "INFO"} trend={t('settings.labels.status_active')} />
+          <MetricCard title={t('settings.labels.store_type')} value={settings?.vector?.store_type || "N/A"} trend={t('settings.labels.production_ready')} />
         </div>
       </div>
 
-      {/* API Keys */}
+      {/* Identifiers */}
       <div>
-        <h3 className="text-lg font-medium text-white mb-4">Internal Identifiers</h3>
+        <h3 className="text-lg font-medium text-white mb-4">{t('settings.sections.identifiers')}</h3>
         <div className="space-y-3">
-          <InfoRow label="Collection Name" value={settings?.vector?.weaviate_collection || "n/a"} />
-          <InfoRow label="Embedding Model" value={settings?.model?.name || "n/a"} />
+          <InfoRow label={t('settings.labels.collection_name')} value={settings?.vector?.weaviate_collection || "n/a"} />
+          <InfoRow label={t('settings.labels.embedding_model')} value={settings?.model?.name || "n/a"} />
         </div>
       </div>
     </div>
@@ -251,6 +252,7 @@ function DetailedEnvCard({
   checkLabel?: string,
   componentId: string
 }) {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<'unknown' | 'loading' | 'success' | 'error'>('unknown');
   const [latency, setLatency] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -310,13 +312,13 @@ function DetailedEnvCard({
             {status === 'unknown' && (
               <>
                 <div className="w-1.5 h-1.5 rounded-full bg-zinc-500"></div>
-                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">Status Unknown</span>
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium">{t('common.status.unknown')}</span>
               </>
             )}
             {status === 'loading' && (
               <>
                 <Loader2 className="w-3 h-3 text-blue-400 animate-spin" />
-                <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">Checking...</span>
+                <span className="text-[10px] text-blue-400 uppercase tracking-wider font-medium">{t('common.actions.syncing')}</span>
               </>
             )}
             {status === 'success' && (
