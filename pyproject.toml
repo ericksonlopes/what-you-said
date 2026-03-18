@@ -33,10 +33,11 @@ mysql = [
     "cryptography>=44.0.0",
 ]
 mariadb = [
-    "mariadb",
+    "pymysql>=1.1.1",
+    "cryptography>=44.0.0",
 ]
 mssql = [
-    "pymssql",
+    "python-tds>=1.15.0",
 ]
 postgres = [
     "psycopg2-binary>=2.9.10",

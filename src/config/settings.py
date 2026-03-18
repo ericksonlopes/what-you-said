@@ -25,10 +25,10 @@ class SQLConfig(BaseSettings):
             return f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
         if self.type == "mariadb":
-            return f"mariadb+mariadbconnector://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+            return f"mariadb+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
         if self.type == "mssql":
-            return f"mssql+pymssql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+            return f"mssql+pytds://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
         return "sqlite:///app.sqlite"
 
