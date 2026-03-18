@@ -106,7 +106,8 @@
         "all": "All Types",
         "video": "Videos",
         "article": "Articles",
-        "transcript": "Transcripts"
+        "transcript": "Transcripts",
+        "youtube": "YouTube"
       }
     },
     "chunks": {

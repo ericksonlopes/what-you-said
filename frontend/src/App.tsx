@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {useTranslation} from 'react-i18next';
-import {ChevronLeft, ChevronRight, Plus, RefreshCw, Search} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Plus, RefreshCw, Search, Database} from 'lucide-react';
 import {AppProvider, useAppContext} from './store/AppContext';
 import {Sidebar} from './components/Sidebar';
 import {TaskCard} from './components/TaskCard';
@@ -149,7 +149,10 @@ function ContentSourcesView() {
     <div className="p-8 max-w-6xl mx-auto h-full flex flex-col">
       <div className="mb-8 flex justify-between items-center">
         <div>
+        <div className="flex items-center gap-3">
+          <Database className="w-10 h-10 text-emerald-500" />
           <h2 className="text-2xl font-bold text-white tracking-tight">{t('sources.title')}</h2>
+        </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-zinc-400">
               {selectedSubjects.length > 0 
