@@ -37,8 +37,8 @@ When triggered, follow these steps in order. If any step fails, stop immediately
 - Run `pytest` to execute the full test suite.
 - Ensure all tests pass.
 
-### 7. Final Commit
-- Only if all previous steps passed, perform the git commit.
+## Final Commit
+- **ZERO TOLERANCE**: Only if ALL previous steps passed with **zero remaining issues** (0 ruff errors, 0 mypy errors, 100% pytest success), perform the git commit.
 - Use a clear, concise, and descriptive commit message that follows the project's established style.
 - Confirm the successful commit with `git status`.
 

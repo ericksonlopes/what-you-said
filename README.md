@@ -113,8 +113,9 @@ We use **Pydantic Settings** with double underscores (`__`) for nested configura
 | :--- | :--- | :--- |
 | **Application** | `APP__` | `APP__ENV`, `APP__LIST_LOG_LEVELS` |
 | **SQL Database** | `SQL__` | `SQL__TYPE`, `SQL__HOST`, `SQL__USER`, `SQL__PASSWORD` |
-| **Vector Store** | `VECTOR__` | `VECTOR__STORE_TYPE`, `VECTOR__WEAVIATE_HOST` |
+| **Vector Store** | `VECTOR__` | `VECTOR__STORE_TYPE`, `VECTOR__WEAVIATE_HOST`, `VECTOR__CHROMA_HOST` |
 | **Embeddings** | `MODEL_EMBEDDING__` | `MODEL_EMBEDDING__NAME` |
+| **Re-ranking** | `MODEL_RERANK__` | `MODEL_RERANK__NAME` |
 
 > 💡 **Full Reference**: For a complete list of all available variables and their default values, check the [Configuration Reference in our Deployment Guide](docs/docker-deployment.md#configuration-reference).
 

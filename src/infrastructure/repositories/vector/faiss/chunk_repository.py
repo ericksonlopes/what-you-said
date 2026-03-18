@@ -266,9 +266,15 @@ class ChunkFAISSRepository(IVectorRepository):
             # For FAISS, the content is the most reliable join key
             import hashlib
 
-            content_str = (model.content or "").strip()
-            content_hash = hashlib.md5(content_str.encode("utf-8")).hexdigest()
-            return content_hash
+            try:
+                content_str = (model.content or "").strip()
+                content_hash = hashlib.md5(
+                    content_str.encode("utf-8"), usedforsecurity=False
+                ).hexdigest()
+                return content_hash
+            except TypeError:
+                # Fallback for older python versions if needed, though 3.12+ supports it
+                return hashlib.md5(content_str.encode("utf-8")).hexdigest()  # nosec B324
 
         for rank, model in enumerate(semantic_results):
             key = _doc_key(model)

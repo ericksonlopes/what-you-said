@@ -87,18 +87,26 @@ class ContentSourceSQLRepository:
                 raise
 
     def get_by_source_info(
-        self, source_type: str, external_source: str
+        self, source_type: str, external_source: str, subject_id: Optional[UUID] = None
     ) -> List[ContentSourceModel]:
         with Connector() as session:
             try:
-                extra = {"source_type": source_type, "external_source": external_source}
+                extra = {
+                    "source_type": source_type,
+                    "external_source": external_source,
+                    "subject_id": subject_id,
+                }
                 logger.debug("Fetching ContentSources by source info", context=extra)
-                result = (
-                    session.query(ContentSourceModel)
-                    .filter_by(source_type=source_type, external_source=external_source)
-                    .order_by(ContentSourceModel.created_at.desc())
-                    .all()
+
+                query = session.query(ContentSourceModel).filter_by(
+                    source_type=source_type, external_source=external_source
                 )
+
+                if subject_id is not None:
+                    query = query.filter_by(subject_id=subject_id)
+
+                result = query.order_by(ContentSourceModel.created_at.desc()).all()
+
                 logger.debug(
                     "Fetch successful", context={**extra, "count": len(result)}
                 )

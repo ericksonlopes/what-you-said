@@ -61,18 +61,24 @@ class ContentSourceService:
         return entity
 
     def get_by_source_info(
-        self, source_type: SourceType, external_source: str
+        self,
+        source_type: SourceType,
+        external_source: str,
+        subject_id: Optional[UUID] = None,
     ) -> Optional[ContentSourceEntity]:
-        """Get a content source by its source_type and external_source."""
+        """Get a content source by its source_type, external_source, and optionally subject_id."""
         self._logger.debug(
-            "Getting content source by source_type and external_source",
+            "Getting content source by source_info",
             context={
                 "source_type": source_type.value,
                 "external_source": external_source,
+                "subject_id": subject_id,
             },
         )
         list_models = self._repo.get_by_source_info(
-            source_type=source_type.value, external_source=external_source
+            source_type=source_type.value,
+            external_source=external_source,
+            subject_id=subject_id,
         )
 
         return (

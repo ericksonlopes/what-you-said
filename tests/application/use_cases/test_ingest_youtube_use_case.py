@@ -29,7 +29,7 @@ def make_cs_service(existing: bool = False):
             self.created = None
             self._repo = SimpleNamespace(update_title=lambda **kwargs: None)
 
-        def get_by_source_info(self, source_type, external_source):
+        def get_by_source_info(self, source_type, external_source, **kwargs):
             return (
                 SimpleNamespace(
                     id=uuid.uuid4(),

@@ -57,7 +57,11 @@ class ContentSourceModel(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("external_source", name="uq_content_source_external_source"),
+        UniqueConstraint(
+            "external_source",
+            "subject_id",
+            name="uq_content_source_external_source_per_subject",
+        ),
         Index("ix_content_sources_subject_id", "subject_id"),
         Index("ix_content_sources_source_type", "source_type"),
         Index("ix_content_sources_status", "status"),

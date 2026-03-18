@@ -232,7 +232,7 @@ class IngestYoutubeUseCase:
             "Processing video", context={"video_id": video_id, "video_url": video_url}
         )
 
-        existing = self._check_existing_source(video_id)
+        existing = self._check_existing_source(video_id, subject.id)
         if existing and existing.processing_status == "done":
             logger.info(
                 "Source already exists and is DONE, skipping ingestion",
@@ -511,12 +511,15 @@ class IngestYoutubeUseCase:
         )
         raise ValueError("Either subject_id or subject_name must be provided")
 
-    def _check_existing_source(self, video_id: str):
+    def _check_existing_source(self, video_id: str, subject_id: Optional[UUID] = None):
         logger.debug(
-            "Checking existing content source", context={"external_source": video_id}
+            "Checking existing content source",
+            context={"external_source": video_id, "subject_id": subject_id},
         )
         return self.cs_service.get_by_source_info(
-            source_type=SourceType.YOUTUBE, external_source=video_id
+            source_type=SourceType.YOUTUBE,
+            external_source=video_id,
+            subject_id=subject_id,
         )
 
     def _create_content_source(
