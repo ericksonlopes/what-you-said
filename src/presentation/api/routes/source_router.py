@@ -24,7 +24,7 @@ def get_sources(cs_service: Annotated[ContentSourceService, Depends(get_cs_servi
         sources = cs_service.list_all()
         return sources
     except Exception as e:
-        logger.error(f"Error fetching sources: {e}", exc_info=True)
+        logger.error(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -44,5 +44,5 @@ def get_model_info(
             "max_seq_length": model_loader.max_seq_length,
         }
     except Exception as e:
-        logger.error(f"Error fetching models info: {e}")
+        logger.error(e)
         raise HTTPException(status_code=500, detail="Internal server error")
