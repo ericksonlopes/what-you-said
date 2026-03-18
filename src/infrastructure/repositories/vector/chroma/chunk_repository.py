@@ -24,11 +24,12 @@ class ChunkChromaRepository(IVectorRepository):
         self._embedding_service = embedding_service
         self._collection_name = collection_name
         self._vector_store: Optional[Any] = None
-
+        self._chroma_client: Optional[Any] = None
+        
         try:
             import chromadb
             from langchain_chroma import Chroma
-
+            
             # Connect to ChromaDB HTTP client
             self._chroma_client = chromadb.HttpClient(host=host, port=port)
 

@@ -14,7 +14,7 @@ class SQLConfig(BaseSettings):
     port: Optional[str] = Field(default=None, description="SQL database port")
     user: Optional[str] = Field(default=None, description="SQL database username")
     password: Optional[str] = Field(default=None, description="SQL database password")
-    database: Optional[str] = Field(default=None, description="SQL database name")
+    database: str = Field(default="whatyousaid", description="SQL database name")
 
     @property
     def url(self) -> str:
@@ -30,7 +30,7 @@ class SQLConfig(BaseSettings):
         if self.type == "mssql":
             return f"mssql+pytds://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
-        return "sqlite:///app.sqlite"
+        return "sqlite:////data/app/app.sqlite"
 
 
 class VectorConfig(BaseSettings):
@@ -39,7 +39,7 @@ class VectorConfig(BaseSettings):
         description="Type of vector store to use (CHROMA, WEAVIATE, FAISS)",
     )
     vector_index_path: str = Field(
-        default="./vector_index",
+        default="/data/app/vector_index",
         description="Path to store vector index files (for Chroma and FAISS)",
     )
 

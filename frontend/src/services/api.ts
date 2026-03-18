@@ -32,7 +32,8 @@ export const api = {
       chunkCount: s.chunks || 0,
       model: s.embedding_model,
       dimensions: s.dimensions,
-      origin: s.external_source
+      origin: s.external_source,
+      processingStatus: s.processing_status || 'unknown'
     }));
   },
 

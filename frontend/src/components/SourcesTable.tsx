@@ -123,6 +123,7 @@ export function SourcesTable({
               <th className="px-6 py-3 font-medium">Origin</th>
               <th className="px-6 py-3 font-medium">Type</th>
               <th className="px-6 py-3 font-medium text-right">Chunks</th>
+              <th className="px-6 py-3 font-medium text-center">Status</th>
               <th className="px-6 py-3 font-medium">Model</th>
               <th className="px-6 py-3 font-medium">Dimensions</th>
               <th className="px-6 py-3 font-medium">Date Indexed</th>
@@ -146,6 +147,17 @@ export function SourcesTable({
                 <td className="px-6 py-4 text-zinc-400 text-sm">{source.origin || 'Unknown'}</td>
                 <td className="px-6 py-4 capitalize">{source.type}</td>
                 <td className="px-6 py-4 text-right font-mono text-xs">{source.chunkCount}</td>
+                <td className="px-6 py-4 text-center">
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                    ['done', 'finished', 'active', 'ingested'].includes(source.processingStatus.toLowerCase())
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : ['failed', 'error'].includes(source.processingStatus.toLowerCase())
+                      ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse'
+                  }`}>
+                    {source.processingStatus.toUpperCase()}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-xs font-mono text-zinc-400">{source.model || 'Unknown'}</td>
                 <td className="px-6 py-4 text-xs font-mono text-zinc-400">{source.dimensions || '-'}</td>
                 <td className="px-6 py-4">{new Date(source.date).toLocaleDateString()}</td>

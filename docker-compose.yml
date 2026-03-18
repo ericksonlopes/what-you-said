@@ -17,7 +17,6 @@ services:
       - APP__LIST_LOG_LEVELS=INFO,DEBUG,WARNING,ERROR,CRITICAL
       - MODEL_EMBEDDING__NAME=${MODEL_EMBEDDING__NAME:-BAAI/bge-m3}
       - VECTOR__STORE_TYPE=${VECTOR__STORE_TYPE:-faiss}
-      - VECTOR__VECTOR_INDEX_PATH=/app/data/vector_index
       - VECTOR__COLLECTION_NAME_CHUNKS=${VECTOR__COLLECTION_NAME_CHUNKS:-chunks}
       - VECTOR__WEAVIATE_HOST=${VECTOR__WEAVIATE_HOST:-weaviate}
       - VECTOR__WEAVIATE_PORT=${VECTOR__WEAVIATE_PORT:-8080}
@@ -34,7 +33,7 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-      - sqlite_data:/app/data
+      - sqlite_data:/data/app
     restart: always
 
   frontend:
@@ -58,10 +57,10 @@ services:
       - 8081:8080
       - 50051:50051
     volumes:
-      - weaviate_data:/var/lib/weaviate
+      - weaviate_data:/data/weaviate
     environment:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      PERSISTENCE_DATA_PATH: '/data/weaviate'
       CLUSTER_HOSTNAME: 'node1'
 
   chroma:
@@ -71,10 +70,11 @@ services:
     ports:
       - 8000:8000
     volumes:
-      - chroma_data:/chroma/chroma
+      - chroma_data:/data/chroma
     environment:
       - IS_PERSISTENT=TRUE
       - ALLOW_RESET=TRUE
+      - PERSIST_DIRECTORY=/data/chroma
 
   postgres:
     image: postgres:16-alpine
@@ -84,11 +84,12 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/data/postgres
     environment:
       POSTGRES_USER: ${SQL__USER:-user}
       POSTGRES_PASSWORD: ${SQL__PASSWORD:-pass}
       POSTGRES_DB: ${SQL__DATABASE:-whatyousaid}
+      PGDATA: /data/postgres
 
   mysql:
     image: mysql:8.0
@@ -97,12 +98,13 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data:/data/mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${SQL__ROOT_PASSWORD:-rootpass}
       MYSQL_DATABASE: ${SQL__DATABASE:-whatyousaid}
       MYSQL_USER: ${SQL__USER:-user}
       MYSQL_PASSWORD: ${SQL__PASSWORD:-pass}
+    command: --datadir=/data/mysql
 
   mariadb:
     image: mariadb:11
@@ -111,12 +113,13 @@ services:
     ports:
       - 3307:3306
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mariadb_data:/data/mariadb
     environment:
       MARIADB_ROOT_PASSWORD: ${SQL__ROOT_PASSWORD:-rootpass}
       MARIADB_DATABASE: ${SQL__DATABASE:-whatyousaid}
       MARIADB_USER: ${SQL__USER:-user}
       MARIADB_PASSWORD: ${SQL__PASSWORD:-pass}
+    command: --datadir=/data/mariadb
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -124,10 +127,15 @@ services:
       - mssql
     ports:
       - 1433:1433
+    volumes:
+      - mssql_data:/data/mssql
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${SQL__PASSWORD:-Password123!}
       MSSQL_PID: "Express"
+      MSSQL_DATA_DIR: /data/mssql
+      MSSQL_LOG_DIR: /data/mssql/log
+      MSSQL_BACKUP_DIR: /data/mssql/backup
 
 volumes:
     weaviate_data:

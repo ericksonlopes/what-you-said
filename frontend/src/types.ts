@@ -30,6 +30,7 @@ export type ContentSource = {
   model?: string;
   dimensions?: number;
   origin?: string;
+  processingStatus: string;
 };
 
 export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database';

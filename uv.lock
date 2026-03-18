@@ -693,6 +693,22 @@ wheels = [
 ]
 
 [[package]]
+name = "flashrank"
+version = "0.2.10"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "onnxruntime" },
+    { name = "requests" },
+    { name = "tokenizers" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/55/1f/176cb4a857a70c3538f637e19389ab6aed21548a1ba1d1424fccc8bba108/FlashRank-0.2.10.tar.gz", hash = "sha256:f8f82a25c32fdfc668a09dc4089421d6aab8e7f71308424b541f40bb3f01d9db", size = 18905, upload-time = "2025-01-06T13:33:01.657Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ec/99/72639cc1c9221c5bc77a2df1c2d352fe11965553bdf7d3e0856e7fcc8fd6/FlashRank-0.2.10-py3-none-any.whl", hash = "sha256:5d3272ae657d793c132d1e7917ed9e2adf49e0e1c60735583a67b051c6f0434a", size = 14511, upload-time = "2025-01-06T13:32:59.42Z" },
+]
+
+[[package]]
 name = "flatbuffers"
 version = "25.12.19"
 source = { registry = "https://pypi.org/simple" }
@@ -3487,6 +3503,7 @@ source = { editable = "." }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
+    { name = "flashrank" },
     { name = "langchain-community" },
     { name = "langchain-text-splitters" },
     { name = "pydantic-settings" },
@@ -3542,6 +3559,7 @@ requires-dist = [
     { name = "cryptography", marker = "extra == 'mysql'", specifier = ">=44.0.0" },
     { name = "faiss-cpu", marker = "extra == 'faiss'", specifier = ">=1.13.2" },
     { name = "fastapi", specifier = ">=0.135.1" },
+    { name = "flashrank", specifier = ">=0.2.0" },
     { name = "langchain-chroma", marker = "extra == 'chroma'", specifier = ">=0.1.0" },
     { name = "langchain-community", specifier = ">=0.4.1" },
     { name = "langchain-text-splitters", specifier = ">=1.1.1" },
@@ -3556,7 +3574,7 @@ requires-dist = [
     { name = "torch", specifier = ">=2.9.1", index = "https://download.pytorch.org/whl/cpu" },
     { name = "uvicorn", specifier = ">=0.42.0" },
     { name = "youtube-transcript-api", specifier = ">=1.2.4" },
-    { name = "yt-dlp", specifier = ">=2026.3.3" },
+    { name = "yt-dlp", specifier = ">=2026.3.13" },
 ]
 provides-extras = ["chroma", "weaviate", "faiss", "mysql", "mariadb", "mssql", "postgres"]
 
