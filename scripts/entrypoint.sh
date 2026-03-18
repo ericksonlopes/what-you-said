@@ -16,6 +16,7 @@ esac
 case "$VECTOR__STORE_TYPE" in
   "weaviate") EXTRAS="$EXTRAS --extra weaviate" ;;
   "faiss")    EXTRAS="$EXTRAS --extra faiss"    ;;
+  "chroma")   EXTRAS="$EXTRAS --extra chroma"   ;;
 esac
 
 echo "🚀 Automating environment for SQL:$SQL__TYPE and Vector:$VECTOR__STORE_TYPE"

@@ -53,6 +53,10 @@ class VectorConfig(BaseSettings):
     weaviate_grpc_port: int = Field(
         default=50051, description="WeaviateConfig gRPC port for local connections"
     )
+
+    chroma_host: str = Field(default="localhost", description="ChromaDB host URL")
+    chroma_port: int = Field(default=8000, description="ChromaDB port")
+
     collection_name_chunks: str = Field(
         default="chunks",
         description="Collection name for YouTube transcripts (used by vector stores like Weaviate)",
@@ -117,7 +121,8 @@ class ModelRerank(BaseSettings):
 
 class ModelEmbedding(BaseSettings):
     name: str = Field(
-        default="BAAI/bge-m3", description="Name of the embedding models to use"
+        default="paraphrase-multilingual-MiniLM-L12-v2",
+        description="Name of the embedding models to use",
     )
 
 

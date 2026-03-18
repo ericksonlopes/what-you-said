@@ -23,6 +23,8 @@ services:
       - VECTOR__WEAVIATE_PORT=${VECTOR__WEAVIATE_PORT:-8080}
       - VECTOR__WEAVIATE_API_KEY=${VECTOR__WEAVIATE_API_KEY:-}
       - VECTOR__WEAVIATE_GRPC_PORT=${VECTOR__WEAVIATE_GRPC_PORT:-50051}
+      - VECTOR__CHROMA_HOST=${VECTOR__CHROMA_HOST:-chroma}
+      - VECTOR__CHROMA_PORT=${VECTOR__CHROMA_PORT:-8000}
       - SQL__TYPE=${SQL__TYPE:-sqlite}
       - SQL__HOST=${SQL__HOST:-}
       - SQL__PORT=${SQL__PORT:-}
@@ -47,7 +49,6 @@ services:
       backend:
         condition: service_healthy
     restart: always
-
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.35.9
     profiles:
@@ -62,6 +63,18 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       CLUSTER_HOSTNAME: 'node1'
+
+  chroma:
+    image: chromadb/chroma:0.5.23
+    profiles:
+      - chroma
+    ports:
+      - 8000:8000
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ALLOW_RESET=TRUE
 
   postgres:
     image: postgres:16-alpine
@@ -118,6 +131,7 @@ services:
 
 volumes:
     weaviate_data:
+    chroma_data:
     sqlite_data:
     postgres_data:
     mysql_data:

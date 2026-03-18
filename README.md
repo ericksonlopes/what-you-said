@@ -34,7 +34,7 @@ Detailed guides for specific topics:
 - **Multi-source extraction**: ingest data from video (YouTube), audio transcripts, and plain text sources.
 - **Transcript processing and temporal splitting**: break long transcripts into semantically coherent chunks suitable for embeddings and dense retrieval.
 - **Embeddings and model loader**: abstracted model loading so you can swap embedding providers easily.
-- **Pluggable Vector Stores**: support for **FAISS** (local/lite) and **Weaviate** (scalable/cloud) out of the box.
+- **Pluggable Vector Stores**: support for **FAISS** (local/lite), **ChromaDB** (local/server), and **Weaviate** (scalable/cloud) out of the box.
 - **Pluggable SQL Databases**: support for **SQLite**, **PostgreSQL**, **MySQL**, **MariaDB**, and **MSSQL**.
 - **Built for RAG**: designed to support retrieval-augmented generation workflows and semantic search over people-centric data.
 
@@ -49,7 +49,7 @@ WhatYouSaid is designed to be flexible, from a lightweight local setup to a scal
 | Component | Lightweight (Local) | Scalable / Production |
 | :--- | :--- | :--- |
 | **Relational Database** | **SQLite** (Default, file-based) | **PostgreSQL**, **MySQL**, **MariaDB**, **MSSQL** |
-| **Vector Store** | **FAISS** (Local, file-based) | **Weaviate** (Container or Cloud) |
+| **Vector Store** | **FAISS** (Local, file-based) | **Weaviate** (Container or Cloud), **ChromaDB** (Container) |
 
 ### 2. Docker Compose Profiles
 

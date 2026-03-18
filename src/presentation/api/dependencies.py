@@ -84,6 +84,18 @@ def get_vector_repository(
 ) -> IVectorRepository:
     emb_service = EmbeddingService(model_loader_service=model_loader)
 
+    if settings.vector.store_type == VectorStoreType.CHROMA:
+        from src.infrastructure.repositories.vector.chroma.chunk_repository import (
+            ChunkChromaRepository,
+        )
+
+        return ChunkChromaRepository(
+            embedding_service=emb_service,
+            host=settings.vector.chroma_host,
+            port=settings.vector.chroma_port,
+            collection_name=settings.vector.collection_name_chunks,
+        )
+
     if settings.vector.store_type == VectorStoreType.WEAVIATE:
         from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
             ChunkWeaviateRepository,

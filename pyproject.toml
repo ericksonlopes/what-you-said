@@ -23,6 +23,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+chroma = [
+    "chromadb>=0.4.24",
+    "langchain-chroma>=0.1.0",
+]
 weaviate = [
     "langchain-weaviate>=0.0.6",
 ]

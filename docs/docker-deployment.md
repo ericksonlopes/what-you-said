@@ -8,8 +8,8 @@ WhatYouSaid uses **Docker Profiles** to allow a modular and lightweight infrastr
 
 The project supports three main components:
 1.  **Backend & Frontend**: Always required.
-2.  **SQL Database**: Choose between `SQLite` (default), `PostgreSQL`, or `MySQL`.
-3.  **Vector Store**: Choose between `FAISS` (default) or `Weaviate`.
+2.  **SQL Database**: Choose between `SQLite` (default), `PostgreSQL`, `MySQL`, `MariaDB`, or `MSSQL`.
+3.  **Vector Store**: Choose between `FAISS` (default), `Weaviate`, or `ChromaDB`.
 
 ### 1. Scenario: Lightweight (Default)
 **Stack**: SQLite (SQL) + FAISS (Vector)
@@ -124,14 +124,16 @@ Required if using any database other than SQLite.
 | `SQL__DATABASE` | (string) | Database name to connect to. |
 
 ### 3. Vector Store Settings (`VECTOR__`)
-| Variable                     | Default          | Description                                     |
-|:-----------------------------|:-----------------|:------------------------------------------------|
-| `VECTOR__STORE_TYPE`         | `faiss`          | Choice between `faiss` or `weaviate`.           |
-| `VECTOR__VECTOR_INDEX_PATH`  | `./vector_index` | Local path for FAISS index files.               |
-| `VECTOR__WEAVIATE_HOST`      | `localhost`      | Weaviate server hostname.                       |
-| `VECTOR__WEAVIATE_PORT`      | `8081`           | Weaviate HTTP port.                             |
-| `VECTOR__WEAVIATE_API_KEY`   | `******`         | Optional API key for Weaviate authentication.   |
-| `VECTOR__WEAVIATE_GRPC_PORT` | `50051`          | Weaviate gRPC port.                             |
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `VECTOR__STORE_TYPE` | `faiss` | Choice between `faiss`, `weaviate`, or `chroma`. |
+| `VECTOR__VECTOR_INDEX_PATH` | `./vector_index` | Local path for FAISS index files. |
+| `VECTOR__WEAVIATE_HOST` | `localhost` | Weaviate server hostname. |
+| `VECTOR__WEAVIATE_PORT` | `8081` | Weaviate HTTP port. |
+| `VECTOR__WEAVIATE_API_KEY` | `******` | Optional API key for Weaviate authentication. |
+| `VECTOR__WEAVIATE_GRPC_PORT` | `50051` | Weaviate gRPC port. |
+| `VECTOR__CHROMA_HOST` | `localhost` | ChromaDB server hostname. |
+| `VECTOR__CHROMA_PORT` | `8000` | ChromaDB port. |
 
 ### 4. Model Settings (`MODEL_EMBEDDING__`)
 | Variable | Default | Description |
@@ -153,12 +155,10 @@ SQL__USER=myuser
 SQL__PASSWORD=mypassword
 SQL__DATABASE=whatyousaid
 
-# Vector Store (Weaviate Example)
-VECTOR__STORE_TYPE=weaviate
-VECTOR__WEAVIATE_HOST=localhost
-VECTOR__WEAVIATE_PORT=8081
-VECTOR__WEAVIATE_API_KEY=8081
-VECTOR__WEAVIATE_GRPC_PORT=50051
+# Vector Store (ChromaDB Example)
+VECTOR__STORE_TYPE=chroma
+VECTOR__CHROMA_HOST=localhost
+VECTOR__CHROMA_PORT=8000
 
 # Logs
 APP__LIST_LOG_LEVELS=DEBUG,INFO,WARNING,ERROR

@@ -74,6 +74,20 @@ class TestDependencies:
             repo = get_vector_repository(settings, loader)
             assert repo is not None
 
+    def test_get_vector_repository_chroma(self):
+        settings = MagicMock()
+        settings.vector.store_type = VectorStoreType.CHROMA
+        settings.vector.chroma_host = "test"
+        settings.vector.chroma_port = 8000
+        settings.vector.collection_name_chunks = "test_collection"
+        loader = MagicMock()
+
+        with patch(
+            "src.infrastructure.repositories.vector.chroma.chunk_repository.ChunkChromaRepository"
+        ):
+            repo = get_vector_repository(settings, loader)
+            assert repo is not None
+
     def test_get_vector_repository_faiss(self):
         settings = MagicMock()
         settings.vector.store_type = VectorStoreType.FAISS
