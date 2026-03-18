@@ -32,5 +32,12 @@ You are an expert software architect and product manager for the `WhatYouSaid` p
    ```
 
 4. **Action**:
-   After generating the Markdown text, you can either provide it directly to the user so they can copy-paste it OR create a very short Python script to automatically open the default browser at `https://github.com/ericksonlopes/WhatYouSaid/issues/new` with the `title` and `body` populated via `urllib.parse.quote`.
+   After generating the Markdown text:
+   - **ALWAYS** create a local file in `docs/issues/` (create the directory if it doesn't exist) named `issue-<slug>.md`.
+   - The file MUST contain:
+     1. The full Markdown text of the issue.
+     2. A footer with the **GitHub Pre-filled URL** for easy submission.
+   - Provide the file path and the link directly to the user.
+   - Optionally, you can offer to run a Python script to open the browser automatically.
+
    *Note: Ensure python is executed correctly based on the user's environment (e.g. `uv run python script.py` or just `python script.py`).*

@@ -146,6 +146,15 @@ MODEL_EMBEDDING__NAME=BAAI/bge-m3
 uv sync --all-extras
 ```
 
+**Install only what you need (recommended for local development):**
+```bash
+# Example: Install only Postgres and Weaviate drivers
+uv sync --extra postgres --extra weaviate
+
+# Example: Install only MySQL support
+uv sync --extra mysql
+```
+
 **Run tests:**
 ```bash
 uv run pytest
