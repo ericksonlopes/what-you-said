@@ -2,7 +2,7 @@ import uuid
 import pytest
 from types import SimpleNamespace
 
-from src.application.use_cases.search_chunks_use_case import SearchChunksUseCase
+from src.application.use_cases.search_chunks_use_case import SearchUseCase
 from src.domain.entities.enums.search_mode_enum import SearchMode
 
 
@@ -38,7 +38,7 @@ class DummyKS:
 
 def test_search_filters_by_subject_id():
     vec = DummyVectorService()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=None)
+    uc = SearchUseCase(vector_service=vec, ks_service=None)
 
     uc.execute(query="hello", top_k=3, subject_id=uuid.uuid4())
 
@@ -50,7 +50,7 @@ def test_search_filters_by_subject_id():
 def test_search_resolves_subject_name(monkeypatch):
     vec = DummyVectorService()
     ks = DummyKS()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=ks)
+    uc = SearchUseCase(vector_service=vec, ks_service=ks)
 
     uc.execute(query="hello", top_k=2, subject_name="Alice")
 
@@ -61,7 +61,7 @@ def test_search_resolves_subject_name(monkeypatch):
 
 def test_search_default_mode_is_semantic():
     vec = DummyVectorService()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=None)
+    uc = SearchUseCase(vector_service=vec, ks_service=None)
 
     result = uc.execute(query="hello", top_k=3)
 
@@ -71,7 +71,7 @@ def test_search_default_mode_is_semantic():
 
 def test_search_passes_bm25_mode_to_service():
     vec = DummyVectorService()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=None)
+    uc = SearchUseCase(vector_service=vec, ks_service=None)
 
     result = uc.execute(query="hello", top_k=3, search_mode=SearchMode.BM25)
 
@@ -81,7 +81,7 @@ def test_search_passes_bm25_mode_to_service():
 
 def test_search_passes_hybrid_mode_to_service():
     vec = DummyVectorService()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=None)
+    uc = SearchUseCase(vector_service=vec, ks_service=None)
 
     result = uc.execute(query="hello", top_k=3, search_mode=SearchMode.HYBRID)
 
@@ -91,7 +91,7 @@ def test_search_passes_hybrid_mode_to_service():
 
 def test_search_passes_re_rank_to_service():
     vec = DummyVectorService()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=None)
+    uc = SearchUseCase(vector_service=vec, ks_service=None)
 
     uc.execute(query="hello", top_k=3, re_rank=False)
 
@@ -102,13 +102,13 @@ def test_search_passes_re_rank_to_service():
 
 def test_search_both_id_and_name_raises():
     vec = DummyVectorService()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=None)
+    uc = SearchUseCase(vector_service=vec, ks_service=None)
     with pytest.raises(ValueError, match="Provide only one of subject_id or subject_name"):
         uc.execute(query="q", subject_id=uuid.uuid4(), subject_name="Alice")
 
 def test_search_name_without_ks_service_raises():
     vec = DummyVectorService()
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=None)
+    uc = SearchUseCase(vector_service=vec, ks_service=None)
     with pytest.raises(ValueError, match="ks_service is required to filter by subject_name"):
         uc.execute(query="q", subject_name="Alice")
 
@@ -117,7 +117,7 @@ def test_search_subject_not_found():
     class NotFoundKS:
         def get_by_name(self, name): return None
     
-    uc = SearchChunksUseCase(vector_service=vec, ks_service=NotFoundKS())
+    uc = SearchUseCase(vector_service=vec, ks_service=NotFoundKS())
     result = uc.execute(query="q", subject_name="Unknown")
     assert result.results == []
     assert result.total_count == 0

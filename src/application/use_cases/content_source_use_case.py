@@ -6,7 +6,7 @@ from src.infrastructure.services.content_source_service import ContentSourceServ
 
 logger = Logger()
 
-class DeleteContentSourceUseCase:
+class ContentSourceUseCase:
     """
     Orchestrates the deletion of a ContentSource and all its related artifacts:
     1. Chunks from SQL (chunk_index table)
@@ -24,7 +24,7 @@ class DeleteContentSourceUseCase:
         self.chunk_service = chunk_service
         self.vector_repo = vector_repo
 
-    def execute(self, content_source_id: UUID) -> bool:
+    def delete(self, content_source_id: UUID) -> bool:
         logger.info(
             "Starting deletion of content source",
             context={"content_source_id": str(content_source_id)},

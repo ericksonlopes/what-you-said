@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, HTTPException, BackgroundTasks
 
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
-from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.config.logger import Logger
 from src.presentation.api.dependencies import get_ingest_youtube_use_case
 from src.presentation.api.schemas.ingest_schemas import (
@@ -25,7 +25,7 @@ router = APIRouter()
 )
 def ingest_youtube(
     request: Annotated[YoutubeIngestRequest, Body()],
-    use_case: Annotated[IngestYoutubeUseCase, Depends(get_ingest_youtube_use_case)],
+    use_case: Annotated[YoutubeIngestionUseCase, Depends(get_ingest_youtube_use_case)],
     background_tasks: BackgroundTasks,
 ):
     """

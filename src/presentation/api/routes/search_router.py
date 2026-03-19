@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 
-from src.application.use_cases.search_chunks_use_case import SearchChunksUseCase
+from src.application.use_cases.search_use_case import SearchUseCase
 from src.config.logger import Logger
 from src.presentation.api.dependencies import get_search_chunks_use_case
 from src.presentation.api.schemas.search_schemas import SearchRequest, SearchResponse
@@ -21,7 +21,7 @@ router = APIRouter()
 )
 def search_chunks(
     request: Annotated[SearchRequest, Body()],
-    use_case: Annotated[SearchChunksUseCase, Depends(get_search_chunks_use_case)],
+    use_case: Annotated[SearchUseCase, Depends(get_search_chunks_use_case)],
 ):
     """
     Search for chunks of knowledge based on a query string.

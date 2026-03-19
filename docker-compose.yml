@@ -37,7 +37,7 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-      - sqlite_data:/data/app
+      - ./data/app:/data/app
     restart: always
 
   frontend:
@@ -66,7 +66,7 @@ services:
     networks:
       - wys_network
     volumes:
-      - weaviate_data:/data/weaviate
+      - ./data/weaviate:/data/weaviate
     environment:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/data/weaviate'
@@ -81,7 +81,7 @@ services:
     networks:
       - wys_network
     volumes:
-      - chroma_data:/data/chroma
+      - ./data/chroma:/data/chroma
     environment:
       - IS_PERSISTENT=TRUE
       - ALLOW_RESET=TRUE
@@ -97,12 +97,12 @@ services:
     networks:
       - wys_network
     volumes:
-      - postgres_data:/data/postgres
+      - ./data/postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${SQL__USER:-user}
       POSTGRES_PASSWORD: ${SQL__PASSWORD:-pass}
       POSTGRES_DB: ${SQL__DATABASE:-whatyousaid}
-      PGDATA: /data/postgres
+      PGDATA: /var/lib/postgresql/data
 
   mysql:
     image: mysql:8.0
@@ -113,13 +113,13 @@ services:
     networks:
       - wys_network
     volumes:
-      - mysql_data:/data/mysql
+      - ./data/mysql:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${SQL__ROOT_PASSWORD:-rootpass}
       MYSQL_DATABASE: ${SQL__DATABASE:-whatyousaid}
       MYSQL_USER: ${SQL__USER:-user}
       MYSQL_PASSWORD: ${SQL__PASSWORD:-pass}
-    command: --datadir=/data/mysql
+    command: --datadir=/var/lib/mysql
 
   mariadb:
     image: mariadb:11
@@ -130,13 +130,13 @@ services:
     networks:
       - wys_network
     volumes:
-      - mariadb_data:/data/mariadb
+      - ./data/mariadb:/var/lib/mysql
     environment:
       MARIADB_ROOT_PASSWORD: ${SQL__ROOT_PASSWORD:-rootpass}
       MARIADB_DATABASE: ${SQL__DATABASE:-whatyousaid}
       MARIADB_USER: ${SQL__USER:-user}
       MARIADB_PASSWORD: ${SQL__PASSWORD:-pass}
-    command: --datadir=/data/mariadb
+    command: --datadir=/var/lib/mysql
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -147,23 +147,15 @@ services:
     networks:
       - wys_network
     volumes:
-      - mssql_data:/data/mssql
+      - ./data/mssql:/var/opt/mssql
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${SQL__PASSWORD:-Password123!}
       MSSQL_PID: "Express"
-      MSSQL_DATA_DIR: /data/mssql
-      MSSQL_LOG_DIR: /data/mssql/log
-      MSSQL_BACKUP_DIR: /data/mssql/backup
+      MSSQL_DATA_DIR: /var/opt/mssql
+      MSSQL_LOG_DIR: /var/opt/mssql/log
+      MSSQL_BACKUP_DIR: /var/opt/mssql/backup
 
 networks:
   wys_network:
     driver: bridge
-
-volumes:
-    weaviate_data:
-    chroma_data:
-    sqlite_data:
-    postgres_data:
-    mysql_data:
-    mariadb_data:

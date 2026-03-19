@@ -5,9 +5,9 @@ from fastapi import Depends, HTTPException, APIRouter
 from src.config.logger import Logger
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.model_loader_service import ModelLoaderService
-from src.presentation.api.dependencies import get_cs_service, get_model_loader, get_delete_source_use_case
+from src.presentation.api.dependencies import get_cs_service, get_model_loader, get_content_source_use_case
 from src.domain.entities.enums.source_type_enum_entity import SourceType
-from src.application.use_cases.delete_content_source_use_case import DeleteContentSourceUseCase
+from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.presentation.api.schemas.model_schemas import ModelInfoResponse
 from src.presentation.api.schemas.source_schemas import SourceResponse
 
@@ -60,7 +60,7 @@ def get_model_info(
 def delete_source(
     id: str,
     use_case: Annotated[
-        DeleteContentSourceUseCase, Depends(get_delete_source_use_case)
+        ContentSourceUseCase, Depends(get_content_source_use_case)
     ],
 ):
     """Delete a content source and all its related data (chunks, embeddings)."""
@@ -68,7 +68,7 @@ def delete_source(
         import uuid
 
         source_id = uuid.UUID(id)
-        success = use_case.execute(source_id)
+        success = use_case.delete(source_id)
         if not success:
             raise HTTPException(status_code=404, detail="Content source not found")
         return {"success": True, "message": f"Source {id} deleted successfully"}

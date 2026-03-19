@@ -33,7 +33,7 @@ from src.infrastructure.services.youtube_vector_service import YouTubeVectorServ
 logger = Logger()
 
 
-class IngestYoutubeUseCase:
+class YoutubeIngestionUseCase:
     """Orquestra a ingestão de vídeos do YouTube usando métodos por step para facilitar testes e logs.
 
     Agora suporta ingestão de múltiplos vídeos (video_urls) e diferenciação por data_type (VIDEO/PLAYLIST).

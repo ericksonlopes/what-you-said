@@ -10,7 +10,7 @@ from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 logger = Logger()
 
 
-class SearchChunksUseCase:
+class SearchUseCase:
     """Use case for semantic/BM25/hybrid search of chunks via vector service with knowledge_subject filtering.
 
     Can filter by subject_id (UUID or str) or by subject_name (requires ks_service).

@@ -2,9 +2,9 @@ from typing import Any
 
 from fastapi import Depends, Request
 
-from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
-from src.application.use_cases.search_chunks_use_case import SearchChunksUseCase
-from src.application.use_cases.delete_content_source_use_case import DeleteContentSourceUseCase
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
+from src.application.use_cases.search_use_case import SearchUseCase
+from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.config.settings import Settings
 
 # Import services and repositories
@@ -181,8 +181,8 @@ def get_youtube_vector_service(
 def get_search_chunks_use_case(
     vector_svc: ChunkVectorService = Depends(get_chunk_vector_service),
     ks_svc: KnowledgeSubjectService = Depends(get_ks_service),
-) -> SearchChunksUseCase:
-    return SearchChunksUseCase(vector_service=vector_svc, ks_service=ks_svc)
+) -> SearchUseCase:
+    return SearchUseCase(vector_service=vector_svc, ks_service=ks_svc)
 
 
 def get_ingest_youtube_use_case(
@@ -194,8 +194,8 @@ def get_ingest_youtube_use_case(
     chunk_svc: ChunkIndexService = Depends(get_chunk_index_service),
     yt_vector_svc: YouTubeVectorService = Depends(get_youtube_vector_service),
     settings: Settings = Depends(get_settings),
-) -> IngestYoutubeUseCase:
-    return IngestYoutubeUseCase(
+) -> YoutubeIngestionUseCase:
+    return YoutubeIngestionUseCase(
         ks_service=ks_svc,
         cs_service=cs_svc,
         ingestion_service=job_svc,
@@ -207,12 +207,12 @@ def get_ingest_youtube_use_case(
     )
 
 
-def get_delete_source_use_case(
+def get_content_source_use_case(
     cs_svc: ContentSourceService = Depends(get_cs_service),
     chunk_svc: ChunkIndexService = Depends(get_chunk_index_service),
     vector_repo: IVectorRepository = Depends(get_vector_repository),
-) -> DeleteContentSourceUseCase:
-    return DeleteContentSourceUseCase(
+) -> ContentSourceUseCase:
+    return ContentSourceUseCase(
         cs_service=cs_svc,
         chunk_service=chunk_svc,
         vector_repo=vector_repo,

@@ -1,13 +1,13 @@
 import pytest
 import uuid
 from unittest.mock import MagicMock, patch
-from src.application.use_cases.ingest_youtube_use_case import IngestYoutubeUseCase
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
 
 
-@pytest.mark.IngestYouTubeUseCase
-class TestIngestYoutubeUseCaseEdgeCases:
+@pytest.mark.YoutubeIngestionUseCase
+class TestYoutubeIngestionUseCaseEdgeCases:
     @pytest.fixture
     def mock_services(self):
         return {
@@ -23,7 +23,7 @@ class TestIngestYoutubeUseCaseEdgeCases:
 
     @pytest.fixture
     def use_case(self, mock_services):
-        return IngestYoutubeUseCase(**mock_services)
+        return YoutubeIngestionUseCase(**mock_services)
 
     def test_execute_job_recovery_fail(self, use_case, mock_services):
         cmd = IngestYoutubeCommand(
@@ -115,7 +115,7 @@ class TestIngestYoutubeUseCaseEdgeCases:
 
         with patch.object(use_case, "_create_ingestion_job") as mock_create:
             with patch(
-                "src.application.use_cases.ingest_youtube_use_case.YoutubeExtractor"
+                "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
             ):
                 with pytest.raises(
                     Exception
@@ -166,7 +166,7 @@ class TestIngestYoutubeUseCaseEdgeCases:
         cmd = IngestYoutubeCommand(video_url="...", subject_id=str(uuid.uuid4()))
 
         with (
-            patch("src.application.use_cases.ingest_youtube_use_case.YoutubeExtractor"),
+            patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"),
             patch.object(use_case, "_extract_and_split", return_value=[]),
         ):
             with pytest.raises(
@@ -190,7 +190,7 @@ class TestIngestYoutubeUseCaseEdgeCases:
         )
 
         with (
-            patch("src.application.use_cases.ingest_youtube_use_case.YoutubeExtractor"),
+            patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"),
             patch.object(
                 use_case, "_extract_and_split", side_effect=Exception("Main Error")
             ),
