@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.application.use_cases.search_use_case import SearchUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
+from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
 from src.config.settings import Settings
 
 # Import services and repositories
@@ -215,5 +216,17 @@ def get_content_source_use_case(
     return ContentSourceUseCase(
         cs_service=cs_svc,
         chunk_service=chunk_svc,
+        vector_repo=vector_repo,
+    )
+
+
+def get_ks_use_case(
+    ks_svc: KnowledgeSubjectService = Depends(get_ks_service),
+    cs_use_case: ContentSourceUseCase = Depends(get_content_source_use_case),
+    vector_repo: IVectorRepository = Depends(get_vector_repository),
+) -> KnowledgeSubjectUseCase:
+    return KnowledgeSubjectUseCase(
+        ks_service=ks_svc,
+        cs_use_case=cs_use_case,
         vector_repo=vector_repo,
     )

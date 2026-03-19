@@ -37,7 +37,9 @@ class TestYoutubeIngestionUseCaseEdgeCases:
             id=uuid.uuid4()
         )
         with patch.object(
-            use_case, "_process_single_video", return_value={"video_id": "123", "created_chunks": 1}
+            use_case,
+            "_process_single_video",
+            return_value={"video_id": "123", "created_chunks": 1},
         ):
             use_case.execute(cmd)
         # No assertion needed, just checking coverage of the try-except block

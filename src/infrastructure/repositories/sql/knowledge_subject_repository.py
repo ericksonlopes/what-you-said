@@ -185,17 +185,16 @@ class KnowledgeSubjectSQLRepository:
         with Connector() as session:
             try:
                 logger.debug("Deleting KnowledgeSubject", context={"id": id})
-                deleted = (
-                    session.query(KnowledgeSubjectModel)
-                    .filter_by(id=id)
-                    .delete(synchronize_session=False)
-                )
-                session.commit()
-                logger.debug(
-                    "KnowledgeSubject deleted successfully",
-                    context={"id": id, "deleted_count": deleted},
-                )
-                return int(deleted)
+                ks = session.get(KnowledgeSubjectModel, id)
+                if ks:
+                    session.delete(ks)
+                    session.commit()
+                    logger.debug(
+                        "KnowledgeSubject deleted successfully",
+                        context={"id": id, "deleted_count": 1},
+                    )
+                    return 1
+                return 0
             except Exception as e:
                 logger.error(
                     "Error deleting KnowledgeSubject",

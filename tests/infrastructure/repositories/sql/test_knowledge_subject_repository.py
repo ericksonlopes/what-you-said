@@ -4,9 +4,13 @@ from unittest.mock import patch
 from src.infrastructure.repositories.sql.knowledge_subject_repository import (
     KnowledgeSubjectSQLRepository,
 )
+from src.infrastructure.repositories.sql.content_source_repository import (
+    ContentSourceSQLRepository,
+)
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 
 
-@pytest.mark.Dependencies
+@pytest.mark.KnowledgeSubjectRepository
 class TestKnowledgeSubjectSQLRepository:
     def test_create_subject_success(self, sqlite_memory):
         repo = KnowledgeSubjectSQLRepository()
@@ -85,11 +89,39 @@ class TestKnowledgeSubjectSQLRepository:
         assert count == 1
         assert repo.get_by_id(sid) is None
 
+    def test_delete_with_content_sources(self, sqlite_memory):
+        repo = KnowledgeSubjectSQLRepository()
+        cs_repo = ContentSourceSQLRepository()
+
+        sid = repo.create_subject(name="Subject with Source")
+        cs_id = cs_repo.create(
+            subject_id=sid,
+            source_type=SourceType.YOUTUBE.value,
+            external_source="vid123",
+            title="Video",
+        )
+
+        # Verify both exist
+        assert repo.get_by_id(sid) is not None
+        assert cs_repo.get_by_id(cs_id) is not None
+
+        # Delete subject
+        count = repo.delete(sid)
+        assert count == 1
+
+        # Verify subject is gone
+        assert repo.get_by_id(sid) is None
+        # Verify content source is also gone due to cascade
+        assert cs_repo.get_by_id(cs_id) is None
+
     def test_delete_error(self, sqlite_memory):
         repo = KnowledgeSubjectSQLRepository()
-        with patch("sqlalchemy.orm.Query.delete", side_effect=Exception("DB Error")):
+        sid = repo.create_subject(name="Test")
+        # Patch commit since delete might not raise until commit,
+        # or patch delete which is where the call happens.
+        with patch("sqlalchemy.orm.Session.delete", side_effect=Exception("DB Error")):
             with pytest.raises(Exception, match="DB Error"):
-                repo.delete(uuid4())
+                repo.delete(sid)
 
     def test_get_by_name_success(self, sqlite_memory):
         repo = KnowledgeSubjectSQLRepository()

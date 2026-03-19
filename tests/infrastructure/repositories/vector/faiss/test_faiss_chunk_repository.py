@@ -173,18 +173,14 @@ class TestChunkFAISSRepository:
 
     def test_delete_no_filter(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ):
+            with patch("langchain_community.vectorstores.FAISS.load_local"):
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
                 repo._vector_store = MagicMock()
                 assert repo.delete(None) == 0
 
     def test_delete_error(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ):
+            with patch("langchain_community.vectorstores.FAISS.load_local"):
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
                 repo._vector_store = MagicMock()
                 repo._vector_store.delete.side_effect = Exception("Delete error")
@@ -197,9 +193,7 @@ class TestChunkFAISSRepository:
 
     def test_list_chunks_error(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ):
+            with patch("langchain_community.vectorstores.FAISS.load_local"):
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
                 repo._vector_store = MagicMock()
                 # docstore attribute missing to trigger error

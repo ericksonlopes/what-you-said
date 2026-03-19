@@ -187,7 +187,11 @@ class YoutubeIngestionUseCase:
             # so the API returns a non-200 status and the user gets a notification.
             # We only do this if it's strictly a single video request (not a list of URLs)
             is_batch = len(video_list) > 1
-            if any_failed and cmd.data_type != YoutubeDataType.PLAYLIST and not is_batch:
+            if (
+                any_failed
+                and cmd.data_type != YoutubeDataType.PLAYLIST
+                and not is_batch
+            ):
                 failed_item = next(r for r in result.video_results if "error" in r)
                 raise ValueError(failed_item["error"])
 

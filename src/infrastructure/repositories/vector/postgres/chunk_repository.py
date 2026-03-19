@@ -62,7 +62,9 @@ class ChunkPostgresRepository(IVectorRepository):
                             processed_extra[k] = v
                     meta["extra"] = processed_extra
 
-                langchain_docs.append(Document(page_content=doc.content or "", metadata=meta))
+                langchain_docs.append(
+                    Document(page_content=doc.content or "", metadata=meta)
+                )
                 ids.append(str(doc.id))
 
             with self.vector_store_ctx as vector_store:

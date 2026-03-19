@@ -7,7 +7,8 @@ from src.config.logger import Logger
 from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
 )
-from src.presentation.api.dependencies import get_ks_service
+from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
+from src.presentation.api.dependencies import get_ks_service, get_ks_use_case
 from src.presentation.api.schemas.subject_schemas import (
     SubjectCreate,
     SubjectResponse,
@@ -95,12 +96,12 @@ def update_subject(
 )
 def delete_subject(
     subject_id: UUID,
-    ks_service: Annotated[KnowledgeSubjectService, Depends(get_ks_service)],
+    ks_use_case: Annotated[KnowledgeSubjectUseCase, Depends(get_ks_use_case)],
 ):
     """Delete a knowledge subject"""
     try:
-        deleted = ks_service.delete_subject(id=subject_id)
-        if not deleted:
+        success = ks_use_case.delete_knowledge(subject_id=subject_id)
+        if not success:
             raise HTTPException(status_code=404, detail="Subject not found")
     except HTTPException:
         raise

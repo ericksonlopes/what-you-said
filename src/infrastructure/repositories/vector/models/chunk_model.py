@@ -16,7 +16,9 @@ class ChunkModel(BaseModel):
         description="ID of the original content source, e.g., video ID, document ID, etc."
     )
     source_type: str = Field(description="e.g., YOUTUBE, PDF, WEB_PAGE, etc.")
-    external_source: Optional[str] = Field(default=None, description="URL, file path, id, etc.")
+    external_source: Optional[str] = Field(
+        default=None, description="URL, file path, id, etc."
+    )
     subject_id: Optional[UUID] = Field(
         default=None, description="Optional subject or category for the chunk"
     )
@@ -25,7 +27,9 @@ class ChunkModel(BaseModel):
         description="Original sequence number of the chunk within the source",
     )
 
-    content: Optional[str] = Field(default=None, description="Text content of the chunk")
+    content: Optional[str] = Field(
+        default=None, description="Text content of the chunk"
+    )
     tokens_count: Optional[int] = Field(
         default=None, description="Number of tokens in the content"
     )
@@ -35,7 +39,8 @@ class ChunkModel(BaseModel):
         default=None, description="Language of the content, e.g., 'en', 'pt', etc."
     )
     embedding_model: Optional[str] = Field(
-        default=None, description="Name of the embedding models used to generate the vector"
+        default=None,
+        description="Name of the embedding models used to generate the vector",
     )
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     version_number: int = 1
