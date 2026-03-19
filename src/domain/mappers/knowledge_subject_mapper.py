@@ -23,6 +23,7 @@ class KnowledgeSubjectMapper:
             name=cast(str, getattr(model, "name", "")),
             description=cast(Optional[str], getattr(model, "description", None)),
             icon=cast(Optional[str], getattr(model, "icon", None)),
+            source_count=len(getattr(model, "content_sources", [])),
             created_at=cast(datetime, getattr(model, "created_at")),
         )
 

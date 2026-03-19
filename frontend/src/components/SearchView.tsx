@@ -4,7 +4,7 @@ import {
   Search, Sparkles, Lock, FileText, PlayCircle, ExternalLink, 
   SlidersHorizontal, Database, TextSearch, Network, ListOrdered, 
   ChevronDown, X, Copy, Check, Languages, Cpu, Hash, Calendar, 
-  Info, Clock, ArrowUpDown, Youtube, BookOpen, Globe, Filter, Newspaper
+  Info, Clock, ArrowUpDown, Youtube, BookOpen, Globe, Filter, Newspaper, Loader2
 } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 import { motion, AnimatePresence } from 'motion/react';

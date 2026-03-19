@@ -35,6 +35,22 @@ export const api = {
     return response.json();
   },
 
+  async updateSubject(id: string, name?: string, description?: string, icon?: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/subjects/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, icon })
+    });
+    await handleResponseError(response, 'Failed to update subject');
+  },
+
+  async deleteSubject(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/subjects/${id}`, {
+      method: 'DELETE'
+    });
+    await handleResponseError(response, 'Failed to delete subject');
+  },
+
   async fetchSources(): Promise<ContentSource[]> {
     const response = await fetch(`${API_BASE_URL}/sources`);
     await handleResponseError(response, 'Failed to fetch sources');

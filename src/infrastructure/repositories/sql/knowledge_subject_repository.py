@@ -2,6 +2,8 @@ from typing import Optional, List
 from typing import cast
 from uuid import UUID
 
+from sqlalchemy.orm import selectinload
+
 from src.config.logger import Logger
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.knowledge_subject import (
@@ -63,7 +65,12 @@ class KnowledgeSubjectSQLRepository:
         with Connector() as session:
             try:
                 logger.debug("Fetching KnowledgeSubject by ID", context={"id": id})
-                result = session.get(KnowledgeSubjectModel, id)
+                result = (
+                    session.query(KnowledgeSubjectModel)
+                    .options(selectinload(KnowledgeSubjectModel.content_sources))
+                    .filter_by(id=id)
+                    .first()
+                )
                 logger.debug(
                     "Fetch successful get_by_id", context={"id": id, "result": result}
                 )
@@ -84,6 +91,7 @@ class KnowledgeSubjectSQLRepository:
                 )
                 result = (
                     session.query(KnowledgeSubjectModel)
+                    .options(selectinload(KnowledgeSubjectModel.content_sources))
                     .filter_by(external_ref=external_ref)
                     .first()
                 )
@@ -105,6 +113,7 @@ class KnowledgeSubjectSQLRepository:
                 logger.debug("Listing KnowledgeSubjects", context={"limit": limit})
                 result = (
                     session.query(KnowledgeSubjectModel)
+                    .options(selectinload(KnowledgeSubjectModel.content_sources))
                     .order_by(KnowledgeSubjectModel.created_at.desc())
                     .limit(limit)
                     .all()
@@ -126,6 +135,7 @@ class KnowledgeSubjectSQLRepository:
         name: Optional[str] = None,
         description: Optional[str] = None,
         external_ref: Optional[str] = None,
+        icon: Optional[str] = None,
     ) -> None:
         with Connector() as session:
             try:
@@ -136,6 +146,7 @@ class KnowledgeSubjectSQLRepository:
                         "name": name,
                         "description": description,
                         "external_ref": external_ref,
+                        "icon": icon,
                     },
                 )
                 ks = session.get(KnowledgeSubjectModel, id)
@@ -150,6 +161,8 @@ class KnowledgeSubjectSQLRepository:
                     ks.description = description
                 if external_ref is not None:
                     ks.external_ref = external_ref
+                if icon is not None:
+                    ks.icon = icon
                 session.commit()
                 logger.debug(
                     "KnowledgeSubject updated successfully", context={"id": id}
@@ -198,7 +211,10 @@ class KnowledgeSubjectSQLRepository:
                     "Fetching KnowledgeSubject by name", context={"name": name}
                 )
                 result = (
-                    session.query(KnowledgeSubjectModel).filter_by(name=name).first()
+                    session.query(KnowledgeSubjectModel)
+                    .options(selectinload(KnowledgeSubjectModel.content_sources))
+                    .filter_by(name=name)
+                    .first()
                 )
                 logger.debug(
                     "Fetch successful", context={"name": name, "result": result}

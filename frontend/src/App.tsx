@@ -10,6 +10,7 @@ import {AddContentModal} from './components/AddContentModal';
 import {ToastContainer} from './components/ToastContainer';
 import {SearchView} from './components/SearchView';
 import {ChunksViewer} from './components/ChunksViewer';
+import {KnowledgeAdminView} from './components/KnowledgeAdminView';
 import {ErrorBoundary} from './components/ErrorBoundary';
 import {ContentSource} from './types';
 
@@ -426,6 +427,7 @@ function MainContent() {
           )}
           {currentView === 'search' && <SearchView />}
           {currentView === 'database' && <ChunksViewer />}
+          {currentView === 'knowledge_contexts' && <KnowledgeAdminView />}
         </ErrorBoundary>
       </main>
 

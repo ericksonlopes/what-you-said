@@ -1,4 +1,5 @@
 from typing import Annotated, List
+from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 
@@ -7,7 +8,11 @@ from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
 )
 from src.presentation.api.dependencies import get_ks_service
-from src.presentation.api.schemas.subject_schemas import SubjectCreate, SubjectResponse
+from src.presentation.api.schemas.subject_schemas import (
+    SubjectCreate,
+    SubjectResponse,
+    SubjectUpdate,
+)
 
 logger = Logger()
 router = APIRouter()
@@ -51,4 +56,54 @@ def get_subjects(
         return subjects
     except Exception as e:
         logger.error(f"Error fetching subjects: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.put(
+    "/{subject_id}",
+    status_code=204,
+    responses={
+        404: {"description": "Subject not found"},
+        500: {"description": "Internal server error"},
+    },
+)
+def update_subject(
+    subject_id: UUID,
+    subject: Annotated[SubjectUpdate, Body()],
+    ks_service: Annotated[KnowledgeSubjectService, Depends(get_ks_service)],
+):
+    """Update an existing knowledge subject"""
+    try:
+        ks_service.update_subject(
+            id=subject_id,
+            name=subject.name,
+            description=subject.description,
+            icon=subject.icon,
+        )
+    except Exception as e:
+        logger.error(f"Error updating subject: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.delete(
+    "/{subject_id}",
+    status_code=204,
+    responses={
+        404: {"description": "Subject not found"},
+        500: {"description": "Internal server error"},
+    },
+)
+def delete_subject(
+    subject_id: UUID,
+    ks_service: Annotated[KnowledgeSubjectService, Depends(get_ks_service)],
+):
+    """Delete a knowledge subject"""
+    try:
+        deleted = ks_service.delete_subject(id=subject_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Subject not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting subject: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

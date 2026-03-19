@@ -57,7 +57,13 @@
       "search": "Semantic Search",
       "sources": "Content Sources",
       "chunks": "Sources > Chunks",
-      "activity": "Activity Monitor"
+      "activity": "Activity Monitor",
+      "knowledge_contexts": "Knowledge Contexts"
+    },
+    "groups": {
+      "search": "Searches",
+      "data": "Data",
+      "monitor": "Monitor"
     },
     "profile": {
       "name": "User",
@@ -316,7 +322,11 @@
     },
     "subject": {
       "created": "Knowledge Base \"{{name}}\" created!",
-      "error": "Failed to create Knowledge Base."
+      "updated": "Knowledge Base \"{{name}}\" updated!",
+      "deleted": "Knowledge Base deleted successfully.",
+      "error": "Failed to create Knowledge Base.",
+      "error_update": "Failed to update Knowledge Base.",
+      "error_delete": "Failed to delete Knowledge Base."
     },
     "ingestion": {
       "started": "Started processing {{type}} for \"{{name}}\"...",
@@ -334,5 +344,26 @@
       "title": "RAG Chat is coming!",
       "description": "While we prepare the chat experience, why not feed your knowledge base? Add new data to make your searches even more powerful."
     }
+  },
+  "knowledge_contexts": {
+    "title": "Knowledge Contexts",
+    "subtitle": "Manage and organize your data contexts",
+    "filter_placeholder": "Filter by name or description...",
+    "source_count": "Sources",
+    "no_description": "No description provided.",
+    "new_context": "New Context",
+    "edit_context": "Edit Context",
+    "delete_confirm_title": "Delete Context?",
+    "delete_confirm_desc": "This will permanently delete \"{{name}}\" and potentially disconnect its sources. This action cannot be undone.",
+    "no_results": "No contexts found",
+    "no_results_desc": "Try adjusting your filter or create a new context.",
+    "name_label": "Name",
+    "description_label": "Description",
+    "icon_label": "Icon",
+    "placeholder_name": "Context Name",
+    "placeholder_description": "Description...",
+    "save_changes": "Save Changes",
+    "delete_tooltip": "Delete",
+    "edit_tooltip": "Edit"
   }
 }

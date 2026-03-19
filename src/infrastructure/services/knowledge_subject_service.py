@@ -104,10 +104,15 @@ class KnowledgeSubjectService:
         name: Optional[str] = None,
         description: Optional[str] = None,
         external_ref: Optional[str] = None,
+        icon: Optional[str] = None,
     ) -> None:
         """Update fields of an existing subject."""
         self._repo.update(
-            id=id, name=name, description=description, external_ref=external_ref
+            id=id,
+            name=name,
+            description=description,
+            external_ref=external_ref,
+            icon=icon,
         )
 
     def delete_subject(self, id: UUID) -> int:

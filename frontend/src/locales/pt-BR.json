@@ -57,7 +57,13 @@
       "search": "Busca Semântica",
       "sources": "Fontes de Conteúdo",
       "chunks": "Fontes > Chunks",
-      "activity": "Monitor de Atividade"
+      "activity": "Monitor de Atividade",
+      "knowledge_contexts": "Contextos de Conhecimento"
+    },
+    "groups": {
+      "search": "Pesquisas",
+      "data": "Dados",
+      "monitor": "Monitor"
     },
     "profile": {
       "name": "Usuário",
@@ -316,7 +322,11 @@
     },
     "subject": {
       "created": "Base de Conhecimento \"{{name}}\" criada!",
-      "error": "Falha ao criar Base de Conhecimento."
+      "updated": "Base de Conhecimento \"{{name}}\" atualizada!",
+      "deleted": "Base de Conhecimento excluída com sucesso.",
+      "error": "Falha ao criar Base de Conhecimento.",
+      "error_update": "Falha ao atualizar Base de Conhecimento.",
+      "error_delete": "Falha ao excluir Base de Conhecimento."
     },
     "ingestion": {
       "started": "Iniciado processamento de {{type}} para \"{{name}}\"...",
@@ -334,5 +344,26 @@
       "title": "O Chat RAG está chegando!",
       "description": "Enquanto preparamos a experiência de chat, que tal alimentar sua base de conhecimento? Adicione novos dados para tornar suas buscas ainda mais poderosas."
     }
+  },
+  "knowledge_contexts": {
+    "title": "Contextos de Conhecimento",
+    "subtitle": "Gerencie e organize seus contextos de dados",
+    "filter_placeholder": "Filtrar por nome ou descrição...",
+    "source_count": "Fontes",
+    "no_description": "Nenhuma descrição fornecida.",
+    "new_context": "Novo Contexto",
+    "edit_context": "Editar Contexto",
+    "delete_confirm_title": "Excluir Contexto?",
+    "delete_confirm_desc": "Isso excluirá permanentemente \"{{name}}\" e potencialmente desconectará suas fontes. Esta ação não pode ser desfeita.",
+    "no_results": "Nenhum contexto encontrado",
+    "no_results_desc": "Tente ajustar seu filtro ou crie um novo contexto.",
+    "name_label": "Nome",
+    "description_label": "Descrição",
+    "icon_label": "Ícone",
+    "placeholder_name": "Nome do Contexto",
+    "placeholder_description": "Descrição...",
+    "save_changes": "Salvar Alterações",
+    "delete_tooltip": "Excluir",
+    "edit_tooltip": "Editar"
   }
 }

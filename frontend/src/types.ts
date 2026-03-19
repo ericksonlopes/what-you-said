@@ -40,7 +40,7 @@ export type ContentSource = {
   processingStatus: string;
 };
 
-export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database';
+export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts';
 
 export type ToastType = 'success' | 'info' | 'error';
 

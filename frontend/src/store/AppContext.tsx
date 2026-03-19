@@ -19,6 +19,8 @@ interface AppState {
   subjects: Subject[];
   refreshSubjects: () => Promise<void>;
   addSubject: (subject: Omit<Subject, 'id' | 'sourceCount'>) => void;
+  updateSubject: (id: string, subject: Partial<Subject>) => Promise<void>;
+  deleteSubject: (id: string) => Promise<void>;
   isSourcesLoaded: boolean;
   refreshSources: () => Promise<void>;
   sources: ContentSource[];
@@ -50,7 +52,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isJobsLoaded, setIsJobsLoaded] = useState(false);
   const [currentView, setCurrentView] = useState<ViewState>(() => {
     const saved = localStorage.getItem('currentView') as ViewState;
-    const validViews: ViewState[] = ['chat', 'search', 'sources', 'activity', 'database'];
+    const validViews: ViewState[] = ['chat', 'search', 'sources', 'activity', 'database', 'knowledge_contexts'];
     const initial = validViews.includes(saved) ? saved : 'search';
     return initial;
   });
@@ -278,6 +280,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [addToast, t]);
 
+  const updateSubject = useCallback(async (id: string, subjectData: Partial<Subject>) => {
+    try {
+      await api.updateSubject(id, subjectData.name, subjectData.description, subjectData.icon);
+      setSubjects((prev) => prev.map(s => s.id === id ? { ...s, ...subjectData } : s));
+      addToast(t('notifications.subject.updated', { name: subjectData.name }), 'success');
+    } catch (err) {
+      console.error('Error updating subject:', err);
+      addToast(t('notifications.subject.error_update'), 'error');
+    }
+  }, [addToast, t]);
+
+  const deleteSubject = useCallback(async (id: string) => {
+    try {
+      await api.deleteSubject(id);
+      setSubjects((prev) => prev.filter(s => s.id !== id));
+      setSelectedSubjects((prev) => {
+        const next = prev.filter(s => s.id !== id);
+        if (next.length === 0 && subjects.length > 1) {
+           const other = subjects.find(s => s.id !== id);
+           return other ? [other] : [];
+        }
+        return next;
+      });
+      addToast(t('notifications.subject.deleted'), 'success');
+    } catch (err) {
+      console.error('Error deleting subject:', err);
+      addToast(t('notifications.subject.error_delete'), 'error');
+    }
+  }, [addToast, t, subjects]);
+
   return (
     <AppContext.Provider
       value={{
@@ -293,6 +325,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         subjects,
         refreshSubjects,
         addSubject,
+        updateSubject,
+        deleteSubject,
         sources,
         isSourcesLoaded,
         refreshSources,

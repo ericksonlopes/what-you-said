@@ -23,6 +23,7 @@ class KnowledgeSubjectEntity(BaseModel):
         default=None, description="Optional longer description"
     )
     icon: Optional[str] = Field(default=None, description="Icon name for the frontend")
+    source_count: int = Field(default=0, description="Number of content sources")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="Creation timestamp",
