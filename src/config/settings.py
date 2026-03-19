@@ -17,8 +17,9 @@ class SQLConfig(BaseModel):
     password: Optional[str] = Field(default=None, description="SQL database password")
     database: str = Field(default="whatyousaid", description="SQL database name")
     url_override: Optional[str] = Field(
-        default=None, description="Direct SQL connection string (overrides other fields)",
-        alias="url"
+        default=None,
+        description="Direct SQL connection string (overrides other fields)",
+        alias="url",
     )
 
     @property
@@ -143,10 +144,10 @@ class ModelEmbedding(BaseSettings):
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_file_encoding="utf-8", 
+        env_file=".env",
+        env_file_encoding="utf-8",
         env_nested_delimiter="__",
-        extra="ignore"
+        extra="ignore",
     )
     app: App = Field(default_factory=App, description="Application settings")
     vector: VectorConfig = Field(

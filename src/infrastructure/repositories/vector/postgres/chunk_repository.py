@@ -44,14 +44,14 @@ class ChunkPostgresRepository(IVectorRepository):
             for doc in documents:
                 # Prepare metadata for JSONB storage
                 meta = doc.model_dump(exclude={"content", "id", "score"})
-                
+
                 # Ensure all UUID and datetime objects are strings for JSON serialization
                 for key, value in meta.items():
                     if isinstance(value, UUID):
                         meta[key] = str(value)
                     elif isinstance(value, datetime):
                         meta[key] = value.isoformat()
-                
+
                 # 'extra' field is already a dict, but check its contents
                 if "extra" in meta and isinstance(meta["extra"], dict):
                     processed_extra = {}
@@ -62,9 +62,7 @@ class ChunkPostgresRepository(IVectorRepository):
                             processed_extra[k] = v
                     meta["extra"] = processed_extra
 
-                langchain_docs.append(
-                    Document(page_content=doc.content, metadata=meta)
-                )
+                langchain_docs.append(Document(page_content=doc.content or "", metadata=meta))
                 ids.append(str(doc.id))
 
             with self.vector_store_ctx as vector_store:
@@ -97,9 +95,9 @@ class ChunkPostgresRepository(IVectorRepository):
         search_mode: SearchMode = SearchMode.SEMANTIC,
         re_rank: bool = True,
     ) -> List[ChunkModel]:
-        # Note: Postgres search currently defaults to SEMANTIC. 
+        # Note: Postgres search currently defaults to SEMANTIC.
         # Hybrid/BM25 would require additional setup in Postgres (tsvector).
-        
+
         logger.debug(
             "Retrieving from Postgres",
             context={
@@ -149,14 +147,16 @@ class ChunkPostgresRepository(IVectorRepository):
 
         except Exception as e:
             logger.error(
-                "Error retrieving documents from Postgres", 
-                context={"query": query, "error": str(e)}
+                "Error retrieving documents from Postgres",
+                context={"query": query, "error": str(e)},
             )
             raise e
 
     def delete(self, filters: Optional[Any]) -> int:
         if not filters:
-            logger.warning("Delete called without filters in Postgres, skipping for safety.")
+            logger.warning(
+                "Delete called without filters in Postgres, skipping for safety."
+            )
             return 0
 
         logger.debug("Deleting documents from Postgres", context={"filters": filters})
@@ -166,11 +166,13 @@ class ChunkPostgresRepository(IVectorRepository):
                 if isinstance(filters, dict) and "id" in filters:
                     vector_store.delete(ids=[str(filters["id"])])
                     return 1
-                
+
                 # Generic delete by filter is not natively robust in all PostgresVectorStore versions
-                # For now, we'll log and return 0. In a production scenario, 
+                # For now, we'll log and return 0. In a production scenario,
                 # we'd implement a direct SQL DELETE here.
-                logger.warning("Generic delete by filter not yet implemented for Postgres vector store")
+                logger.warning(
+                    "Generic delete by filter not yet implemented for Postgres vector store"
+                )
                 return 0
         except Exception as e:
             logger.error(
@@ -184,8 +186,8 @@ class ChunkPostgresRepository(IVectorRepository):
     ) -> List[ChunkModel]:
         # list_chunks without vector search is not natively in VectorStore interface.
         # This implementation returns empty for now to satisfy interface.
-         logger.warning("list_chunks not implemented for Postgres vector store")
-         return []
+        logger.warning("list_chunks not implemented for Postgres vector store")
+        return []
 
     def is_ready(self) -> bool:
         """Check if Postgres is ready and vector extension is available."""

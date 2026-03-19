@@ -54,7 +54,9 @@ def ingest_youtube(
     if request.reprocess:
         logger.info("Running reprocessing in background")
         background_tasks.add_task(use_case.execute, cmd)
-        return IngestResponse(skipped=False, reason="Reprocessing started in background.")
+        return IngestResponse(
+            skipped=False, reason="Reprocessing started in background."
+        )
 
     try:
         result = use_case.execute(cmd)

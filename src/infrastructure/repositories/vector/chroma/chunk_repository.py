@@ -360,7 +360,7 @@ class ChunkChromaRepository(IVectorRepository):
                 models.append(mapper.document_to_model(doc))
 
             # Sort by index if present
-            models.sort(key=lambda x: x.index if x.index is not None else float('inf'))
+            models.sort(key=lambda x: x.index if x.index is not None else float("inf"))
 
             return models
             return models

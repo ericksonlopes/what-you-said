@@ -103,30 +103,35 @@ class TestIngestionJobSQLRepository:
 
     def test_get_by_id_error(self):
         from unittest.mock import patch
+
         with patch("sqlalchemy.orm.Query.first", side_effect=Exception("DB error")):
             with pytest.raises(Exception, match="DB error"):
                 self.repo.get_by_id(uuid4())
 
     def test_list_recent_jobs_error(self):
         from unittest.mock import patch
+
         with patch("sqlalchemy.orm.Query.all", side_effect=Exception("DB error")):
             with pytest.raises(Exception, match="DB error"):
                 self.repo.list_recent_jobs()
 
     def test_list_recent_jobs_by_subject_error(self):
         from unittest.mock import patch
+
         with patch("sqlalchemy.orm.Query.all", side_effect=Exception("DB error")):
             with pytest.raises(Exception, match="DB error"):
                 self.repo.list_recent_jobs_by_subject(uuid4())
 
     def test_list_by_content_source_error(self):
         from unittest.mock import patch
+
         with patch("sqlalchemy.orm.Query.all", side_effect=Exception("DB error")):
             with pytest.raises(Exception, match="DB error"):
                 self.repo.list_by_content_source(uuid4())
 
     def test_link_job_to_source_error(self):
         from unittest.mock import patch
+
         # Trigger error during commit
         job_id = self.repo.create_job(None)
         with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("DB error")):
@@ -135,6 +140,7 @@ class TestIngestionJobSQLRepository:
 
     def test_update_job_error(self):
         from unittest.mock import patch
+
         job_id = self.repo.create_job(None)
         with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("DB error")):
             with pytest.raises(Exception, match="DB error"):

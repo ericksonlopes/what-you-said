@@ -289,7 +289,9 @@ class ContentSourceSQLRepository:
                 logger.debug("Deleting ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
                 if cs is None:
-                    logger.warning("ContentSource not found for deletion", context=extra)
+                    logger.warning(
+                        "ContentSource not found for deletion", context=extra
+                    )
                     return False
                 session.delete(cs)
                 session.commit()

@@ -47,7 +47,7 @@ def setup_logging():
         "chromadb",
         "sentence_transformers",
         "weaviate",
-        "faiss"
+        "faiss",
     ]
 
     for logger_name in silence_loggers:

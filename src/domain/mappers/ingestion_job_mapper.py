@@ -53,7 +53,9 @@ class IngestionJobMapper:
             pipeline_version=cast(
                 Optional[str], getattr(model, "pipeline_version", None)
             ),
-            external_source=cast(Optional[str], getattr(model, "external_source", None)),
+            external_source=cast(
+                Optional[str], getattr(model, "external_source", None)
+            ),
             subject_id=cast(Optional[UUID], subject_id),
         )
 

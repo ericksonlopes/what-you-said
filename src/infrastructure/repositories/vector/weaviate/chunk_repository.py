@@ -375,7 +375,9 @@ class ChunkWeaviateRepository(IVectorRepository):
                     chunks.append(chunk_model)
 
                 # Sort by index if present
-                chunks.sort(key=lambda x: x.index if x.index is not None else float('inf'))
+                chunks.sort(
+                    key=lambda x: x.index if x.index is not None else float("inf")
+                )
 
                 logger.debug(
                     "Listed chunks",

@@ -1,7 +1,10 @@
 import pytest
 import sys
 from unittest.mock import MagicMock
-from src.infrastructure.repositories.vector.weaviate.weaviate_client import WeaviateClient
+from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
+    WeaviateClient,
+)
+
 
 class DummyConfig:
     def __init__(self, api_key=None):
@@ -11,17 +14,28 @@ class DummyConfig:
         self.weaviate_api_key = api_key
         self.weaviate_url = "http://localhost:8080"
 
+
 class FakeClient:
     def __init__(self, ready=True):
         self.closed = False
         self._ready = ready
         self.collections = MagicMock()
 
-    def is_ready(self): return self._ready
-    def is_live(self): return True
-    def close(self): self.closed = True
-    def __enter__(self): return self
-    def __exit__(self, *args, **kwargs): self.close()
+    def is_ready(self):
+        return self._ready
+
+    def is_live(self):
+        return True
+
+    def close(self):
+        self.closed = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.close()
+
 
 @pytest.mark.WeaviateClient
 class TestWeaviateClientExtended:
@@ -38,7 +52,7 @@ class TestWeaviateClientExtended:
         mock_weaviate, mock_auth, _ = self.setup_mocks(monkeypatch)
         fake = FakeClient()
         mock_weaviate.connect_to_weaviate_cloud.return_value = fake
-        
+
         cfg = DummyConfig(api_key="secret")
         wc = WeaviateClient(cfg)
         client = wc._create_client()
@@ -50,24 +64,24 @@ class TestWeaviateClientExtended:
         fake = FakeClient()
         fake.close = MagicMock(side_effect=Exception("Close error"))
         mock_weaviate.connect_to_local.return_value = fake
-        
+
         wc = WeaviateClient(DummyConfig())
-        with wc as client:
+        with wc:
             pass
-        
-        assert wc._client is None # Should be cleared anyway
+
+        assert wc._client is None  # Should be cleared anyway
 
     def test_create_collection_if_not_exists(self, monkeypatch):
         mock_weaviate, _, mock_wvc = self.setup_mocks(monkeypatch)
         fake = FakeClient()
         mock_weaviate.connect_to_local.return_value = fake
-        
+
         # 1. Test collection exists
         fake.collections.exists.return_value = True
         wc = WeaviateClient(DummyConfig())
         wc.create_collection_if_not_exists("Existing")
         fake.collections.create.assert_not_called()
-        
+
         # 2. Test collection doesn't exist
         fake.collections.exists.return_value = False
         wc.create_collection_if_not_exists("New")

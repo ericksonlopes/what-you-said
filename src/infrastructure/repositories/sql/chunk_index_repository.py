@@ -150,7 +150,9 @@ class ChunkIndexSQLRepository:
                 if not chunks:
                     return 0
 
-                source_ids = {c.content_source_id for c in chunks if c.content_source_id}
+                source_ids = {
+                    c.content_source_id for c in chunks if c.content_source_id
+                }
 
                 # 2. Delete the chunks
                 deleted = (
@@ -162,9 +164,7 @@ class ChunkIndexSQLRepository:
                 # 3. Update ContentSource counts (decrement by the number of chunks deleted)
                 if deleted > 0:
                     for sid in source_ids:
-                        count = sum(
-                            1 for c in chunks if c.content_source_id == sid
-                        )
+                        count = sum(1 for c in chunks if c.content_source_id == sid)
                         session.query(ContentSourceModel).filter_by(id=sid).update(
                             {"chunks": sa.text(f"chunks - {count}")}
                         )

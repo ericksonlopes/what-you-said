@@ -6,6 +6,7 @@ from src.infrastructure.services.ingestion_job_service import IngestionJobServic
 from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.infrastructure.repositories.sql.models.ingestion_job import IngestionJobModel
 
+
 @pytest.mark.IngestionJobService
 class TestIngestionJobService:
     @pytest.fixture
@@ -31,7 +32,7 @@ class TestIngestionJobService:
             embedding_model=kwargs.get("embedding_model", "emb"),
             pipeline_version=kwargs.get("pipeline_version", "1.0"),
             started_at=kwargs.get("started_at", datetime.now(timezone.utc)),
-            finished_at=kwargs.get("finished_at", None)
+            finished_at=kwargs.get("finished_at", None),
         )
         return model
 
@@ -39,25 +40,28 @@ class TestIngestionJobService:
         jid = uuid4()
         mock_repo.create_job.return_value = jid
         mock_repo.get_by_id.return_value = self.create_mock_model(id=jid)
-        
+
         result = service.create_job(
             content_source_id=uuid4(),
             status=IngestionJobStatus.STARTED,
             embedding_model="emb",
             pipeline_version="1.0",
             ingestion_type="youtube",
-            vector_store_type="weaviate"
+            vector_store_type="weaviate",
         )
-        
+
         assert result.id == jid
         mock_repo.create_job.assert_called_once_with(
-            content_source_id=mock_repo.create_job.call_args.kwargs.get("content_source_id"),
+            content_source_id=mock_repo.create_job.call_args.kwargs.get(
+                "content_source_id"
+            ),
             status="started",
             embedding_model="emb",
             pipeline_version="1.0",
             ingestion_type="youtube",
             vector_store_type="weaviate",
-            source_title=None
+            source_title=None,
+            external_source=None,
         )
 
     def test_update_job(self, service, mock_repo):
@@ -66,7 +70,7 @@ class TestIngestionJobService:
             job_id=jid,
             status=IngestionJobStatus.PROCESSING,
             status_message="working",
-            current_step=2
+            current_step=2,
         )
         mock_repo.update_job.assert_called_once_with(
             job_id=jid,
@@ -76,7 +80,8 @@ class TestIngestionJobService:
             current_step=2,
             total_steps=None,
             chunks_count=None,
-            source_title=None
+            source_title=None,
+            content_source_id=None,
         )
 
     def test_link_job_to_source(self, service, mock_repo):
@@ -92,7 +97,7 @@ class TestIngestionJobService:
         mock_repo.get_by_id.return_value = self.create_mock_model(id=jid)
         result = service.get_by_id(jid)
         assert result.id == jid
-        
+
         mock_repo.get_by_id.return_value = None
         assert service.get_by_id(uuid4()) is None
 

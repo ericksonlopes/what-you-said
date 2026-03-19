@@ -45,7 +45,7 @@ class TestYoutubeExtractor:
             )
             with patch.object(logger, "info"), patch.object(logger, "error"):
                 extractor = YoutubeExtractor(video_id)
-                with pytest.raises(NoTranscriptFound):
+                with pytest.raises(ValueError):
                     extractor.extract_transcript()
 
     def test_extract_transcript_transcripts_disabled(self):
@@ -54,7 +54,7 @@ class TestYoutubeExtractor:
             mock_fetch.side_effect = TranscriptsDisabled("Transcripts disabled")
             with patch.object(logger, "info"), patch.object(logger, "warning"):
                 extractor = YoutubeExtractor(video_id)
-                with pytest.raises(TranscriptsDisabled):
+                with pytest.raises(ValueError):
                     extractor.extract_transcript()
 
     def test_extract_transcript_generic_error(self):

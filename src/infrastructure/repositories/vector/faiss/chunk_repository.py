@@ -378,7 +378,7 @@ class ChunkFAISSRepository(IVectorRepository):
                     chunks.append(model)
 
             # Sort by index if present
-            chunks.sort(key=lambda x: x.index if x.index is not None else float('inf'))
+            chunks.sort(key=lambda x: x.index if x.index is not None else float("inf"))
 
             return chunks
 

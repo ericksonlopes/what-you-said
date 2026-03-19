@@ -19,11 +19,15 @@ class PostgresVector:
         self._connection_string = settings.sql.url
         # Convert any potential async strings to sync if needed for psycopg2
         if "postgresql+asyncpg" in self._connection_string:
-            self._connection_string = self._connection_string.replace("postgresql+asyncpg", "postgresql")
+            self._connection_string = self._connection_string.replace(
+                "postgresql+asyncpg", "postgresql"
+            )
         elif "postgresql://" not in self._connection_string:
             # Fallback/Error if not postgres
             if settings.app.env != "testing":
-                logger.warning(f"Connection string {self._connection_string} is not PostgreSQL. pgvector may fail.")
+                logger.warning(
+                    f"Connection string {self._connection_string} is not PostgreSQL. pgvector may fail."
+                )
 
         self._initialized = False
 

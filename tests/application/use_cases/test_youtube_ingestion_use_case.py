@@ -3,7 +3,7 @@ import uuid
 from types import SimpleNamespace
 
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
-from src.application.use_cases.ingest_youtube_use_case import YoutubeIngestionUseCase
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 
 
 class DummyDoc:
@@ -279,7 +279,9 @@ def test_ingest_playlist_empty_raises(monkeypatch):
 
 
 def test_url_extraction_logic():
-    from src.application.use_cases.ingest_youtube_use_case import YoutubeIngestionUseCase
+    from src.application.use_cases.youtube_ingestion_use_case import (
+        YoutubeIngestionUseCase,
+    )
 
     extract = YoutubeIngestionUseCase._extract_video_id_from_url
 
@@ -298,7 +300,9 @@ def test_resolve_subject_errors(monkeypatch):
     monkeypatch.setattr(ks, "get_by_name", lambda name: None)
     monkeypatch.setattr(ks, "get_subject_by_id", lambda id: None)
 
-    use_case = YoutubeIngestionUseCase(ks, None, None, None, None, None, None, "weaviate")
+    use_case = YoutubeIngestionUseCase(
+        ks, None, None, None, None, None, None, "weaviate"
+    )
 
     cmd_name = IngestYoutubeCommand(video_url="v", subject_name="unknown")
     with pytest.raises(
@@ -332,11 +336,8 @@ def test_ingest_fails_to_create_job(monkeypatch):
     monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: "vid")
 
     cmd = IngestYoutubeCommand(video_url="vid", subject_name="s")
-    result = use_case.execute(cmd)
-    assert "error" in result.video_results[0]
-    assert (
-        "Failed to create or retrieve ingestion job" in result.video_results[0]["error"]
-    )
+    with pytest.raises(ValueError, match="Failed to create or retrieve ingestion job"):
+        use_case.execute(cmd)
 
 
 def test_ingest_fails_no_transcript(monkeypatch):
@@ -354,9 +355,8 @@ def test_ingest_fails_no_transcript(monkeypatch):
     monkeypatch.setattr(use_case, "_extract_and_split", lambda *args, **kwargs: [])
 
     cmd = IngestYoutubeCommand(video_url="vid", subject_name="s")
-    result = use_case.execute(cmd)
-    assert "error" in result.video_results[0]
-    assert "No transcript chunks generated" in result.video_results[0]["error"]
+    with pytest.raises(ValueError, match="No transcript chunks generated"):
+        use_case.execute(cmd)
 
 
 def test_ingest_with_pre_created_job(monkeypatch):
@@ -397,7 +397,9 @@ def test_resolve_subject_by_id(monkeypatch):
         ks, "get_subject_by_id", lambda id: subject if id == subject_id else None
     )
 
-    use_case = YoutubeIngestionUseCase(ks, None, None, None, None, None, None, "weaviate")
+    use_case = YoutubeIngestionUseCase(
+        ks, None, None, None, None, None, None, "weaviate"
+    )
 
     # Test valid UUID object
     cmd = IngestYoutubeCommand(video_url="v", subject_id=subject_id)
@@ -470,7 +472,9 @@ def test_process_single_video_with_existing_but_not_done_source(monkeypatch):
 
 
 def test_url_extraction_edge_cases():
-    from src.application.use_cases.ingest_youtube_use_case import YoutubeIngestionUseCase
+    from src.application.use_cases.youtube_ingestion_use_case import (
+        YoutubeIngestionUseCase,
+    )
 
     extract = YoutubeIngestionUseCase._extract_video_id_from_url
 

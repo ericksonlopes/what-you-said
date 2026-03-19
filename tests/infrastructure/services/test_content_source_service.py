@@ -7,6 +7,7 @@ from src.infrastructure.services.content_source_service import ContentSourceServ
 from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
 from src.domain.entities.enums.source_type_enum_entity import SourceType
 
+
 @pytest.mark.Dependencies
 class TestContentSourceService:
     @pytest.fixture
@@ -32,33 +33,35 @@ class TestContentSourceService:
             dimensions=kwargs.get("dimensions", 384),
             chunks=kwargs.get("chunks", 10),
             created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
+            updated_at=datetime.now(timezone.utc),
         )
 
     def test_create_source(self, service, mock_repo):
         sid = uuid4()
         cid = uuid4()
         mock_repo.create.return_value = cid
-        mock_repo.get_by_id.return_value = self.create_mock_model(id=cid, subject_id=sid)
-        
+        mock_repo.get_by_id.return_value = self.create_mock_model(
+            id=cid, subject_id=sid
+        )
+
         res = service.create_source(
             subject_id=sid,
             source_type=SourceType.YOUTUBE,
             external_source="vid",
             status=ContentSourceStatus.DONE,
-            title="T"
+            title="T",
         )
-        
+
         assert res.id == cid
         mock_repo.create.assert_called_once()
 
     def test_get_by_source_info(self, service, mock_repo):
         model = self.create_mock_model()
         mock_repo.get_by_source_info.return_value = [model]
-        
+
         res = service.get_by_source_info(SourceType.PDF, "file.pdf")
         assert res.id == model.id
-        
+
         mock_repo.get_by_source_info.return_value = []
         assert service.get_by_source_info(SourceType.PDF, "none") is None
 
@@ -93,8 +96,5 @@ class TestContentSourceService:
         cid = uuid4()
         service.finish_ingestion(cid, "emb", 384, 100)
         mock_repo.finish_ingestion.assert_called_once_with(
-            content_source_id=cid,
-            embedding_model="emb",
-            dimensions=384,
-            chunks=100
+            content_source_id=cid, embedding_model="emb", dimensions=384, chunks=100
         )

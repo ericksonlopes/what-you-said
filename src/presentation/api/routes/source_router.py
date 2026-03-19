@@ -5,7 +5,11 @@ from fastapi import Depends, HTTPException, APIRouter
 from src.config.logger import Logger
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.model_loader_service import ModelLoaderService
-from src.presentation.api.dependencies import get_cs_service, get_model_loader, get_content_source_use_case
+from src.presentation.api.dependencies import (
+    get_cs_service,
+    get_model_loader,
+    get_content_source_use_case,
+)
 from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.presentation.api.schemas.model_schemas import ModelInfoResponse
@@ -59,9 +63,7 @@ def get_model_info(
 @router.delete("/{id}", responses={404: {"description": "Source not found"}})
 def delete_source(
     id: str,
-    use_case: Annotated[
-        ContentSourceUseCase, Depends(get_content_source_use_case)
-    ],
+    use_case: Annotated[ContentSourceUseCase, Depends(get_content_source_use_case)],
 ):
     """Delete a content source and all its related data (chunks, embeddings)."""
     try:

@@ -34,6 +34,7 @@ def test_get_source_types():
     assert "youtube" in data
     assert "pdf" in data
 
+
 def test_get_sources_success(mock_cs_service):
     mock_cs_service.list_all.return_value = []
 
@@ -68,12 +69,14 @@ def test_get_model_info_error(mock_model_loader):
     # We can use a property mock or just side_effect if it were a method
     # Since it's accessing attributes, we might need to mock the whole service to fail on access
     # but the router code accesses attributes.
-    
+
     # Let's mock it to raise exception on access if possible, or just mock the dependency to raise.
-    app.dependency_overrides[get_model_loader] = MagicMock(side_effect=Exception("Error"))
-    
+    app.dependency_overrides[get_model_loader] = MagicMock(
+        side_effect=Exception("Error")
+    )
+
     try:
-        response = client.get("/rest/sources/model")
+        client.get("/rest/sources/model")
         # FastAPI handles dependency exception usually before the router try-except if it's in Depends
         # but the router has its own try-except.
         # If the dependency itself raises, it's a 500 from FastAPI.

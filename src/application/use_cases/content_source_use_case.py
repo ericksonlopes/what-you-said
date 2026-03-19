@@ -6,6 +6,7 @@ from src.infrastructure.services.content_source_service import ContentSourceServ
 
 logger = Logger()
 
+
 class ContentSourceUseCase:
     """
     Orchestrates the deletion of a ContentSource and all its related artifacts:
@@ -44,7 +45,10 @@ class ContentSourceUseCase:
             sql_deleted = self.chunk_service.delete_by_content_source(content_source_id)
             logger.debug(
                 "Deleted chunks from SQL",
-                context={"content_source_id": str(content_source_id), "count": sql_deleted},
+                context={
+                    "content_source_id": str(content_source_id),
+                    "count": sql_deleted,
+                },
             )
 
             # 3. Delete from Vector Store
@@ -53,12 +57,15 @@ class ContentSourceUseCase:
             vector_deleted = self.vector_repo.delete(filters=filters)
             logger.debug(
                 "Deleted chunks from vector store",
-                context={"content_source_id": str(content_source_id), "count": vector_deleted},
+                context={
+                    "content_source_id": str(content_source_id),
+                    "count": vector_deleted,
+                },
             )
 
             # 4. Delete the Content Source record
             success = self.cs_service.delete_source(content_source_id)
-            
+
             logger.info(
                 "Content source and all related data deleted successfully",
                 context={

@@ -151,7 +151,10 @@ class YoutubeIngestionUseCase:
                 for future in concurrent.futures.as_completed(futures):
                     single_result = future.result()
                     result.video_results.append(single_result)
-                    if not single_result.get("skipped", False) and "error" not in single_result:
+                    if (
+                        not single_result.get("skipped", False)
+                        and "error" not in single_result
+                    ):
                         result.created_chunks = (
                             result.created_chunks or 0
                         ) + single_result.get("created_chunks", 0)
@@ -182,7 +185,9 @@ class YoutubeIngestionUseCase:
 
             # 3. For single video ingestion, if it fails, we raise an error here
             # so the API returns a non-200 status and the user gets a notification.
-            if any_failed and cmd.data_type != YoutubeDataType.PLAYLIST:
+            # We only do this if it's strictly a single video request (not a list of URLs)
+            is_batch = len(video_list) > 1
+            if any_failed and cmd.data_type != YoutubeDataType.PLAYLIST and not is_batch:
                 failed_item = next(r for r in result.video_results if "error" in r)
                 raise ValueError(failed_item["error"])
 
@@ -461,7 +466,9 @@ class YoutubeIngestionUseCase:
                         },
                     )
                 except Exception as er:
-                    logger.error(f"Failed to perform rollback for job {ingestion.id}: {er}")
+                    logger.error(
+                        f"Failed to perform rollback for job {ingestion.id}: {er}"
+                    )
 
             if source:
                 try:

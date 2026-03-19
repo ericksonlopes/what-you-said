@@ -2,7 +2,7 @@ import uuid
 import pytest
 from types import SimpleNamespace
 
-from src.application.use_cases.search_chunks_use_case import SearchUseCase
+from src.application.use_cases.search_use_case import SearchUseCase
 from src.domain.entities.enums.search_mode_enum import SearchMode
 
 
@@ -100,23 +100,32 @@ def test_search_passes_re_rank_to_service():
     uc.execute(query="hello", top_k=3, re_rank=True)
     assert vec.last_re_rank is True
 
+
 def test_search_both_id_and_name_raises():
     vec = DummyVectorService()
     uc = SearchUseCase(vector_service=vec, ks_service=None)
-    with pytest.raises(ValueError, match="Provide only one of subject_id or subject_name"):
+    with pytest.raises(
+        ValueError, match="Provide only one of subject_id or subject_name"
+    ):
         uc.execute(query="q", subject_id=uuid.uuid4(), subject_name="Alice")
+
 
 def test_search_name_without_ks_service_raises():
     vec = DummyVectorService()
     uc = SearchUseCase(vector_service=vec, ks_service=None)
-    with pytest.raises(ValueError, match="ks_service is required to filter by subject_name"):
+    with pytest.raises(
+        ValueError, match="ks_service is required to filter by subject_name"
+    ):
         uc.execute(query="q", subject_name="Alice")
+
 
 def test_search_subject_not_found():
     vec = DummyVectorService()
+
     class NotFoundKS:
-        def get_by_name(self, name): return None
-    
+        def get_by_name(self, name):
+            return None
+
     uc = SearchUseCase(vector_service=vec, ks_service=NotFoundKS())
     result = uc.execute(query="q", subject_name="Unknown")
     assert result.results == []

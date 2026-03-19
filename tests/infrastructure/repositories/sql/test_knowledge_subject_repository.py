@@ -1,15 +1,20 @@
 import pytest
 from uuid import uuid4
 from unittest.mock import patch
-from src.infrastructure.repositories.sql.knowledge_subject_repository import KnowledgeSubjectSQLRepository
+from src.infrastructure.repositories.sql.knowledge_subject_repository import (
+    KnowledgeSubjectSQLRepository,
+)
+
 
 @pytest.mark.Dependencies
 class TestKnowledgeSubjectSQLRepository:
     def test_create_subject_success(self, sqlite_memory):
         repo = KnowledgeSubjectSQLRepository()
-        sid = repo.create_subject(name="Test", external_ref="ref", description="desc", icon="icon")
+        sid = repo.create_subject(
+            name="Test", external_ref="ref", description="desc", icon="icon"
+        )
         assert sid is not None
-        
+
         ks = repo.get_by_id(sid)
         assert ks.name == "Test"
         assert ks.external_ref == "ref"
@@ -22,7 +27,7 @@ class TestKnowledgeSubjectSQLRepository:
 
     def test_get_by_id_error(self, sqlite_memory):
         repo = KnowledgeSubjectSQLRepository()
-        with patch("sqlalchemy.orm.Session.get", side_effect=Exception("DB Error")):
+        with patch("sqlalchemy.orm.Query.first", side_effect=Exception("DB Error")):
             with pytest.raises(Exception, match="DB Error"):
                 repo.get_by_id(uuid4())
 

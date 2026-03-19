@@ -33,7 +33,13 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         )
         # This should trigger the except block in execute for job recovery
         # But we need it to continue, so we don't mock it to fail completely
-        use_case.execute(cmd)
+        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=uuid.uuid4()
+        )
+        with patch.object(
+            use_case, "_process_single_video", return_value={"video_id": "123", "created_chunks": 1}
+        ):
+            use_case.execute(cmd)
         # No assertion needed, just checking coverage of the try-except block
 
     def test_execute_playlist_no_url(self, use_case):
@@ -79,7 +85,8 @@ class TestYoutubeIngestionUseCaseEdgeCases:
                 use_case, "_process_single_video", return_value={"error": "some error"}
             ),
         ):
-            use_case.execute(cmd)
+            with pytest.raises(ValueError, match="some error"):
+                use_case.execute(cmd)
             mock_services["ingestion_service"].update_job.assert_called()
 
     def test_process_single_video_duplicate_fail_job_creation(
@@ -166,7 +173,9 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         cmd = IngestYoutubeCommand(video_url="...", subject_id=str(uuid.uuid4()))
 
         with (
-            patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"),
+            patch(
+                "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
+            ),
             patch.object(use_case, "_extract_and_split", return_value=[]),
         ):
             with pytest.raises(
@@ -190,7 +199,9 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         )
 
         with (
-            patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"),
+            patch(
+                "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
+            ),
             patch.object(
                 use_case, "_extract_and_split", side_effect=Exception("Main Error")
             ),
