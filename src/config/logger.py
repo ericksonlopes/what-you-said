@@ -48,6 +48,7 @@ def setup_logging():
         "sentence_transformers",
         "weaviate",
         "faiss",
+        "onnxruntime",
     ]
 
     for logger_name in silence_loggers:
@@ -57,5 +58,22 @@ def setup_logging():
         logging_logger.addHandler(intercept_handler)
         logging_logger.propagate = False
         logging_logger.setLevel(logging.ERROR)
+
+    # Allow verbose/visible logs for specific new libraries (Docling, RapidOCR)
+    verbose_loggers = [
+        "docling",
+        "docling_core",
+        "rapidocr_onnxruntime",
+        "huggingface_hub",
+        "transformers",
+    ]
+
+    for logger_name in verbose_loggers:
+        logging_logger = logging.getLogger(logger_name)
+        for handler in logging_logger.handlers[:]:
+            logging_logger.removeHandler(handler)
+        logging_logger.addHandler(intercept_handler)
+        logging_logger.propagate = False
+        logging_logger.setLevel(logging.INFO)
 
     return custom_logger

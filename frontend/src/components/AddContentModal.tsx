@@ -8,6 +8,14 @@ import {
     Database,
     FileText,
     FileUp,
+    FileSpreadsheet,
+    FileTerminal,
+    FileCode,
+    FileImage,
+    FileSignature,
+    FileVideo,
+    FileType,
+    Presentation,
     Globe,
     Layers,
     ListVideo,
@@ -23,7 +31,8 @@ import {
 } from 'lucide-react';
 import {useAppContext} from '../store/AppContext';
 import { useTranslation } from 'react-i18next';
-import {useIngestion} from '../hooks/useIngestion';
+import { useIngestion } from '../hooks/useIngestion';
+import { api } from '../services/api';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface AddContentModalProps {
@@ -31,7 +40,7 @@ interface AddContentModalProps {
     onClose: () => void;
 }
 
-type ContentType = 'youtube' | 'wikipedia' | 'web' | 'notion' | 'pdf' | 'article';
+type ContentType = 'youtube' | 'wikipedia' | 'web' | 'notion' | 'pdf' | 'article' | 'docx' | 'pptx' | 'xlsx' | 'markdown' | 'html' | 'asciidoc' | 'latex' | 'csv' | 'image';
 
 interface SourceOption {
     id: ContentType;
@@ -221,13 +230,15 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
     
     const SOURCES: SourceOption[] = [
         {id: 'youtube', name: t('ingestion.sources.youtube'), description: t('ingestion.descriptions.youtube'), icon: Youtube, enabled: true},
+        {id: 'pdf', name: t('ingestion.sources.file'), description: t('ingestion.descriptions.file'), icon: FileUp, enabled: true},
         {id: 'article', name: t('ingestion.sources.article'), description: t('ingestion.descriptions.article'), icon: Newspaper, enabled: false},
-        {id: 'pdf', name: t('ingestion.sources.file'), description: t('ingestion.descriptions.file'), icon: FileText, enabled: true},
         {id: 'wikipedia', name: t('ingestion.sources.wikipedia'), description: t('ingestion.descriptions.wikipedia'), icon: BookOpen, enabled: false},
         {id: 'web', name: t('ingestion.sources.web'), description: t('ingestion.descriptions.web'), icon: Globe, enabled: false},
+        {id: 'notion', name: t('ingestion.sources.notion'), description: t('ingestion.descriptions.notion'), icon: Layers, enabled: false},
     ];
 
     const [contentType, setContentType] = useState<ContentType>('youtube');
+    const [selectedFileFormat, setSelectedFileFormat] = useState<ContentType>('pdf');
     const [inputValue, setInputValue] = useState('');
     const [targetSubjectId, setTargetSubjectId] = useState(selectedSubjects[0]?.id || subjects[0]?.id);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -265,43 +276,63 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
         }
     }, [isOpen, selectedSubjects]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         const targetSubject = subjects.find(s => s.id === targetSubjectId);
-        if (!targetSubject) return;
-
-        if (contentType !== 'youtube' && contentType !== 'pdf') return;
+        if (!targetSubject) {
+            addToast(t('ingestion.messages.error_subject'), 'error');
+            return;
+        }
 
         if (contentType === 'youtube') {
             startIngestion(inputValue, contentType, targetSubject, tokensPerChunk, tokensOverlap, youtubeDataType);
             setInputValue('');
             onClose();
-        } else if (contentType === 'pdf' && selectedFile) {
-            // Simulate file processing
+            return;
+        } 
+        
+        if (selectedFile) {
+            // Real file ingestion
             setUploadStatus('chunking');
             setProgress(0);
 
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('subject_id', targetSubject.id);
+            formData.append('tokens_per_chunk', tokensPerChunk.toString());
+            formData.append('tokens_overlap', tokensOverlap.toString());
+            formData.append('language', 'pt');
+
+            // Progress simulation for UI feedback during the network request
             const interval = setInterval(() => {
                 setProgress(p => {
-                    if (p >= 100) {
+                    if (p >= 90) {
                         clearInterval(interval);
-                        return 100;
+                        return 90;
                     }
-                    if (p === 40) setUploadStatus('vectorizing');
-                    if (p === 90) setUploadStatus('done');
-                    return p + 10;
+                    if (p === 30) setUploadStatus('vectorizing');
+                    return p + 5;
                 });
-            }, 300);
+            }, 200);
 
-            setTimeout(() => {
+            try {
+                await api.ingestFile(formData);
                 clearInterval(interval);
-                startIngestion(selectedFile.name, contentType, targetSubject, tokensPerChunk, tokensOverlap);
-                setSelectedFile(null);
+                setProgress(100);
+                setUploadStatus('done');
+                addToast(t('ingestion.messages.success'), 'success');
+                setTimeout(() => {
+                    setSelectedFile(null);
+                    setUploadStatus('idle');
+                    setProgress(0);
+                    onClose();
+                }, 500);
+            } catch (err: any) {
+                clearInterval(interval);
                 setUploadStatus('idle');
-                setProgress(0);
-                onClose();
-            }, 3500);
+                addToast(t('ingestion.messages.error') + ': ' + (err.message || err), 'error');
+            }
         }
     };
 
@@ -335,7 +366,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
 
     const isSubmitDisabled = !selectedSource?.enabled || 
         (contentType === 'youtube' && !inputValue.trim()) || 
-        (contentType === 'pdf' && !selectedFile) || 
+        (contentType !== 'youtube' && !selectedFile) || 
         uploadStatus !== 'idle';
 
     return (
@@ -586,6 +617,48 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                     ) : contentType === 'pdf' ? (
                                                         <div
                                                             className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                                            
+                                                            {/* File Format Selection */}
+                                                            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                                                                {[
+                                                                    {id: 'pdf', icon: FileText, ext: '.pdf'},
+                                                                    {id: 'docx', icon: FileText, ext: '.docx,.doc'},
+                                                                    {id: 'pptx', icon: Presentation, ext: '.pptx,.ppt'},
+                                                                    {id: 'xlsx', icon: FileSpreadsheet, ext: '.xlsx,.xls'},
+                                                                    {id: 'markdown', icon: FileTerminal, ext: '.md,.markdown'},
+                                                                    {id: 'csv', icon: FileSpreadsheet, ext: '.csv'},
+                                                                    {id: 'html', icon: Globe, ext: '.html,.htm'},
+                                                                    {id: 'image', icon: FileImage, ext: '.jpg,.jpeg,.png'},
+                                                                    {id: 'txt', icon: FileText, ext: '.txt'},
+                                                                    {id: 'other', icon: FileUp, ext: '*/*'},
+                                                                ].map((format) => {
+                                                                    const Icon = format.icon;
+                                                                    return (
+                                                                        <button
+                                                                            key={format.id}
+                                                                            type="button"
+                                                                            onClick={() => setSelectedFileFormat(format.id as ContentType)}
+                                                                            title={t(`ingestion.sources.${format.id}`)}
+                                                                            className={`p-2 rounded-lg border flex flex-col items-center justify-center gap-1 transition-all ${
+                                                                                selectedFileFormat === format.id 
+                                                                                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400' 
+                                                                                : 'bg-black/20 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                                                                            }`}
+                                                                        >
+                                                                            <Icon className="w-5 h-5"/>
+                                                                            <span className="text-[9px] font-bold uppercase">
+                                                                                {format.id === 'markdown' ? 'MD' : 
+                                                                                 format.id === 'other' ? t('ingestion.sources.other') : 
+                                                                                 format.id === 'docx' ? 'Word' :
+                                                                                 format.id === 'xlsx' ? 'Excel' :
+                                                                                 format.id === 'pptx' ? 'PPT' :
+                                                                                 format.id}
+                                                                            </span>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+
                                                             {!selectedFile ? (
                                                                 <div
                                                                     onDragOver={handleDragOver}
@@ -597,13 +670,25 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                                 >
                                                                     <UploadCloud
                                                                         className={`w-10 h-10 mb-3 ${isDragging ? 'text-emerald-400' : 'text-zinc-500'}`}/>
-                                                                    <p className="text-sm font-medium text-zinc-300 mb-1">{t('ingestion.coming_soon.title')}</p>
+                                                                    <p className="text-sm font-medium text-zinc-300 mb-1">
+                                                                        {t('common.actions.upload')} {t(`ingestion.sources.${selectedFileFormat}`)}
+                                                                    </p>
                                                                     <p className="text-xs text-zinc-500 mb-4">{t('ingestion.options.types.file_support')}</p>
                                                                     <label
                                                                         className="cursor-pointer px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm font-medium rounded-lg transition-colors border border-zinc-700">
                                                                         {t('common.actions.addData')}
                                                                         <input type="file" className="hidden"
-                                                                               accept=".pdf,.txt,.csv"
+                                                                               accept={
+                                                                                   selectedFileFormat === 'pdf' ? '.pdf' :
+                                                                                   selectedFileFormat === 'docx' ? '.docx,.doc' :
+                                                                                   selectedFileFormat === 'pptx' ? '.pptx,.ppt' :
+                                                                                   selectedFileFormat === 'xlsx' ? '.xlsx,.xls' :
+                                                                                   selectedFileFormat === 'markdown' ? '.md,.markdown' :
+                                                                                   selectedFileFormat === 'csv' ? '.csv' :
+                                                                                   selectedFileFormat === 'html' ? '.html,.htm' :
+                                                                                   selectedFileFormat === 'image' ? '.jpg,.jpeg,.png,.webp' : 
+                                                                                   selectedFileFormat === 'txt' ? '.txt' : '*/*'
+                                                                               }
                                                                                onChange={handleFileChange}/>
                                                                     </label>
                                                                 </div>

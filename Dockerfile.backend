@@ -25,7 +25,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Install core dependencies (fast build)
-RUN uv sync --locked --no-dev --no-install-project
+RUN uv sync --no-dev --no-install-project
 
 # Copy the rest of the application code
 COPY . .

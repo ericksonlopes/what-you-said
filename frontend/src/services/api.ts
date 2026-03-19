@@ -144,6 +144,15 @@ export const api = {
     return response.json();
   },
 
+  async ingestFile(formData: FormData): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/ingest/file`, {
+      method: 'POST',
+      body: formData
+    });
+    await handleResponseError(response, 'File ingestion failed');
+    return response.json();
+  },
+
   async fetchChunks(sourceId?: string, limit: number = 100, offset: number = 0, query?: string): Promise<Chunk[]> {
     const url = new URL(`${API_BASE_URL}/chunks`, window.location.origin);
     if (sourceId) url.searchParams.append('source_id', sourceId);

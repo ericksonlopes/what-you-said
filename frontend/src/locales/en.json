@@ -15,7 +15,8 @@
       "reprocess": "Reprocess",
       "delete": "Delete",
       "view_details": "View Details",
-      "go_to_source": "Go to Source"
+      "go_to_source": "Go to Source",
+      "upload": "Upload"
     },
     "status": {
       "pending": "PENDING",
@@ -244,7 +245,19 @@
     "sources": {
       "youtube": "YouTube",
       "article": "Article",
-      "file": "PDF",
+      "pdf": "PDF",
+      "file": "File",
+      "docx": "Word Document",
+      "pptx": "Presentation",
+      "xlsx": "Spreadsheet",
+      "markdown": "Markdown",
+      "html": "HTML Page",
+      "asciidoc": "AsciiDoc",
+      "latex": "LaTeX Document",
+      "csv": "CSV File",
+      "image": "Image (OCR)",
+      "txt": "Text File",
+      "other": "Others",
       "wikipedia": "Wikipedia",
       "web": "Web Scrape",
       "notion": "Notion"
@@ -252,7 +265,19 @@
     "descriptions": {
       "youtube": "Videos & Transcripts",
       "article": "Web Text Content",
-      "file": "PDF Documents",
+      "pdf": "PDF Document",
+      "file": "Local Document",
+      "docx": "Microsoft Word",
+      "pptx": "Microsoft PowerPoint",
+      "xlsx": "Microsoft Excel",
+      "markdown": "Markdown File",
+      "html": "Web Content",
+      "asciidoc": "Technical Doc",
+      "latex": "Scientific Paper",
+      "csv": "Data Table",
+      "image": "Scanned Image",
+      "txt": "Plain Text",
+      "other": "Supported File",
       "wikipedia": "Articles & History",
       "web": "Scrape any URL",
       "notion": "Workspace Sync"
@@ -311,8 +336,9 @@
       }
     },
     "messages": {
-      "success": "Ingestion started successfully!",
-      "error": "Failed to start ingestion.",
+      "success": "Content successfully added to Knowledge Base!",
+      "error": "Failed to add content",
+      "error_subject": "Please select a Knowledge Base",
       "duplicate": "This source already exists in this context."
     }
   },

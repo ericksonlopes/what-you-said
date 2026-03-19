@@ -25,10 +25,10 @@ echo "🚀 Automating environment for SQL:$SQL__TYPE and Vector:$VECTOR__STORE_T
 # Sincroniza apenas o necessário (rápido com uv)
 if [ -n "$EXTRAS" ]; then
     echo "📦 Installing: $EXTRAS"
-    uv sync --locked --no-dev $EXTRAS
+    uv sync --no-dev $EXTRAS
 else
     echo "✅ No extras needed, using core dependencies."
-    uv sync --locked --no-dev
+    uv sync --no-dev
 fi
 
 # Roda as migrações

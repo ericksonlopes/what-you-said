@@ -15,7 +15,8 @@
       "reprocess": "Reprocessar",
       "delete": "Excluir",
       "view_details": "Ver detalhes",
-      "go_to_source": "Ver na fonte"
+      "go_to_source": "Ver na fonte",
+      "upload": "Fazer Upload"
     },
     "status": {
       "pending": "PENDENTE",
@@ -244,7 +245,19 @@
     "sources": {
       "youtube": "YouTube",
       "article": "Artigo",
-      "file": "PDF",
+      "pdf": "PDF",
+      "file": "Arquivo",
+      "docx": "Documento Word",
+      "pptx": "Apresentação",
+      "xlsx": "Planilha Excel",
+      "markdown": "Markdown",
+      "html": "Página HTML",
+      "asciidoc": "AsciiDoc",
+      "latex": "Documento LaTeX",
+      "csv": "Arquivo CSV",
+      "image": "Imagem (OCR)",
+      "txt": "Arquivo de Texto",
+      "other": "Outros",
       "wikipedia": "Wikipedia",
       "web": "Web Scrape",
       "notion": "Notion"
@@ -252,7 +265,19 @@
     "descriptions": {
       "youtube": "Vídeos e Transcrições",
       "article": "Conteúdo de Texto Web",
-      "file": "Documentos PDF",
+      "pdf": "Documento PDF",
+      "file": "Arquivo Local",
+      "docx": "Microsoft Word",
+      "pptx": "Microsoft PowerPoint",
+      "xlsx": "Microsoft Excel",
+      "markdown": "Arquivo Markdown",
+      "html": "Conteúdo Web",
+      "asciidoc": "Documentação Técnica",
+      "latex": "Artigo Científico",
+      "csv": "Tabela de Dados",
+      "image": "Imagem Escaneada",
+      "txt": "Texto Plano",
+      "other": "Arquivo Suportado",
       "wikipedia": "Artigos e História",
       "web": "Extração de qualquer URL",
       "notion": "Sincronização de Workspace"
