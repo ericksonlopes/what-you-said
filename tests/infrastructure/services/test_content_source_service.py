@@ -59,11 +59,11 @@ class TestContentSourceService:
         model = self.create_mock_model()
         mock_repo.get_by_source_info.return_value = [model]
 
-        res = service.get_by_source_info(SourceType.PDF, "file.pdf")
+        res = service.get_by_source_info(SourceType.YOUTUBE, "vid")
         assert res.id == model.id
 
         mock_repo.get_by_source_info.return_value = []
-        assert service.get_by_source_info(SourceType.PDF, "none") is None
+        assert service.get_by_source_info(SourceType.YOUTUBE, "none") is None
 
     def test_get_by_id(self, service, mock_repo):
         model = self.create_mock_model()

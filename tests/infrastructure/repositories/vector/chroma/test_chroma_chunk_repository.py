@@ -1,7 +1,8 @@
-import pytest
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 # Mock dependencies at module level
 mock_chromadb = MagicMock()
@@ -9,11 +10,11 @@ mock_langchain_chroma = MagicMock()
 sys.modules["chromadb"] = mock_chromadb
 sys.modules["langchain_chroma"] = mock_langchain_chroma
 
-from src.infrastructure.repositories.vector.chroma.chunk_repository import (
+from src.infrastructure.repositories.vector.chroma.chunk_repository import (  # noqa: E402
     ChunkChromaRepository,
 )
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
-from src.domain.entities.enums.search_mode_enum import SearchMode
+from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel  # noqa: E402
+from src.domain.entities.enums.search_mode_enum import SearchMode  # noqa: E402
 
 
 @pytest.mark.ChunkChromaRepository

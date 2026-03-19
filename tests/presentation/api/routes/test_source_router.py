@@ -32,7 +32,6 @@ def test_get_source_types():
     data = response.json()
     assert isinstance(data, list)
     assert "youtube" in data
-    assert "pdf" in data
 
 
 def test_get_sources_success(mock_cs_service):

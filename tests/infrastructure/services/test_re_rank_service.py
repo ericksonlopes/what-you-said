@@ -7,8 +7,8 @@ from uuid import uuid4
 mock_flashrank = MagicMock()
 sys.modules["flashrank"] = mock_flashrank
 
-from src.infrastructure.services.re_rank_service import ReRankService
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
+from src.infrastructure.services.re_rank_service import ReRankService  # noqa: E402
+from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel  # noqa: E402
 
 
 @pytest.mark.ReRankService
