@@ -15,31 +15,46 @@ logger = Logger()
 class DoclingExtractor:
     """Extracts text and metadata from various file types using IBM's Docling with structural chunking."""
 
-    def __init__(self):
-        # Configure pipeline options with the device from settings (CUDA or CPU)
+    def _get_pipeline_options(self, do_ocr: bool = False) -> PdfPipelineOptions:
+        """Helper to create PdfPipelineOptions with consistent settings."""
         pipeline_options = PdfPipelineOptions()
         pipeline_options.accelerator_options.device = settings.app.device
+        pipeline_options.do_ocr = do_ocr
 
-        # Optimization for low memory / CPU environments
-        # Default to 1 thread to avoid peak memory usage causing std::bad_alloc
         if settings.app.device == "cpu":
             pipeline_options.accelerator_options.num_threads = (
                 settings.docling.cpu_num_threads
             )
+        return pipeline_options
 
-        # Default converter for use in Linux/High-resource environments
+    def __init__(self):
+        # Default converter (no OCR)
+        pipeline_options = self._get_pipeline_options(do_ocr=False)
         self.converter = DocumentConverter(
             format_options={
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
             }
         )
+        # Lazy-loaded OCR converter
+        self._ocr_converter = None
 
-    def extract(self, file_path: str) -> List[Document]:
+    def _get_ocr_converter(self) -> DocumentConverter:
+        if self._ocr_converter is None:
+            pipeline_options = self._get_pipeline_options(do_ocr=True)
+            self._ocr_converter = DocumentConverter(
+                format_options={
+                    InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+                }
+            )
+        return self._ocr_converter
+
+    def extract(self, file_path: str, do_ocr: bool = False) -> List[Document]:
         """
         Converts a file to a single LangChain Document containing the full Markdown content.
 
         Args:
             file_path: Path to the local file.
+            do_ocr: Whether to use OCR for extraction.
 
         Returns:
             A list containing a single Document object.
@@ -48,6 +63,7 @@ class DoclingExtractor:
             "Starting extraction with Docling",
             context={
                 "file_path": file_path,
+                "do_ocr": do_ocr,
             },
         )
 
@@ -55,10 +71,13 @@ class DoclingExtractor:
             raise FileNotFoundError(f"File not found: {file_path}")
 
         try:
-            # 1. Convert the document
-            result = self.converter.convert(file_path)
+            # 1. Convert the document using the appropriate converter
+            converter = self._get_ocr_converter() if do_ocr else self.converter
+            result = converter.convert(file_path)
 
             # 2. Extract global metadata
+            from docling_core.types.doc import PictureItem
+
             doc_meta = None
             if hasattr(result.document, "meta"):
                 doc_meta = result.document.meta
@@ -69,10 +88,44 @@ class DoclingExtractor:
             ):
                 doc_meta = result.input.document.meta
 
+            # Get Docling-detected source type and count images
+            docling_source_type = "unknown"
+            if hasattr(result, "input") and hasattr(result.input, "format"):
+                docling_source_type = result.input.format.value
+
+            image_count = 0
+            for element, _level in result.document.iterate_items():
+                if isinstance(element, PictureItem):
+                    image_count += 1
+
+            # Get original filename and extension
+            origin_filename = os.path.basename(file_path)
+            origin = getattr(result.document, "origin", None)
+            if origin and getattr(origin, "filename", None):
+                origin_filename = origin.filename
+
+            # Extension from origin_filename
+            extension = os.path.splitext(origin_filename)[1].lower().lstrip(".")
+            if not extension:
+                extension = self._get_file_type(file_path)
+
+            logger.debug(
+                "Extracted metadata from Docling",
+                context={
+                    "origin_filename": origin_filename,
+                    "extension": extension,
+                    "docling_source_type": docling_source_type,
+                    "image_count": image_count,
+                },
+            )
+
             global_metadata = {
                 "source": file_path,
-                "file_name": os.path.basename(file_path),
-                "file_type": self._get_file_type(file_path),
+                "file_name": origin_filename,
+                "file_type": extension,
+                "source_type": extension,
+                "docling_source_type": docling_source_type,
+                "image_count": image_count,
                 "is_structural_chunk": False,  # No longer pre-chunked
             }
 

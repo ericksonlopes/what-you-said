@@ -195,7 +195,8 @@
       "live": "Live Monitor Active"
     },
     "pipeline_optimized": "Pipeline optimized",
-    "phase": "Phase"
+    "phase": "Phase",
+    "duration": "duration"
   },
   "settings": {
     "title": "Settings",
@@ -318,6 +319,11 @@
       "title": "Advanced Options",
       "strategy": "Strategy",
       "optimized": "Optimized",
+      "ocr": {
+        "label": "Advanced Reading (OCR)",
+        "description": "Enable high-precision reading for images, tables, and complex layouts.",
+        "warning": "May significantly increase processing time."
+      },
       "max_tokens": "Maximum Tokens",
       "tokens_fragment": "Maximum tokens per fragment",
       "context_overlap": "Context Overlap",

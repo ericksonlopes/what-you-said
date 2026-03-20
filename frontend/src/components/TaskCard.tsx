@@ -40,6 +40,19 @@ const formatRelativeTime = (dateString: string, t: any) => {
   return date.toLocaleDateString();
 };
 
+const formatDuration = (start: string, end?: string) => {
+  if (!end) return null;
+  const startTime = new Date(start.endsWith('Z') || start.includes('+') ? start : `${start}Z`).getTime();
+  const endTime = new Date(end.endsWith('Z') || end.includes('+') ? end : `${end}Z`).getTime();
+  const diffInSeconds = Math.floor((endTime - startTime) / 1000);
+  
+  if (diffInSeconds < 0) return null;
+  if (diffInSeconds < 60) return `${diffInSeconds}s`;
+  const minutes = Math.floor(diffInSeconds / 60);
+  const seconds = diffInSeconds % 60;
+  return `${minutes}m ${seconds}s`;
+};
+
 export function TaskCard({ task }: TaskCardProps) {
   const { t } = useTranslation();
   const { setSelectedSourceIdForDb, setCurrentView, addToast, refreshJobs } = useAppContext();
@@ -244,11 +257,18 @@ export function TaskCard({ task }: TaskCardProps) {
                   </div>
                 )}
               </div>
-
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[9px] text-zinc-500/60 font-bold uppercase tracking-tighter">
-                  <Clock className="w-3 h-3" />
-                  {formatRelativeTime(task.createdAt, t)}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5 text-[9px] text-zinc-500/60 font-bold uppercase tracking-tighter">
+                    <Clock className="w-3 h-3" />
+                    {formatRelativeTime(task.createdAt, t)}
+                  </div>
+                  {isCompleted && task.finishedAt && (
+                    <div className="flex items-center gap-1.5 text-[9px] text-emerald-500/60 font-bold tracking-tighter">
+                      <Clock className="w-3 h-3" />
+                      {t('activity.duration')}: {formatDuration(task.createdAt, task.finishedAt)}
+                    </div>
+                  )}
                 </div>
                 {isCompleted && task.contentSourceId && (
                   <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-emerald-500/60">

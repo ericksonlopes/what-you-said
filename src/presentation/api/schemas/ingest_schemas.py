@@ -38,3 +38,4 @@ class FileUrlIngestRequest(BaseModel):
     language: str = "pt"
     tokens_per_chunk: int = 512
     tokens_overlap: int = 50
+    do_ocr: bool = False

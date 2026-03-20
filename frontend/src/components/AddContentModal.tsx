@@ -27,7 +27,9 @@ import {
     UploadCloud,
     X,
     Youtube,
-    Zap
+    Zap,
+    Scan,
+    Info
 } from 'lucide-react';
 import {useAppContext} from '../store/AppContext';
 import { useTranslation } from 'react-i18next';
@@ -40,7 +42,7 @@ interface AddContentModalProps {
     onClose: () => void;
 }
 
-type ContentType = 'youtube' | 'wikipedia' | 'web' | 'notion' | 'pdf' | 'article' | 'docx' | 'pptx' | 'xlsx' | 'markdown' | 'html' | 'asciidoc' | 'latex' | 'csv' | 'image';
+type ContentType = 'youtube' | 'wikipedia' | 'web' | 'notion' | 'pdf' | 'article' | 'docx' | 'pptx' | 'xlsx' | 'markdown' | 'html' | 'asciidoc' | 'latex' | 'csv' | 'image' | 'txt' | 'other' | 'audio';
 
 interface SourceOption {
     id: ContentType;
@@ -263,6 +265,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
     const [activeTab, setActiveTab] = useState<'source' | 'settings'>('source');
     const [youtubeDataType, setYoutubeDataType] = useState<'video' | 'playlist'>('video');
     const [fileInputMode, setFileInputMode] = useState<'upload' | 'url'>('upload');
+    const [doOcr, setDoOcr] = useState(false);
 
     const strategyProps = {
         tokensPerChunk,
@@ -315,6 +318,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                     subject_id: targetSubject.id,
                     tokens_per_chunk: tokensPerChunk,
                     tokens_overlap: tokensOverlap,
+                    do_ocr: doOcr,
                     language: 'pt'
                 });
                 setProgress(100);
@@ -343,6 +347,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
             formData.append('subject_id', targetSubject.id);
             formData.append('tokens_per_chunk', tokensPerChunk.toString());
             formData.append('tokens_overlap', tokensOverlap.toString());
+            formData.append('do_ocr', doOcr.toString());
             formData.append('language', 'pt');
 
             // Progress simulation for UI feedback during the network request
@@ -683,6 +688,51 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                                     <Globe className="w-3.5 h-3.5"/>
                                                                     URL
                                                                 </button>
+                                                            </div>
+
+                                                            {/* OCR Toggle implementation */}
+                                                            <div className="bg-black/40 rounded-xl border border-zinc-800/50 p-4 space-y-3">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`p-2 rounded-lg transition-colors ${doOcr ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800/80 text-zinc-500'}`}>
+                                                                            <Scan className="w-4 h-4" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-[13px] font-semibold text-zinc-200">
+                                                                                {t('ingestion.options.ocr.label')}
+                                                                            </h4>
+                                                                            <p className="text-[11px] text-zinc-500">
+                                                                                {t('ingestion.options.ocr.description')}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setDoOcr(!doOcr)}
+                                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                                                                            doOcr ? 'bg-emerald-500' : 'bg-zinc-700'
+                                                                        }`}
+                                                                    >
+                                                                        <span
+                                                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                                                                                doOcr ? 'translate-x-6' : 'translate-x-1'
+                                                                            }`}
+                                                                        />
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                                {doOcr && (
+                                                                    <motion.div 
+                                                                        initial={{ opacity: 0, height: 0 }}
+                                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                                        className="flex items-start gap-2 p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/10"
+                                                                    >
+                                                                        <Info className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                                                        <p className="text-[10px] text-zinc-400 leading-relaxed font-medium">
+                                                                            {t('ingestion.options.ocr.warning')}
+                                                                        </p>
+                                                                    </motion.div>
+                                                                )}
                                                             </div>
 
                                                             {fileInputMode === 'upload' ? (

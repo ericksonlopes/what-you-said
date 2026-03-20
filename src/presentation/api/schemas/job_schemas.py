@@ -18,5 +18,6 @@ class JobResponse(BaseModel):
     chunks_count: Optional[int] = None
     external_source: Optional[str] = None
     created_at: datetime
+    finished_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

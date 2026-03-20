@@ -109,6 +109,7 @@ async def ingest_file(
     language: Annotated[str, Form()] = "pt",
     tokens_per_chunk: Annotated[int, Form()] = 512,
     tokens_overlap: Annotated[int, Form()] = 50,
+    do_ocr: Annotated[bool, Form()] = False,
 ):
     """
     Upload and ingest a file using Docling.
@@ -147,6 +148,7 @@ async def ingest_file(
         language=language,
         tokens_per_chunk=tokens_per_chunk,
         tokens_overlap=tokens_overlap,
+        do_ocr=do_ocr,
     )
 
     # Execute ingestion in background to avoid timeout
@@ -246,6 +248,7 @@ async def ingest_file_url(
         language=request.language,
         tokens_per_chunk=request.tokens_per_chunk,
         tokens_overlap=request.tokens_overlap,
+        do_ocr=request.do_ocr,
     )
 
     # Execute ingestion in background

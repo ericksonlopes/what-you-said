@@ -57,6 +57,7 @@ class IngestionJobService:
         chunks_count: Optional[int] = None,
         source_title: Optional[str] = None,
         content_source_id: Optional[UUID] = None,
+        ingestion_type: Optional[str] = None,
     ) -> None:
         """Update a job — accept IngestionJobStatus enum and progress info."""
         self._repo.update_job(
@@ -69,6 +70,7 @@ class IngestionJobService:
             chunks_count=chunks_count,
             source_title=source_title,
             content_source_id=content_source_id,
+            ingestion_type=ingestion_type,
         )
 
     def link_job_to_source(

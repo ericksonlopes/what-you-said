@@ -195,7 +195,8 @@
       "live": "Monitoramento em Tempo Real"
     },
     "pipeline_optimized": "Pipeline otimizada",
-    "phase": "Fase"
+    "phase": "Fase",
+    "duration": "duração"
   },
   "settings": {
     "title": "Configurações",
@@ -318,6 +319,11 @@
       "title": "Opções Avançadas",
       "strategy": "Estratégia",
       "optimized": "Otimizado",
+      "ocr": {
+        "label": "Leitura Avançada (OCR)",
+        "description": "Ativa leitura de alta precisão para imagens, tabelas e layouts complexos.",
+        "warning": "Pode aumentar significativamente o tempo de processamento."
+      },
       "max_tokens": "Máximo de Tokens",
       "tokens_fragment": "Máximo de tokens por fragmento",
       "context_overlap": "Sobreposição de Contexto",

@@ -21,6 +21,7 @@ export type IngestionTask = {
   subjectId: string;
   subjectName?: string;
   createdAt: string;
+  finishedAt?: string;
   ingestionType?: string;
   errorMessage?: string;
   externalSource?: string;

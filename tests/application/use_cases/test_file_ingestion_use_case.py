@@ -332,4 +332,46 @@ class TestFileIngestionUseCase:
         # OR if I mock extractor.extract to return something that evaluates to True but is not a list? No.
         # If docs = [obj], 111 passes.
         # If I want to reach 145, docs must be falsy at 143.
-        pass
+
+    def test_execute_source_type_refinement(self, use_case_deps, mock_extractor):
+        use_case = FileIngestionUseCase(**use_case_deps)
+
+        subject_id = uuid4()
+        job_id = uuid4()
+        source_id = uuid4()
+
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=subject_id
+        )
+        use_case_deps["ingestion_service"].create_job.return_value = MagicMock(
+            id=job_id
+        )
+        use_case_deps["cs_service"].create_source.return_value = MagicMock(
+            id=source_id, source_type=SourceType.PDF, external_source="test.docx"
+        )
+
+        # Mock Docling to detect PDF despite .docx extension in filename
+        mock_extractor.extract.return_value = [
+            MagicMock(page_content="content", metadata={"source_type": "pdf"})
+        ]
+        use_case_deps["vector_service"].index_documents.return_value = ["vec1"]
+
+        cmd = IngestFileCommand(
+            file_path="/tmp/test.docx", file_name="test.docx", subject_id=subject_id
+        )
+
+        use_case.execute(cmd)
+
+        # Verify create_source was called with PDF (refined) instead of DOCX
+        args, kwargs = use_case_deps["cs_service"].create_source.call_args
+        assert kwargs["source_type"] == SourceType.PDF
+
+        # Verify update_job was called with refined ingestion_type
+        # It's called after extraction
+        update_calls = use_case_deps["ingestion_service"].update_job.call_args_list
+        refined_call_found = any(
+            call.kwargs.get("ingestion_type") == "pdf" for call in update_calls
+        )
+        assert refined_call_found, (
+            f"Refined ingestion_type 'pdf' not found in update_job calls: {update_calls}"
+        )

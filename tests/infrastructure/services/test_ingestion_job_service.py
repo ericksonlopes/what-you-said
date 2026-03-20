@@ -82,6 +82,7 @@ class TestIngestionJobService:
             chunks_count=None,
             source_title=None,
             content_source_id=None,
+            ingestion_type=None,
         )
 
     def test_link_job_to_source(self, service, mock_repo):

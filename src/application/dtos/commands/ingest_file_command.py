@@ -21,6 +21,7 @@ class IngestFileCommand:
 
     embedding_model: Optional[str] = None
     reprocess: bool = False
+    do_ocr: bool = False
 
     # Optional pre-created job id
     ingestion_job_id: Optional[UUID] = None

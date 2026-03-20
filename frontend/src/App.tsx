@@ -171,7 +171,6 @@ function ActivityMonitorView() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-10 mt-6">
             {paginatedJobs.map((task) => (
-              // @ts-ignore - IntrinsicAttributes should include key, but TS is being difficult here
               <TaskCard key={task.id} task={task} />
             ))}
           </div>
@@ -373,7 +372,6 @@ function MainContent() {
   const { currentView, selectedSubjects, isAddModalOpen, setIsAddModalOpen, addToast } = useAppContext();
   const { t } = useTranslation();
 
-  // @ts-ignore
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bg-dark relative">
       {/* Topbar Context Indicator & Global Actions */}

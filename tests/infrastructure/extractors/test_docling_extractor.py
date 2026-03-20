@@ -22,10 +22,17 @@ class TestDoclingExtractor:
         test_file.write_text("dummy")
 
         mock_result = MagicMock()
+        mock_result.document.origin.filename = None  # Force fallback
         mock_converter.convert.return_value = mock_result
+
+        # Mock input format
+        mock_result.input.format.value = "docx"
 
         # Mock result.document.export_to_markdown
         mock_result.document.export_to_markdown.return_value = "# Markdown Content"
+
+        # Mock result.document.iterate_items for image counting
+        mock_result.document.iterate_items.return_value = []
 
         extractor = DoclingExtractor()
         docs = extractor.extract(str(test_file))
@@ -35,6 +42,8 @@ class TestDoclingExtractor:
         assert docs[0].metadata["file_name"] == "test.docx"
         assert docs[0].metadata["is_structural_chunk"] is False
         assert docs[0].metadata["source"] == str(test_file)
+        assert docs[0].metadata["docling_source_type"] == "docx"
+        assert docs[0].metadata["image_count"] == 0
 
     def test_extract_file_not_found(self):
         from src.infrastructure.extractors.docling_extractor import DoclingExtractor
@@ -63,6 +72,7 @@ class TestDoclingExtractor:
         test_file.write_text("dummy")
 
         mock_result = MagicMock()
+        mock_result.document.origin.filename = None  # Force fallback
         mock_result.document.export_to_markdown.return_value = "content"
         # Mock metadata
         mock_result.document.meta.title = "Test Title"
@@ -119,3 +129,34 @@ class TestDoclingExtractor:
         extractor = DoclingExtractor()
         assert extractor._get_file_type("test.PDF") == "pdf"
         assert extractor._get_file_type("no_ext") == "unknown"
+
+    def test_extract_with_images(self, mock_converter, tmp_path):
+        from src.infrastructure.extractors.docling_extractor import DoclingExtractor
+        from docling_core.types.doc import PictureItem
+
+        test_file = tmp_path / "images.pdf"
+        test_file.write_text("dummy")
+
+        mock_result = MagicMock()
+        mock_result.input.format.value = "pdf"
+        mock_result.document.export_to_markdown.return_value = "content"
+
+        # Mock 2 images
+        image1 = MagicMock(spec=PictureItem)
+        image2 = MagicMock(spec=PictureItem)
+        other_item = MagicMock()
+
+        mock_result.document.iterate_items.return_value = [
+            (image1, 0),
+            (other_item, 0),
+            (image2, 1),
+        ]
+
+        mock_converter.convert.return_value = mock_result
+
+        extractor = DoclingExtractor()
+        docs = extractor.extract(str(test_file))
+
+        assert len(docs) == 1
+        assert docs[0].metadata["image_count"] == 2
+        assert docs[0].metadata["docling_source_type"] == "pdf"

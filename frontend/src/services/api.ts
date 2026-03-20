@@ -27,6 +27,7 @@ export const api = {
     language?: string;
     tokens_per_chunk?: number;
     tokens_overlap?: number;
+    do_ocr?: boolean;
   }): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/ingest/file-url`, {
       method: 'POST',
@@ -118,6 +119,7 @@ export const api = {
       chunksCount: j.chunks_count || undefined,
       subjectId: j.subject_id || '',
       createdAt: j.created_at,
+      finishedAt: j.finished_at,
       ingestionType: j.ingestion_type || undefined,
       errorMessage: j.error_message || undefined,
       externalSource: j.external_source || undefined,

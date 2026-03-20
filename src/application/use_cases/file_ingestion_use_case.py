@@ -90,9 +90,38 @@ class FileIngestionUseCase:
                 total_steps=4,
             )
 
-            docs = self.extractor.extract(cmd.file_path)
+            docs = self.extractor.extract(cmd.file_path, do_ocr=cmd.do_ocr)
             if not docs:
                 raise ValueError(f"No content extracted from file {cmd.file_name}")
+
+            # Refine source_type based on actual extracted metadata if available
+            extracted_ext = docs[0].metadata.get("source_type")
+            docling_detected = docs[0].metadata.get("docling_source_type")
+
+            logger.debug(
+                "Attempting source_type refinement",
+                context={
+                    "extracted_ext": extracted_ext,
+                    "docling_detected": docling_detected,
+                    "current_source_type": source_type.value,
+                },
+            )
+
+            # Prioritize Docling's specific detection if it's a known format
+            to_try = [docling_detected, extracted_ext]
+            for ext_str in to_try:
+                if ext_str and isinstance(ext_str, str):
+                    try:
+                        refined = SourceType(ext_str.lower())
+                        if refined != SourceType.OTHER:
+                            source_type = refined
+                            logger.info(
+                                f"Refined source_type to {source_type.value} based on {ext_str}",
+                                context={"file_name": cmd.file_name},
+                            )
+                            break
+                    except ValueError:
+                        pass
 
             # 3. Create ContentSource
             source = self.cs_service.create_source(
@@ -112,6 +141,7 @@ class FileIngestionUseCase:
                 status_message="Splitting content into chunks...",
                 current_step=2,
                 total_steps=4,
+                ingestion_type=source_type.value,
             )
 
             # 4. Split and Tokenize

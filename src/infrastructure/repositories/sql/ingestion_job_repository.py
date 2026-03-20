@@ -75,6 +75,7 @@ class IngestionJobSQLRepository:
         chunks_count: Optional[int] = None,
         source_title: Optional[str] = None,
         content_source_id: Optional[UUID] = None,
+        ingestion_type: Optional[str] = None,
     ) -> None:
         """Update an ingestion job's status, error_message and progress info."""
         with Connector() as session:
@@ -89,6 +90,7 @@ class IngestionJobSQLRepository:
                     "chunks_count": chunks_count,
                     "source_title": source_title,
                     "content_source_id": content_source_id,
+                    "ingestion_type": ingestion_type,
                 }
                 logger.debug("Updating ingestion job", context=extra)
                 job = session.get(IngestionJobModel, job_id)
@@ -114,6 +116,8 @@ class IngestionJobSQLRepository:
                     job.source_title = source_title
                 if content_source_id is not None:
                     job.content_source_id = content_source_id
+                if ingestion_type is not None:
+                    job.ingestion_type = ingestion_type
 
                 session.commit()
                 logger.debug("Ingestion job updated successfully", context=extra)
