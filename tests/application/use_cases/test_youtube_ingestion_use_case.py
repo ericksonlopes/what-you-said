@@ -72,7 +72,7 @@ def make_cs_service(existing: bool = False):
             return None
 
         def finish_ingestion(
-            self, content_source_id, embedding_model, dimensions, chunks
+            self, content_source_id, embedding_model, dimensions, chunks, **kwargs
         ):
             # noop for tests
             return None

@@ -14,6 +14,8 @@ class SourceResponse(BaseModel):
     external_source: Optional[str] = None
     embedding_model: Optional[str] = None
     dimensions: Optional[int] = None
+    total_tokens: Optional[int] = None
+    max_tokens_per_chunk: Optional[int] = None
     chunks: Optional[int] = None
     created_at: datetime
 

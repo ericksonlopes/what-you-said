@@ -21,12 +21,13 @@ class DummyClientContext:
     def __exit__(self, exc_type, exc, tb):
         self.exited_args = (exc_type, exc, tb)
 
-    def create_collection_if_not_exists(self, collection_name):
+    def create_collection_if_not_exists(self, collection_name, dimensions=None):
         pass
 
 
 class DummyEmbedding:
-    pass
+    def __init__(self, dimensions=768):
+        self.model_loader_service = SimpleNamespace(dimensions=dimensions)
 
 
 @pytest.mark.WeaviateVector

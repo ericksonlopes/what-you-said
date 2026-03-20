@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ContentSource } from '../types';
 import { useTranslation } from 'react-i18next';
-import { FileText, ChevronLeft, ChevronRight, Search, Filter, ChevronDown, Check, Database, Youtube, BookOpen, Globe, Newspaper, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import { FileText, ChevronLeft, ChevronRight, Search, Filter, ChevronDown, Check, Database, Youtube, BookOpen, Globe, Newspaper, RotateCcw, Plus, Trash2, FileCode, FileSpreadsheet, FileImage, Presentation, FileAudio, FileVideo, Terminal, Share2, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../store/AppContext';
 import { api } from '../services/api';
@@ -27,8 +27,27 @@ const getIcon = (type: string) => {
     case 'youtube': return Youtube;
     case 'article': return Newspaper;
     case 'pdf': return FileText;
+    case 'docx':
+    case 'doc':
+    case 'file':
+    case 'txt': return FileText;
+    case 'pptx':
+    case 'ppt': return Presentation;
+    case 'xlsx':
+    case 'xls':
+    case 'csv': return FileSpreadsheet;
+    case 'markdown':
+    case 'md':
+    case 'html':
+    case 'asciidoc':
+    case 'latex': return FileCode;
+    case 'image': return FileImage;
+    case 'video': return FileVideo;
+    case 'audio': return FileAudio;
     case 'wikipedia': return BookOpen;
     case 'web': return Globe;
+    case 'notion': return Database;
+    case 'all': return Layers;
     default: return Filter;
   }
 };
@@ -170,9 +189,9 @@ export function SourcesTable({
           </div>
 
           {/* Search Input + Button */}
-          <div className="flex items-center bg-zinc-900 border border-border-subtle rounded-lg overflow-hidden group focus-within:border-emerald-500/50 transition-colors">
+          <div className="flex items-center bg-zinc-800 border border-border-subtle rounded-lg overflow-hidden group focus-within:border-emerald-500/50 transition-all">
             <div className="relative flex items-center pl-3">
-              <Search className="w-4 h-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
+              <Search className="w-4 h-4 text-zinc-500 group-focus-within/search:text-emerald-400 transition-colors" />
               <input
                 type="text"
                 placeholder={`${t('common.actions.search')}...`}
@@ -184,9 +203,9 @@ export function SourcesTable({
             </div>
             <button
               onClick={onSearchSubmit}
-              className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-1.5 text-xs font-bold border-l border-border-subtle transition-all active:scale-95 flex items-center gap-2 uppercase tracking-wider"
+              className="bg-zinc-900 hover:bg-zinc-950 text-emerald-500 px-4 py-1.5 text-xs font-bold border-l border-border-subtle transition-all active:scale-95 flex items-center gap-2 uppercase tracking-wider group/btn"
             >
-              <Search className="w-3.5 h-3.5" />
+              <Search className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
               {t('common.actions.search')}
             </button>
           </div>
@@ -199,21 +218,23 @@ export function SourcesTable({
           <thead className="text-xs text-zinc-500 uppercase bg-black/40 sticky top-0 backdrop-blur-md">
             <tr>
               <th className="w-14 pl-4 pr-0 py-3"></th>
-              <th className="pl-0 pr-6 py-3 font-medium text-left">{t('sources.table.title')}</th>
-              <th className="px-6 py-3 font-medium text-left">{t('sources.table.type')}</th>
-              <th className="px-6 py-3 font-medium text-left">{t('sources.table.origin')}</th>
-              <th className="px-6 py-3 font-medium text-right">{t('sources.table.chunks')}</th>
-              <th className="px-6 py-3 font-medium text-center">{t('sources.table.status')}</th>
-              <th className="px-6 py-3 font-medium text-left">{t('sources.table.model')}</th>
-              <th className="px-6 py-3 font-medium text-left">{t('sources.table.dimensions')}</th>
-              <th className="px-6 py-3 font-medium text-left">{t('sources.table.date')}</th>
-              <th className="px-6 py-3 font-medium text-center">{t('sources.table.actions') || 'Actions'}</th>
+              <th className="pl-0 pr-4 py-3 font-medium text-left">{t('sources.table.title')}</th>
+              <th className="px-4 py-3 font-medium text-left">{t('sources.table.type')}</th>
+              <th className="px-4 py-3 font-medium text-left">{t('sources.table.origin')}</th>
+              <th className="px-4 py-3 font-medium text-right">{t('sources.table.chunks')}</th>
+              <th className="px-4 py-3 font-medium text-center">{t('sources.table.status')}</th>
+              <th className="px-4 py-3 font-medium text-left">{t('sources.table.model')}</th>
+              <th className="px-4 py-3 font-medium text-right">{t('sources.table.dimensions') || 'Dimensions'}</th>
+              <th className="px-4 py-3 font-medium text-right">{t('sources.table.tokens')}</th>
+              <th className="px-4 py-3 font-medium text-right">{t('sources.table.tokens_chunk') || 'Tokens(Chunk)'}</th>
+              <th className="px-4 py-3 font-medium text-left">{t('sources.table.date')}</th>
+              <th className="px-4 py-3 font-medium text-center sticky right-0 bg-[#080808] backdrop-blur-md z-10 shadow-[-4px_0_10px_rgba(0,0,0,0.5)]">{t('sources.table.actions') || 'Actions'}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle">
             {sources.length === 0 ? (
               <tr>
-                <td colSpan={10} className="py-20 text-center">
+                <td colSpan={12} className="py-20 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
                       <Search className="w-5 h-5 text-zinc-600" />
@@ -248,17 +269,17 @@ export function SourcesTable({
                     <td className="w-14 pl-4 pr-4 py-4 text-center">
                       <Icon className={`w-6 h-6 text-zinc-500 group-hover:text-emerald-400 transition-colors mx-auto`} />
                     </td>
-                    <td className="pl-0 pr-6 py-4 font-medium text-zinc-200">{source.title}</td>
-                    <td className="px-6 py-4">
+                    <td className="pl-0 pr-4 py-4 font-medium text-zinc-200">{source.title}</td>
+                    <td className="px-4 py-4">
                       <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">
                         {t(`ingestion.sources.${source.type.toLowerCase()}`, { defaultValue: source.type.toUpperCase() })}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-zinc-500 font-mono text-xs truncate max-w-[200px]" title={source.origin || ''}>
+                    <td className="px-4 py-4 text-zinc-500 font-mono text-xs truncate max-w-[160px]" title={source.origin || ''}>
                       {source.origin || 'n/a'}
                     </td>
-                    <td className="px-6 py-4 text-right font-mono text-xs">{source.chunkCount}</td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-4 py-4 text-right font-mono text-xs">{source.chunkCount}</td>
+                    <td className="px-4 py-4 text-center">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${['done', 'finished', 'active', 'ingested'].includes(source.processingStatus.toLowerCase())
                         ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         : ['failed', 'error'].includes(source.processingStatus.toLowerCase())
@@ -268,10 +289,12 @@ export function SourcesTable({
                         {source.processingStatus.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs font-mono text-zinc-400">{source.model || 'Unknown'}</td>
-                    <td className="px-6 py-4 text-xs font-mono text-zinc-400">{source.dimensions || '-'}</td>
-                    <td className="px-6 py-4 font-mono text-xs">{new Date(source.date).toLocaleDateString()}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 text-xs font-mono text-zinc-400">{source.model || 'Unknown'}</td>
+                    <td className="px-4 py-4 text-right text-xs font-mono text-zinc-400">{source.dimensions || '-'}</td>
+                    <td className="px-4 py-4 text-right text-xs font-mono text-zinc-400">{source.totalTokens || '-'}</td>
+                    <td className="px-4 py-4 text-right text-xs font-mono text-zinc-400">{source.maxTokensPerChunk || '-'}</td>
+                    <td className="px-4 py-4 font-mono text-xs">{new Date(source.date).toLocaleDateString()}</td>
+                    <td className="px-4 py-4 sticky right-0 bg-[#121212]/95 group-hover:bg-[#1C1C1E]/95 z-10 transition-colors shadow-[-4px_0_10px_rgba(0,0,0,0.3)]">
                       <div className="flex items-center justify-center gap-2">
                         {source.type.toLowerCase() === 'youtube' && (
                           <button

@@ -23,5 +23,7 @@ class ContentSourceEntity(BaseModel):
     processing_status: str = Field(default="processing")
     embedding_model: Optional[str] = Field(default=None)
     dimensions: Optional[int] = Field(default=None)
+    total_tokens: Optional[int] = Field(default=None)
+    max_tokens_per_chunk: Optional[int] = Field(default=None)
     status: str = Field(default="active")
     chunks: int = Field(default=0)

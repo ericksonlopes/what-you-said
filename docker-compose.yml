@@ -27,19 +27,26 @@ services:
       - VECTOR__WEAVIATE_GRPC_PORT=${VECTOR__WEAVIATE_GRPC_PORT:-50051}
       - VECTOR__CHROMA_HOST=${VECTOR__CHROMA_HOST:-chroma}
       - VECTOR__CHROMA_PORT=${VECTOR__CHROMA_PORT:-8000}
-      # New nested SQL settings
-      - VECTOR__SQL__TYPE=${SQL__TYPE:-sqlite}
-      - VECTOR__SQL__HOST=${SQL__HOST:-}
-      - VECTOR__SQL__PORT=${SQL__PORT:-}
-      - VECTOR__SQL__USER=${SQL__USER:-}
-      - VECTOR__SQL__PASSWORD=${SQL__PASSWORD:-}
-      - VECTOR__SQL__DATABASE=${SQL__DATABASE:-}
-      - VECTOR__SQL__URL=${VECTOR__SQL__URL:-}
+      # SQL settings
+      - SQL__TYPE=${SQL__TYPE:-sqlite}
+      - SQL__HOST=${SQL__HOST:-}
+      - SQL__PORT=${SQL__PORT:-}
+      - SQL__USER=${SQL__USER:-}
+      - SQL__PASSWORD=${SQL__PASSWORD:-}
+      - SQL__DATABASE=${SQL__DATABASE:-}
+      - SQL__URL=${SQL__URL:-}
     volumes:
       - .:/app
       - /app/.venv
       - ./data/app:/data/app
     restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   frontend:
     build:

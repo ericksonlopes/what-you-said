@@ -119,6 +119,8 @@
       "model": "Model",
       "origin": "identifier",
       "dimensions": "Dimensions",
+      "tokens": "Tokens",
+      "tokens_chunk": "Tokens(Chunk)",
       "actions": "Actions",
       "none": "No sources found.",
       "pagination": "Showing {{start}} to {{end}} of {{total}} results",

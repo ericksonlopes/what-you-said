@@ -34,6 +34,8 @@ class ContentSourceService:
         embedding_model: Optional[str] = None,
         dimensions: Optional[int] = None,
         processing_status: Optional[str] = None,
+        total_tokens: Optional[int] = None,
+        max_tokens_per_chunk: Optional[int] = None,
     ) -> ContentSourceEntity:
         """Create a content source and return a domain entity."""
         self._logger.debug(
@@ -54,6 +56,8 @@ class ContentSourceService:
             dimensions=dimensions,
             status="active",  # General operational status
             processing_status=effective_processing_status,
+            total_tokens=total_tokens,
+            max_tokens_per_chunk=max_tokens_per_chunk,
         )  # Ingestion status
         model = self._repo.get_by_id(created_id)
         entity = ContentSourceMapper.model_to_entity(model)
@@ -124,6 +128,8 @@ class ContentSourceService:
         embedding_model: str,
         dimensions: int,
         chunks: int,
+        total_tokens: Optional[int] = None,
+        max_tokens_per_chunk: Optional[int] = None,
     ) -> None:
         """Update the content source record when ingestion is finished."""
         self._repo.finish_ingestion(
@@ -131,6 +137,8 @@ class ContentSourceService:
             embedding_model=embedding_model,
             dimensions=dimensions,
             chunks=chunks,
+            total_tokens=total_tokens,
+            max_tokens_per_chunk=max_tokens_per_chunk,
         )
 
     def delete_source(self, content_source_id: UUID) -> bool:

@@ -18,9 +18,6 @@ from src.infrastructure.repositories.sql.ingestion_job_repository import (
 from src.infrastructure.repositories.sql.knowledge_subject_repository import (
     KnowledgeSubjectSQLRepository,
 )
-from src.infrastructure.repositories.sql.query_log_repository import (
-    QueryLogSQLRepository,
-)
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.ingestion_job_service import IngestionJobService
@@ -111,11 +108,6 @@ def test_sql_repositories_and_services():
     deleted_count = chunk_repo.delete_by_content_source(cs_id)
     assert deleted_count == 1
     assert len(chunk_repo.list_by_content_source(cs_id)) == 0
-
-    # QueryLog repository
-    q_repo = QueryLogSQLRepository()
-    qid = q_repo.create_log(subject_id=ks_id, query_text="find", top_k=5, latency_ms=20)
-    assert isinstance(qid, UUID)
 
     # Services
     ks_service = KnowledgeSubjectService(KnowledgeSubjectSQLRepository())

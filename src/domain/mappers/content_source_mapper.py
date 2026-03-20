@@ -29,6 +29,10 @@ class ContentSourceMapper:
                 Optional[str], getattr(model, "embedding_model", None)
             ),
             dimensions=cast(Optional[int], getattr(model, "dimensions", None)),
+            total_tokens=cast(Optional[int], getattr(model, "total_tokens", None)),
+            max_tokens_per_chunk=cast(
+                Optional[int], getattr(model, "max_tokens_per_chunk", None)
+            ),
             status=cast(str, getattr(model, "status", "active")),
             chunks=cast(int, getattr(model, "chunks", 0)),
         )

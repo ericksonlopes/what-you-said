@@ -58,7 +58,10 @@ class ModelLoaderService(IModelLoaderService):
     @property
     def max_seq_length(self) -> int:
         """Returns the maximum sequence length (tokens) the model can process."""
-        return int(getattr(self.model, "max_seq_length", 512))
+        try:
+            return int(self.model.max_seq_length)
+        except (AttributeError, TypeError):
+            return 512
 
     @property
     def model(self) -> SentenceTransformer:

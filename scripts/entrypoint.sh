@@ -4,18 +4,21 @@ set -e
 # Lista de extras para instalar
 EXTRAS=""
 
-# Detecta o Banco SQL
-case "$SQL__TYPE" in
+# Detecta o Banco SQL (normaliza para lowercase)
+SQL_VAL=$(echo "${VECTOR__SQL__TYPE:-$SQL__TYPE}" | tr '[:upper:]' '[:lower:]')
+
+case "$SQL_VAL" in
   "postgres") EXTRAS="$EXTRAS --extra postgres" ;;
   "mysql")    EXTRAS="$EXTRAS --extra mysql"    ;;
   "mariadb")  EXTRAS="$EXTRAS --extra mariadb"  ;;
   "mssql")    EXTRAS="$EXTRAS --extra mssql"    ;;
 esac
 
-# Detecta o Banco Vetorial
-case "$VECTOR__STORE_TYPE" in
+# Detecta o Banco Vetorial (normaliza para lowercase)
+VEC_VAL=$(echo "$VECTOR__STORE_TYPE" | tr '[:upper:]' '[:lower:]')
+
+case "$VEC_VAL" in
   "weaviate") EXTRAS="$EXTRAS --extra weaviate" ;;
-  "postgres") EXTRAS="$EXTRAS --extra postgres" ;;
   "faiss")    EXTRAS="$EXTRAS --extra faiss"    ;;
   "chroma")   EXTRAS="$EXTRAS --extra chroma"   ;;
 esac

@@ -26,15 +26,20 @@ async def lifespan(app: FastAPI):
         from src.infrastructure.services.model_loader_service import ModelLoaderService
         from src.infrastructure.services.re_rank_service import ReRankService
 
+        logger.info("Initializing Settings...")
         _settings = Settings()
 
         # Load Embedding Model
+        logger.info(
+            f"Loading Embedding Model: {_settings.model_embedding.name} on {_settings.app.device}..."
+        )
         app.state.model_loader = ModelLoaderService(
             model_name=_settings.model_embedding.name
         )
         logger.info("Embedding model pre-loaded successfully.")
 
         # Load Re-rank Model
+        logger.info(f"Loading Re-rank Model: {_settings.model_rerank.name}...")
         app.state.rerank_service = ReRankService(model_name=_settings.model_rerank.name)
         logger.info("Re-rank model pre-loaded successfully.")
 

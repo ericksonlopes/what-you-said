@@ -27,7 +27,10 @@ class WeaviateVector:
     def __enter__(self):
         """Context manager entry."""
         # Ensure collection with correct types exists using the wrapper
-        self._client_wrapper.create_collection_if_not_exists(self._index_name)
+        self._client_wrapper.create_collection_if_not_exists(
+            self._index_name,
+            dimensions=self._embedding_service.model_loader_service.dimensions,
+        )
 
         # Open the connection and store the low-level client
         self._active_client = self._client_wrapper.__enter__()

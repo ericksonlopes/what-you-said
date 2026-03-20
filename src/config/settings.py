@@ -1,10 +1,15 @@
 import logging
+import warnings
 from typing import List, Annotated, Optional
 
 from pydantic import field_validator, Field, BaseModel
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
+
+warnings.filterwarnings(
+    "ignore", message='.*has conflict with protected namespace "model_".*'
+)
 
 
 class SQLConfig(BaseModel):
@@ -48,7 +53,7 @@ class SQLConfig(BaseModel):
 class VectorConfig(BaseSettings):
     store_type: VectorStoreType = Field(
         default=VectorStoreType.FAISS,
-        description="Type of vector store to use (CHROMA, WEAVIATE, FAISS, POSTGRES)",
+        description="Type of vector store to use (CHROMA, WEAVIATE, FAISS)",
     )
     vector_index_path: str = Field(
         default="./data/app/vector_index",
@@ -74,10 +79,6 @@ class VectorConfig(BaseSettings):
         description="Collection name for YouTube transcripts (used by vector stores like Weaviate)",
     )
 
-    sql: SQLConfig = Field(
-        default_factory=SQLConfig, description="SQL database connection settings"
-    )
-
     @property
     def weaviate_url(self) -> str:
         """Construct the full URL for WeaviateConfig connection."""
@@ -99,6 +100,16 @@ class App(BaseSettings):
         if v not in allowed_envs:
             raise ValueError(f"env must be one of {allowed_envs}, got '{v}'")
         return v
+
+    @property
+    def device(self) -> str:
+        """Detect the best available device (CUDA or CPU)."""
+        try:
+            import torch
+
+            return "cuda" if torch.cuda.is_available() else "cpu"
+        except ImportError:
+            return "cpu"
 
     list_log_levels: Annotated[List[str], NoDecode] = Field(
         default=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -135,9 +146,16 @@ class ModelRerank(BaseSettings):
     )
 
 
+class DoclingConfig(BaseSettings):
+    cpu_num_threads: int = Field(
+        default=1,
+        description="Number of threads for Docling PDF processing on CPU. Use 1 for low-RAM systems.",
+    )
+
+
 class ModelEmbedding(BaseSettings):
     name: str = Field(
-        default="paraphrase-multilingual-MiniLM-L12-v2",
+        default="intfloat/multilingual-e5-small",
         description="Name of the embedding models to use",
     )
 
@@ -148,8 +166,12 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
         extra="ignore",
+        protected_namespaces=(),
     )
     app: App = Field(default_factory=App, description="Application settings")
+    sql: SQLConfig = Field(
+        default_factory=SQLConfig, description="SQL database settings"
+    )
     vector: VectorConfig = Field(
         default_factory=VectorConfig, description="Vector store settings"
     )
@@ -159,10 +181,9 @@ class Settings(BaseSettings):
     model_rerank: ModelRerank = Field(
         default_factory=ModelRerank, description="Model rerank settings"
     )
-
-    @property
-    def sql(self) -> SQLConfig:
-        return self.vector.sql
+    docling: DoclingConfig = Field(
+        default_factory=DoclingConfig, description="Docling settings"
+    )
 
 
 settings = Settings()

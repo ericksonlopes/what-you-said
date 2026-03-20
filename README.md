@@ -49,7 +49,7 @@ WhatYouSaid is designed to be flexible, from a lightweight local setup to a scal
 | Component | Lightweight (Local) | Scalable / Production                                              |
 | :--- | :--- |:-------------------------------------------------------------------|
 | **Relational Database** | **SQLite** (Default, file-based) | **PostgreSQL**, **MySQL**, **MariaDB**, **MSSQL**                  |
-| **Vector Store** | **FAISS** (Local, file-based) | **Weaviate** (Container or Cloud), **ChromaDB** (Container), **PostgreSQL** (with pgvector extension) |
+| **Vector Store** | **FAISS** (Local, file-based) | **Weaviate** (Container or Cloud), **ChromaDB** (Container) |
 
 ### 2. Docker Compose Profiles
 

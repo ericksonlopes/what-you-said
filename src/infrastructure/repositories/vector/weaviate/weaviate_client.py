@@ -1,3 +1,4 @@
+from typing import Optional
 from src.config.logger import Logger
 from src.config.settings import VectorConfig
 
@@ -65,20 +66,33 @@ class WeaviateClient:
             finally:
                 self._client = None
 
-    def create_collection_if_not_exists(self, collection_name: str):
+    def create_collection_if_not_exists(
+        self, collection_name: str, dimensions: Optional[int] = None
+    ):
         """Creates the collection with explicit property types if it doesn't exist.
 
         This prevents Weaviate auto-schema from misidentifying types (e.g. tokens_count as text).
+        If dimensions are provided, it explicitly configures the vector index.
         """
         import weaviate.classes.config as wvc
 
         with self as client:
             if not client.collections.exists(collection_name):
                 logger.debug(
-                    f"Creating collection '{collection_name}' with explicit schema"
+                    f"Creating collection '{collection_name}' with explicit schema (dims: {dimensions})"
                 )
+
+                # Configure vectorizer as 'none' since we provide vectors from the app
+                vectorizer_config = wvc.Configure.Vectorizer.none()
+
+                # Optional: specify vector index configuration if dimensions are known
+                # In Weaviate V4, if vectorizer is 'none', you can still hint at the index type
+                # but dimensionality is usually inferred from the first insertion.
+                # However, being explicit helps with validation.
+
                 client.collections.create(
                     name=collection_name,
+                    vectorizer_config=vectorizer_config,
                     properties=[
                         # Numeric fields
                         wvc.Property(name="tokens_count", data_type=wvc.DataType.INT),

@@ -13,7 +13,7 @@ class YoutubeIngestRequest(BaseModel):
     subject_name: Optional[str] = None
     title: Optional[str] = None
     language: str = "pt"
-    tokens_per_chunk: int = 400
+    tokens_per_chunk: int = 512
     tokens_overlap: int = 50
     data_type: YoutubeDataType = YoutubeDataType.VIDEO
     ingestion_job_id: Optional[str] = None

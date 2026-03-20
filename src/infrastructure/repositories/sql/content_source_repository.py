@@ -26,6 +26,8 @@ class ContentSourceSQLRepository:
         processing_status: Optional[str] = None,
         chunks: Optional[int] = None,
         chars: Optional[int] = None,
+        total_tokens: Optional[int] = None,
+        max_tokens_per_chunk: Optional[int] = None,
     ) -> UUID:
         with Connector() as session:
             try:
@@ -41,6 +43,8 @@ class ContentSourceSQLRepository:
                     "processing_status": processing_status,
                     "chunks": chunks,
                     "chars": chars,
+                    "total_tokens": total_tokens,
+                    "max_tokens_per_chunk": max_tokens_per_chunk,
                 }
                 logger.debug("Creating ContentSource", context=extra)
                 cs = ContentSourceModel(
@@ -54,6 +58,8 @@ class ContentSourceSQLRepository:
                     status=status or "active",
                     processing_status=processing_status or "pending",
                     chunks=chunks or 0,
+                    total_tokens=total_tokens,
+                    max_tokens_per_chunk=max_tokens_per_chunk,
                 )
                 session.add(cs)
                 session.commit()
@@ -244,6 +250,8 @@ class ContentSourceSQLRepository:
         embedding_model: str,
         dimensions: int,
         chunks: int,
+        total_tokens: Optional[int] = None,
+        max_tokens_per_chunk: Optional[int] = None,
     ) -> None:
         with Connector() as session:
             try:
@@ -252,6 +260,8 @@ class ContentSourceSQLRepository:
                     "embedding_model": embedding_model,
                     "dimensions": dimensions,
                     "chunks": chunks,
+                    "total_tokens": total_tokens,
+                    "max_tokens_per_chunk": max_tokens_per_chunk,
                 }
                 logger.debug("Finishing ingestion for ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
@@ -267,6 +277,8 @@ class ContentSourceSQLRepository:
                 cs.embedding_model = embedding_model
                 cs.dimensions = dimensions
                 cs.chunks = chunks
+                cs.total_tokens = total_tokens
+                cs.max_tokens_per_chunk = max_tokens_per_chunk
 
                 session.commit()
                 logger.debug(

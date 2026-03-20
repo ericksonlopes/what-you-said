@@ -1,10 +1,13 @@
 import os
 from typing import List
-from docling.document_converter import DocumentConverter
-from docling.chunking import HybridChunker
+
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from langchain_core.documents import Document
 
 from src.config.logger import Logger
+from src.config.settings import settings
 
 logger = Logger()
 
@@ -13,24 +16,39 @@ class DoclingExtractor:
     """Extracts text and metadata from various file types using IBM's Docling with structural chunking."""
 
     def __init__(self):
+        # Configure pipeline options with the device from settings (CUDA or CPU)
+        pipeline_options = PdfPipelineOptions()
+        pipeline_options.accelerator_options.device = settings.app.device
+
+        # Optimization for low memory / CPU environments
+        # Default to 1 thread to avoid peak memory usage causing std::bad_alloc
+        if settings.app.device == "cpu":
+            pipeline_options.accelerator_options.num_threads = (
+                settings.docling.cpu_num_threads
+            )
+
         # Default converter for use in Linux/High-resource environments
-        self.converter = DocumentConverter()
-        # Default chunker for structural splitting
-        self.chunker = HybridChunker()
+        self.converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+            }
+        )
 
     def extract(self, file_path: str) -> List[Document]:
         """
-        Converts a file to a list of chunked LangChain Documents.
+        Converts a file to a single LangChain Document containing the full Markdown content.
 
         Args:
             file_path: Path to the local file.
 
         Returns:
-            A list of Document objects, each representing a structural chunk.
+            A list containing a single Document object.
         """
         logger.info(
-            "Starting structural extraction with Docling",
-            context={"file_path": file_path},
+            "Starting extraction with Docling",
+            context={
+                "file_path": file_path,
+            },
         )
 
         if not os.path.exists(file_path):
@@ -55,7 +73,7 @@ class DoclingExtractor:
                 "source": file_path,
                 "file_name": os.path.basename(file_path),
                 "file_type": self._get_file_type(file_path),
-                "is_structural_chunk": True,  # Tag for the use case to know it's already chunked
+                "is_structural_chunk": False,  # No longer pre-chunked
             }
 
             if doc_meta:
@@ -65,62 +83,21 @@ class DoclingExtractor:
                 if hasattr(doc_meta, "date") and doc_meta.date:
                     global_metadata["date"] = str(doc_meta.date)
 
-            # 3. Perform structural chunking
-            chunks = list(self.chunker.chunk(result.document))
+            # 3. Export to Markdown
+            # Docling's result.document can be exported to markdown
+            raw_markdown = result.document.export_to_markdown()
 
-            extracted_docs = []
-            for i, chunk in enumerate(chunks):
-                # Serialize chunk to markdown/text
-                raw_content = self.chunker.serialize(chunk)
+            # 4. Clean text
+            content = self._clean_text(raw_markdown)
 
-                # 4. Clean and Filter content
-                if self._is_noisy_chunk(raw_content):
-                    logger.debug(
-                        f"Skipping noisy chunk {i} (likely TOC or Index)",
-                        context={"chunk_index": i},
-                    )
-                    continue
-
-                content = self._clean_text(raw_content)
-
-                # Chunk-specific metadata
-                chunk_metadata = global_metadata.copy()
-                chunk_metadata["chunk_index"] = i
-
-                # Extract page numbers from chunk provenance
-                pages = set()
-                if hasattr(chunk, "meta") and hasattr(chunk.meta, "doc_items"):
-                    for item in chunk.meta.doc_items:
-                        if hasattr(item, "prov") and item.prov:
-                            for p in item.prov:
-                                if hasattr(p, "page_no"):
-                                    pages.add(p.page_no)
-
-                if pages:
-                    sorted_pages = sorted(list(pages))
-                    chunk_metadata["pages"] = sorted_pages
-                    chunk_metadata["page_label"] = ", ".join(map(str, sorted_pages))
-
-                # Extract headings (document hierarchy)
-                if (
-                    hasattr(chunk, "meta")
-                    and hasattr(chunk.meta, "headings")
-                    and chunk.meta.headings
-                ):
-                    chunk_metadata["headings"] = chunk.meta.headings
-                    chunk_metadata["current_section"] = (
-                        chunk.meta.headings[-1] if chunk.meta.headings else None
-                    )
-
-                extracted_docs.append(
-                    Document(page_content=content, metadata=chunk_metadata)
-                )
+            # 5. Build single document
+            doc = Document(page_content=content, metadata=global_metadata)
 
             logger.info(
-                "Successfully extracted structural chunks with Docling",
-                context={"file_path": file_path, "chunks_count": len(extracted_docs)},
+                "Successfully extracted full Markdown with Docling",
+                context={"file_path": file_path, "content_length": len(content)},
             )
-            return extracted_docs
+            return [doc]
 
         except Exception as e:
             logger.error(

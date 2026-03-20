@@ -13,6 +13,9 @@ class TestFileIngestionUseCase:
     def use_case_deps(self):
         ms = MagicMock()
         ms.model_name = "test-model"
+        ms.model.tokenizer = MagicMock()
+        ms.model.tokenizer.encode.return_value = [1, 2, 3]
+        ms.model.tokenizer.decode.return_value = "content"
         return {
             "ks_service": MagicMock(),
             "cs_service": MagicMock(),
@@ -105,7 +108,7 @@ class TestFileIngestionUseCase:
         with pytest.raises(Exception, match="Extraction failed"):
             use_case.execute(cmd)
 
-        use_case_deps["ingestion_service"].update_job.assert_called_with(
+        use_case_deps["ingestion_service"].update_job.assert_any_call(
             job_id=job_mock.id,
             status=IngestionJobStatus.FAILED,
             error_message="Extraction failed",

@@ -7,7 +7,7 @@ name = "what-you-said"
 version = "1.0.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "langchain-text-splitters>=1.1.1",
     "pydantic>=2.8.0,<2.10.0",
@@ -55,8 +55,6 @@ mssql = [
 ]
 postgres = [
     "psycopg2-binary>=2.9.10",
-    "pgvector>=0.3.6",
-    "langchain-postgres>=0.0.12",
 ]
 
 [dependency-groups]
@@ -64,9 +62,38 @@ dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "mypy>=1.19.1",
-    "ruff>=0.15.6",
+    "ruff>=0.15.7",
     "bandit>=1.8.3",
 ]
+
+#[[tool.uv.index]]
+#name = "pytorch-cu124"
+#url = "https://download.pytorch.org/whl/cu124"
+#explicit = true
+#
+#[[tool.uv.index]]
+#name = "pytorch-cpu"
+#url = "https://download.pytorch.org/whl/cpu"
+#explicit = true
+#
+#[tool.uv.sources]
+#torch = [
+#    { index = "pytorch-cu124", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
+#    { index = "pytorch-cpu", marker = "sys_platform != 'win32' and sys_platform != 'linux'" }
+#]
+#torchvision = [
+#    { index = "pytorch-cu124", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
+#    { index = "pytorch-cpu", marker = "sys_platform != 'win32' and sys_platform != 'linux'" }
+#]
+#torchaudio = [
+#    { index = "pytorch-cu124", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
+#    { index = "pytorch-cpu", marker = "sys_platform != 'win32' and sys_platform != 'linux'" }
+#]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.uv.sources]
 torch = [
@@ -75,14 +102,6 @@ torch = [
 torchvision = [
     { index = "pytorch-cpu" },
 ]
-torchaudio = [
-    { index = "pytorch-cpu" },
-]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
 
 
 [tool.setuptools.packages.find]

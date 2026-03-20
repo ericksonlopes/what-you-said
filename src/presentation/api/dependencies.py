@@ -2,11 +2,11 @@ from typing import Any
 
 from fastapi import Depends, Request
 
-from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
-from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
-from src.application.use_cases.search_use_case import SearchUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
+from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
 from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
+from src.application.use_cases.search_use_case import SearchUseCase
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.config.settings import Settings
 
 # Import services and repositories
@@ -86,6 +86,10 @@ def get_vector_repository(
     model_loader: ModelLoaderService = Depends(get_model_loader),
 ) -> IVectorRepository:
     emb_service = EmbeddingService(model_loader_service=model_loader)
+    # Automatically append dimensionality to collection/index name to avoid mismatches
+    base_name = settings.vector.collection_name_chunks
+    dimensions = model_loader.dimensions
+    collection_name = f"{base_name}_{dimensions}"
 
     if settings.vector.store_type == VectorStoreType.CHROMA:
         from src.infrastructure.repositories.vector.chroma.chunk_repository import (
@@ -96,7 +100,7 @@ def get_vector_repository(
             embedding_service=emb_service,
             host=settings.vector.chroma_host,
             port=settings.vector.chroma_port,
-            collection_name=settings.vector.collection_name_chunks,
+            collection_name=collection_name,
         )
 
     if settings.vector.store_type == VectorStoreType.WEAVIATE:
@@ -111,7 +115,7 @@ def get_vector_repository(
         return ChunkWeaviateRepository(
             weaviate_client=client,
             embedding_service=emb_service,
-            collection_name=settings.vector.collection_name_chunks,
+            collection_name=collection_name,
         )
 
     if settings.vector.store_type == VectorStoreType.FAISS:
@@ -122,17 +126,7 @@ def get_vector_repository(
         return ChunkFAISSRepository(
             embedding_service=emb_service,
             index_path=settings.vector.vector_index_path,
-            index_name="chunks",
-        )
-
-    if settings.vector.store_type == VectorStoreType.POSTGRES:
-        from src.infrastructure.repositories.vector.postgres.chunk_repository import (
-            ChunkPostgresRepository,
-        )
-
-        return ChunkPostgresRepository(
-            embedding_service=emb_service,
-            collection_name=settings.vector.collection_name_chunks,
+            index_name=collection_name,
         )
 
     raise ValueError(f"Unsupported vector store type: {settings.vector.store_type}")

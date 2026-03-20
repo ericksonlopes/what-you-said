@@ -102,31 +102,34 @@ function ProcessingStrategy({
             <div className="grid grid-cols-3 gap-3">
                 {STRATEGIES.map((strategy) => {
                     const Icon = strategy.icon;
+                    // Cap tokens by model limit if available
+                    const cappedTokens = Math.min(strategy.tokens, modelInfo?.max_seq_length || 2000);
                     const isSelected = activeStrategy === strategy.id;
+                    
                     return (
                         <button
                             key={strategy.id}
                             type="button"
                             onClick={() => {
                                 setActiveStrategy(strategy.id);
-                                setTokensPerChunk(strategy.tokens);
+                                setTokensPerChunk(cappedTokens);
                                 setTokensOverlap(strategy.overlap);
                             }}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-300 ${
+                            className={`flex flex-col items-center gap-2.5 p-3.5 rounded-xl border transition-all duration-300 ${
                                 isSelected
-                                    ? 'bg-emerald-500/5 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                                    : 'bg-black/20 border-zinc-800 hover:border-zinc-700'
+                                    ? 'bg-emerald-500/10 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                                    : 'bg-black/40 border-zinc-800 hover:border-zinc-700/80 hover:bg-black/20'
                             }`}
                         >
                             <div
-                                className={`p-1.5 rounded-lg ${isSelected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800/50 text-zinc-500'}`}>
-                                <Icon className="w-3.5 h-3.5"/>
+                                className={`p-2 rounded-xl ${isSelected ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-800/80 text-zinc-500'}`}>
+                                <Icon className="w-4 h-4"/>
                             </div>
-                            <div className="text-center">
+                            <div className="text-center space-y-0.5">
                                 <div
-                                    className={`text-[10px] font-bold ${isSelected ? 'text-zinc-100' : 'text-zinc-400'}`}>{strategy.name}</div>
+                                    className={`text-[12px] font-bold tracking-wide ${isSelected ? 'text-zinc-100' : 'text-zinc-400'}`}>{strategy.name}</div>
                                 <div
-                                    className="text-[8px] text-zinc-500 font-medium truncate w-full max-w-[80px] mt-0.5">{strategy.description}</div>
+                                    className="text-[10px] text-zinc-500 font-medium leading-tight line-clamp-2 px-1">{strategy.description}</div>
                             </div>
                         </button>
                     );
@@ -138,30 +141,30 @@ function ProcessingStrategy({
                 <div className="space-y-3">
                     <div className="flex justify-between items-end">
                         <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1.5">
-                                <Scissors className="w-3 h-3 text-emerald-500"/>
+                            <label className="text-[12px] font-bold text-zinc-200 flex items-center gap-2 w-full">
+                                <Scissors className="w-3.5 h-3.5 text-emerald-500 opacity-80"/>
                                 {t('ingestion.options.max_tokens')}
                                 {modelInfo?.max_seq_length && (
                                     <span
-                                        className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded border border-zinc-700/50 ml-auto font-mono">
+                                        className="text-[10px] px-2 py-0.5 bg-zinc-800/80 text-zinc-400 rounded-lg border border-zinc-700/50 ml-auto font-mono font-bold">
                     {t('ingestion.options.model_limit')}: {modelInfo.max_seq_length}
                   </span>
                                 )}
                             </label>
-                            <p className="text-[10px] text-zinc-500 leading-tight">{t('ingestion.options.tokens_fragment')}</p>
+                            <p className="text-[11px] text-zinc-500 font-medium leading-tight">{t('ingestion.options.tokens_fragment')}</p>
                         </div>
-                        <div className="flex items-baseline gap-1">
+                        <div className="flex items-baseline gap-1 bg-black/30 px-2 py-0.5 rounded-lg border border-zinc-800/50">
                             <span
                                 className="text-base font-mono font-bold text-emerald-400 leading-none">{tokensPerChunk}</span>
                             <span
-                                className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">{t('ingestion.options.tokens_label')}</span>
+                                className="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">{t('ingestion.options.tokens_label')}</span>
                         </div>
                     </div>
                     <input
                         type="range"
                         min="64"
                         max={modelInfo?.max_seq_length || 2000}
-                        step={tokensPerChunk > 1000 ? 100 : 50}
+                        step={1}
                         value={tokensPerChunk}
                         onChange={(e) => {
                             setTokensPerChunk(parseInt(e.target.value));
@@ -175,24 +178,24 @@ function ProcessingStrategy({
                 <div className="space-y-3">
                     <div className="flex justify-between items-end">
                         <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-zinc-300 flex items-center gap-1.5">
-                                <Layers className="w-3 h-3 text-emerald-500"/>
+                            <label className="text-[12px] font-bold text-zinc-200 flex items-center gap-2">
+                                <Layers className="w-3.5 h-3.5 text-emerald-500 opacity-80"/>
                                 {t('ingestion.options.context_overlap')}
                             </label>
-                            <p className="text-[10px] text-zinc-500 leading-tight">{t('ingestion.options.shared_context')}</p>
+                            <p className="text-[11px] text-zinc-500 font-medium leading-tight">{t('ingestion.options.shared_context')}</p>
                         </div>
-                        <div className="flex items-baseline gap-1">
+                        <div className="flex items-baseline gap-1 bg-black/30 px-2 py-0.5 rounded-lg border border-zinc-800/50">
                             <span
                                 className="text-base font-mono font-bold text-emerald-400 leading-none">{tokensOverlap}</span>
                             <span
-                                className="text-[9px] text-zinc-600 font-bold uppercase tracking-tighter">{t('ingestion.options.tokens_label')}</span>
+                                className="text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">{t('ingestion.options.tokens_label')}</span>
                         </div>
                     </div>
                     <input
                         type="range"
                         min="0"
                         max="300"
-                        step="10"
+                        step={1}
                         value={tokensOverlap}
                         onChange={(e) => {
                             setTokensOverlap(parseInt(e.target.value));
@@ -204,13 +207,13 @@ function ProcessingStrategy({
             </div>
 
             <div
-                className="flex items-center gap-3 px-3 py-2 bg-emerald-500/5 rounded-lg border border-emerald-500/10 transition-colors duration-500">
-                <Activity className="w-3.5 h-3.5 text-emerald-500/50 flex-shrink-0 animate-pulse"/>
+                className="flex items-center gap-3 px-4 py-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10 transition-colors duration-500 shadow-[inset_0_1px_1px_rgba(16,185,129,0.05)]">
+                <Activity className="w-4 h-4 text-emerald-500/50 flex-shrink-0 animate-pulse"/>
                 <div className="flex-1">
-                    <p className="text-[9px] text-zinc-500 italic leading-tight">
+                    <p className="text-[11px] text-zinc-400 italic leading-snug">
                         {t('ingestion.options.optimized')} for <span
-                        className="text-emerald-500/80 font-bold">{activeStrategy === 'custom' ? t('ingestion.options.strategies.custom.name') : activeStrategy}</span> retrieval.
-                        <span className="block mt-0.5 opacity-60">
+                        className="text-emerald-500/90 font-bold tracking-wide uppercase text-[10px]">{activeStrategy === 'custom' ? t('ingestion.options.strategies.custom.name') : activeStrategy}</span> retrieval.
+                        <span className="block mt-1 opacity-70 text-[10px] not-italic">
                {activeStrategy === 'balanced' && t('ingestion.options.strategies.balanced.long_description')}
                             {activeStrategy === 'granular' && t('ingestion.options.strategies.granular.long_description')}
                             {activeStrategy === 'context' && t('ingestion.options.strategies.context.long_description')}
@@ -470,8 +473,8 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                         <div className="flex flex-col md:flex-row flex-1 min-h-0">
                             {/* Left Sidebar: Source Selection */}
                             <div
-                                className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-border-subtle bg-black/20 p-4 flex flex-col gap-2 overflow-y-auto">
-                                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 px-1">{t('sidebar.operations.sources')}</h3>
+                                className="w-full md:w-[280px] border-b md:border-b-0 md:border-r border-border-subtle bg-black/20 p-3.5 flex flex-col gap-1.5 overflow-y-auto">
+                                <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.1em] mb-2 px-1.5">{t('sidebar.operations.sources')}</h3>
                                 {SOURCES.map((source) => {
                                     const Icon = source.icon;
                                     const isSelected = contentType === source.id;
@@ -480,29 +483,29 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                         <button
                                             key={source.id}
                                             onClick={() => setContentType(source.id)}
-                                            className={`group flex items-start gap-3 p-3 rounded-xl text-left transition-all ${
+                                            className={`group flex items-center gap-3 p-2.5 rounded-xl text-left transition-all ${
                                                 isSelected
-                                                    ? 'bg-zinc-800 border border-zinc-700 shadow-sm'
+                                                    ? 'bg-zinc-800 border-zinc-700 shadow-sm'
                                                     : 'hover:bg-panel-hover border border-transparent'
                                             } ${!source.enabled && !isSelected ? 'opacity-60' : ''}`}
                                         >
                                             <div
-                                                className={`p-2 rounded-lg transition-colors ${isSelected ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400 group-hover:text-zinc-200'}`}>
+                                                className={`p-2 rounded-lg transition-colors flex-shrink-0 ${isSelected ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-400 group-hover:text-zinc-200'}`}>
                                                 <Icon
                                                     className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isSelected ? 'scale-110' : ''}`}/>
                                             </div>
-                                            <div className="flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0 transition-all duration-300">
                                                 <div className="flex items-center justify-between gap-2">
-                            <span
-                                className={`text-sm font-medium truncate ${isSelected ? 'text-zinc-100' : 'text-zinc-300'}`}>
-                                {source.name}
-                            </span>
+                                                    <span className={`text-[13px] font-semibold truncate ${isSelected ? 'text-zinc-100' : 'text-zinc-400 group-hover:text-zinc-300'}`}>
+                                                        {source.name}
+                                                    </span>
                                                     {!source.enabled && (
-                                                        <Lock className="w-3 h-3 text-zinc-500 flex-shrink-0"/>
+                                                        <Lock className="w-3 h-3 text-zinc-600 flex-shrink-0"/>
                                                     )}
                                                 </div>
-                                                <span
-                                                    className="text-xs text-zinc-500 block truncate">{source.description}</span>
+                                                <span className="text-[10px] text-zinc-500 block truncate font-medium">
+                                                    {source.description}
+                                                </span>
                                             </div>
                                         </button>
                                     );
@@ -510,7 +513,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                             </div>
 
                             {/* Right Content: Dynamic Input Area */}
-                            <div className="w-full md:w-2/3 flex flex-col bg-[#121212] relative">
+                            <div className="flex-1 flex flex-col bg-[#121212] relative">
                                 <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
 
                                     {/* Fixed Tab Buttons */}
@@ -560,7 +563,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
 
                                     {/* Scrollable Content Area */}
                                     <div
-                                        className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-zinc-800 custom-scrollbar">
+                                        className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-zinc-800 custom-scrollbar">
                                         <div className="min-h-full">
                                             {activeTab === 'source' ? (
                                                 selectedSource?.enabled ? (

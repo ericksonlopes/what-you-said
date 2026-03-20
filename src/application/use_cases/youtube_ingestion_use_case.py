@@ -206,7 +206,12 @@ class YoutubeIngestionUseCase:
                         ContentSourceStatus.FAILED,
                         ContentSourceStatus.DONE,
                     ]:
-                        self._finish_ingestion(source, result.created_chunks or 0)
+                        # Sum tokens if possible, but for batch it's more complex.
+                        # For now, we'll use the result created_chunks if chunks entities are available.
+                        # Wait, execute() doesn't have easy access to all chunk entities here if it was parallel.
+                        # However, _process_single_video already calls _finish_ingestion.
+                        # So for single videos, it's already handled.
+                        pass  # handled in _process_single_video
 
             skipped_count = sum(
                 1 for r in result.video_results if r.get("skipped", False)
@@ -429,14 +434,18 @@ class YoutubeIngestionUseCase:
                 status=IngestionJobStatus.FINISHED,
                 status_message="Ingestion complete!",
                 current_step=4,
-                total_steps=4,
                 chunks_count=len(chunks),
             )
-            self._finish_ingestion(source, len(chunks))
+            total_tokens = sum(
+                c.tokens_count for c in chunks if c.tokens_count is not None
+            )
+            max_tokens = cmd.tokens_per_chunk
+            self._finish_ingestion(source, len(chunks), total_tokens, max_tokens)
 
             return {
                 "video_url": video_url,
                 "video_id": video_id,
+                "job_id": ingestion.id,
                 "skipped": False,
                 "created_chunks": len(chunks),
                 "vector_ids": created_ids,
@@ -651,9 +660,10 @@ class YoutubeIngestionUseCase:
         ytts = YoutubeDataProcessService(
             model_loader_service=self.model_loader_service, yt_extractor=yt_extractor
         )
+        effective_tokens = cmd.tokens_per_chunk
         docs: List[Document] = ytts.split_transcript(
             mode="tokens",
-            tokens_per_chunk=cmd.tokens_per_chunk,
+            tokens_per_chunk=effective_tokens,
             tokens_overlap=cmd.tokens_overlap,
         )
 
@@ -715,7 +725,13 @@ class YoutubeIngestionUseCase:
         )
         return created_ids
 
-    def _finish_ingestion(self, source, num_chunks: int) -> None:
+    def _finish_ingestion(
+        self,
+        source,
+        num_chunks: int,
+        total_tokens: int = 0,
+        max_tokens_per_chunk: Optional[int] = None,
+    ) -> None:
         dims = getattr(self.model_loader_service, "dimensions", None)
         dims_val: int = int(dims) if dims is not None else 0
 
@@ -724,6 +740,8 @@ class YoutubeIngestionUseCase:
             embedding_model=self.model_loader_service.model_name,
             dimensions=dims_val,
             chunks=num_chunks,
+            total_tokens=total_tokens,
+            max_tokens_per_chunk=max_tokens_per_chunk,
         )
         logger.info(
             "Ingestion finished",

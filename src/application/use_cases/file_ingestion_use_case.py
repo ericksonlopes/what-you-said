@@ -4,7 +4,6 @@ from typing import Any, Dict, List
 from uuid import UUID
 
 from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.config.logger import Logger
@@ -22,6 +21,7 @@ from src.infrastructure.services.knowledge_subject_service import (
 )
 from src.infrastructure.services.model_loader_service import ModelLoaderService
 from src.infrastructure.services.chunk_vector_service import ChunkVectorService
+from src.infrastructure.services.text_splitter_service import TextSplitterService
 
 logger = Logger()
 
@@ -115,25 +115,34 @@ class FileIngestionUseCase:
             )
 
             # 4. Split and Tokenize
-            # Check if documents are already structurally chunked (e.g., by Docling)
-            is_pre_chunked = any(
-                doc.metadata.get("is_structural_chunk") for doc in docs
+            tokenizer = (
+                self.model_loader_service.model.tokenizer
+                if hasattr(self.model_loader_service, "model")
+                and hasattr(self.model_loader_service.model, "tokenizer")
+                else None
             )
 
-            if is_pre_chunked:
-                logger.info(
-                    "Content already structurally chunked by extractor, skipping recursive splitting."
+            effective_tokens = cmd.tokens_per_chunk
+
+            if tokenizer and docs:
+                splitter_service = TextSplitterService(tokenizer=tokenizer)
+                split_docs = splitter_service.split_text(
+                    text=docs[0].page_content,
+                    tokens_per_chunk=effective_tokens,
+                    tokens_overlap=cmd.tokens_overlap,
+                    metadata=docs[0].metadata,
                 )
-                split_docs = docs
-            else:
-                # For simplicity, using a basic RecursiveCharacterTextSplitter for markdown
-                # but we could use more specialized ones.
-                splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=cmd.tokens_per_chunk
-                    * 4,  # Approximation: 1 token ~ 4 chars
+            elif docs:
+                # Fallback to basic RecursiveCharacterTextSplitter if no tokenizer
+                from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+                langchain_splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=effective_tokens * 4,
                     chunk_overlap=cmd.tokens_overlap * 4,
                 )
-                split_docs = splitter.split_documents(docs)
+                split_docs = langchain_splitter.split_documents(docs)
+            else:
+                split_docs = []
 
             # 5. Build and Persist Chunks
             chunks = self._build_chunk_entities(
@@ -162,12 +171,25 @@ class FileIngestionUseCase:
                 chunks_count=len(chunks),
             )
 
+            total_tokens = sum(
+                c.tokens_count for c in chunks if c.tokens_count is not None
+            )
             dims = getattr(self.model_loader_service, "dimensions", None)
+            dims_val: int = int(dims) if dims is not None else 0
+
+            max_tokens = cmd.tokens_per_chunk
+            logger.info(
+                f"FileIngestion: finishing with requested={cmd.tokens_per_chunk}, limit={self.model_loader_service.max_seq_length}, effective={max_tokens}",
+                context={"source_id": str(source.id)},
+            )
+
             self.cs_service.finish_ingestion(
                 content_source_id=source.id,
                 embedding_model=self.model_loader_service.model_name,
-                dimensions=int(dims) if dims else 0,
+                dimensions=dims_val,
                 chunks=len(chunks),
+                total_tokens=total_tokens,
+                max_tokens_per_chunk=max_tokens,
             )
 
             return {

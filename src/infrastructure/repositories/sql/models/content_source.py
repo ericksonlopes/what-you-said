@@ -35,7 +35,6 @@ class ContentSourceModel(Base):
     title = Column(Text, nullable=True)
     language = Column(Text, nullable=True)
     embedding_model = Column(Text, nullable=True)
-    dimensions = Column(Integer, nullable=True)
     status = Column(Text, nullable=False, server_default=text("'active'"))
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
@@ -48,6 +47,9 @@ class ContentSourceModel(Base):
     )
     ingested_at = Column(DateTime(timezone=True), nullable=True)
     processing_status = Column(Text, nullable=False, default="pending", index=True)
+    dimensions = Column(Integer, nullable=True)
+    total_tokens = Column(Integer, nullable=True)
+    max_tokens_per_chunk = Column(Integer, nullable=True)
     chunks = Column(Integer, nullable=False, server_default=text("0"))
     subject = relationship("KnowledgeSubjectModel", back_populates="content_sources")
     ingestion_jobs = relationship(

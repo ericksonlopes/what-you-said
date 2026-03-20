@@ -1,10 +1,9 @@
 from enum import Enum
 
 
-class VectorStoreType(Enum):
-    """Enum for available vector store types."""
+class VectorStoreType(str, Enum):
+    """Available vector store types."""
 
     CHROMA = "chroma"
     WEAVIATE = "weaviate"
     FAISS = "faiss"
-    POSTGRES = "postgres"

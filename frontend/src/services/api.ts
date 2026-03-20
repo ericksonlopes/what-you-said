@@ -64,6 +64,8 @@ export const api = {
       chunkCount: s.chunks || 0,
       model: s.embedding_model,
       dimensions: s.dimensions,
+      totalTokens: s.total_tokens,
+      maxTokensPerChunk: s.max_tokens_per_chunk,
       origin: s.external_source,
       processingStatus: s.processing_status || 'unknown'
     }));

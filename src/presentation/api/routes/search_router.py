@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/",
+    "",
     response_model=SearchResponse,
     responses={
         400: {"description": "Validation error or invalid query"},

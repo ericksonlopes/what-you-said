@@ -96,5 +96,10 @@ class TestContentSourceService:
         cid = uuid4()
         service.finish_ingestion(cid, "emb", 384, 100)
         mock_repo.finish_ingestion.assert_called_once_with(
-            content_source_id=cid, embedding_model="emb", dimensions=384, chunks=100
+            content_source_id=cid,
+            embedding_model="emb",
+            dimensions=384,
+            chunks=100,
+            total_tokens=None,
+            max_tokens_per_chunk=None,
         )

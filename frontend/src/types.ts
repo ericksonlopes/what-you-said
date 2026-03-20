@@ -36,6 +36,8 @@ export type ContentSource = {
   chunkCount: number;
   model?: string;
   dimensions?: number;
+  totalTokens?: number;
+  maxTokensPerChunk?: number;
   origin?: string;
   processingStatus: string;
 };

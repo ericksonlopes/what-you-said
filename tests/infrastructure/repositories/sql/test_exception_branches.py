@@ -6,7 +6,6 @@ import src.infrastructure.repositories.sql.chunk_index_repository as ch_mod
 import src.infrastructure.repositories.sql.content_source_repository as cs_mod
 import src.infrastructure.repositories.sql.ingestion_job_repository as ij_mod
 import src.infrastructure.repositories.sql.knowledge_subject_repository as ks_mod
-import src.infrastructure.repositories.sql.query_log_repository as ql_mod
 
 
 class RepositoryTestError(RuntimeError):
@@ -108,8 +107,3 @@ def test_repositories_handle_exceptions(monkeypatch):
         ch_repo.delete_by_content_source(uuid4())
     with pytest.raises(RepositoryTestError):
         ch_repo.search(query=None)
-
-    monkeypatch.setattr(ql_mod, "Connector", BadConnector)
-    ql_repo = ql_mod.QueryLogSQLRepository()
-    with pytest.raises(RepositoryTestError):
-        ql_repo.create_log(subject_id=None, query_text="q")
