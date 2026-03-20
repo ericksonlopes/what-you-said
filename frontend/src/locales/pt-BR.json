@@ -361,7 +361,8 @@
         "status": {
           "chunking": "Dividindo texto...",
           "vectorizing": "Vetorizando ({{model}})..."
-        }
+        },
+        "format_filter": "Filtro por formato (Localize mais rápido)"
       }
     },
     "messages": {

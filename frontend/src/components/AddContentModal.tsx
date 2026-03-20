@@ -691,7 +691,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                                     <div className="space-y-2">
                                                                         <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
                                                                             <Search className="w-3 h-3"/>
-                                                                            Filtro por formato (Localize mais rápido)
+                                                                            {t('ingestion.options.types.format_filter')}
                                                                         </label>
                                                                         <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
                                                                             {[
