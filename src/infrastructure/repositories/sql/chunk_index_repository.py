@@ -95,11 +95,10 @@ class ChunkIndexSQLRepository:
         search_query: Optional[str] = None,
     ) -> List[ChunkIndexModel]:
         with Connector() as session:
-            query = (
-                session.query(ChunkIndexModel)
-                .options(joinedload(ChunkIndexModel.content_source))
+            query = session.query(ChunkIndexModel).options(
+                joinedload(ChunkIndexModel.content_source)
             )
-            
+
             if source_id:
                 query = query.filter_by(content_source_id=source_id).order_by(
                     ChunkIndexModel.index.asc(), ChunkIndexModel.created_at.asc()
@@ -109,7 +108,7 @@ class ChunkIndexSQLRepository:
 
             if search_query:
                 query = query.filter(ChunkIndexModel.content.ilike(f"%{search_query}%"))
-                
+
             return query.limit(limit).offset(offset).all()
 
     def count_by_content_source(self, content_source_id: UUID) -> int:

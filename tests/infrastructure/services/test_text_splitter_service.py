@@ -13,7 +13,9 @@ class TestTextSplitterService:
         # For simple testing, each word is an ID
         tokenizer.encode.side_effect = lambda text, **kwargs: [ord(c) for c in text]
         # Mock decode: converts IDs back to characters
-        tokenizer.decode.side_effect = lambda ids, **kwargs: "".join(chr(i) for i in ids)
+        tokenizer.decode.side_effect = lambda ids, **kwargs: "".join(
+            chr(i) for i in ids
+        )
         return tokenizer
 
     def test_split_text_success(self, mock_tokenizer):

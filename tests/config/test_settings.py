@@ -4,7 +4,6 @@ import sys
 from unittest.mock import MagicMock
 
 import pytest
-from pydantic import ValidationError
 
 from src.config.settings import Settings, App, SQLConfig, VectorConfig
 

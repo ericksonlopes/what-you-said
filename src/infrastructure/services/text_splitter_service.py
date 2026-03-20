@@ -56,7 +56,9 @@ class TextSplitterService:
 
                 # 2. Decode back to text
                 try:
-                    chunk_text = self.tokenizer.decode(chunk_ids, skip_special_tokens=True)
+                    chunk_text = self.tokenizer.decode(
+                        chunk_ids, skip_special_tokens=True
+                    )
                 except Exception:
                     chunk_text = self.tokenizer.decode(chunk_ids)
 
@@ -65,7 +67,9 @@ class TextSplitterService:
                     {"token_count": len(chunk_ids), "chunk_index": chunk_index}
                 )
 
-                documents.append(Document(page_content=chunk_text, metadata=chunk_metadata))
+                documents.append(
+                    Document(page_content=chunk_text, metadata=chunk_metadata)
+                )
 
                 i += step
                 chunk_index += 1

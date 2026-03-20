@@ -77,7 +77,9 @@ def test_get_model_info_success(mock_model_loader):
 
 def test_get_model_info_error(mock_model_loader):
     # To trigger the router's internal try-except block, we mock an attribute access error.
-    type(mock_model_loader).model_name = property(lambda x: exec('raise(Exception("attr fail"))'))
+    type(mock_model_loader).model_name = property(
+        lambda x: exec('raise(Exception("attr fail"))')
+    )
 
     response = client.get("/rest/sources/model")
     assert response.status_code == 500
@@ -86,6 +88,7 @@ def test_get_model_info_error(mock_model_loader):
 
 def test_delete_source_success(mock_delete_use_case):
     from uuid import uuid4
+
     source_id = uuid4()
     mock_delete_use_case.delete.return_value = True
 
@@ -98,6 +101,7 @@ def test_delete_source_success(mock_delete_use_case):
 
 def test_delete_source_not_found(mock_delete_use_case):
     from uuid import uuid4
+
     source_id = uuid4()
     mock_delete_use_case.delete.return_value = False
 
@@ -115,6 +119,7 @@ def test_delete_source_invalid_uuid():
 
 def test_delete_source_internal_error(mock_delete_use_case):
     from uuid import uuid4
+
     source_id = uuid4()
     mock_delete_use_case.delete.side_effect = Exception("Fatal error")
 

@@ -165,7 +165,9 @@ class TestFileIngestionUseCase:
         use_case_deps["ks_service"].get_by_name.return_value = MagicMock(id=subject_id)
 
         cmd = IngestFileCommand(
-            file_path="/tmp/test.docx", file_name="test.docx", subject_name="SubjectName"
+            file_path="/tmp/test.docx",
+            file_name="test.docx",
+            subject_name="SubjectName",
         )
         subject = use_case._resolve_subject(cmd)
         assert subject.id == subject_id
@@ -201,13 +203,19 @@ class TestFileIngestionUseCase:
         assert use_case._determine_source_type("test.txt") == SourceType.TXT
         assert use_case._determine_source_type("test.unknown") == SourceType.OTHER
 
-    def test_execute_fallback_splitter(self, use_case_deps, mock_extractor, monkeypatch):
+    def test_execute_fallback_splitter(
+        self, use_case_deps, mock_extractor, monkeypatch
+    ):
         # Remove model from deps to trigger fallback splitter
         del use_case_deps["model_loader_service"].model
         use_case = FileIngestionUseCase(**use_case_deps)
 
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
-        use_case_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid4())
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=uuid4()
+        )
+        use_case_deps["ingestion_service"].create_job.return_value = MagicMock(
+            id=uuid4()
+        )
         use_case_deps["cs_service"].create_source.return_value = MagicMock(
             id=uuid4(), source_type=SourceType.DOCX, external_source="test.docx"
         )
@@ -241,7 +249,9 @@ class TestFileIngestionUseCase:
         # First exception: No add_special_tokens
         tokenizer.encode.side_effect = [TypeError("No add_special_tokens"), [1, 2]]
         docs = [MagicMock(page_content="test", metadata={})]
-        source = MagicMock(id=uuid4(), source_type=SourceType.DOCX, external_source="test.docx")
+        source = MagicMock(
+            id=uuid4(), source_type=SourceType.DOCX, external_source="test.docx"
+        )
         subject = MagicMock(id=uuid4())
 
         chunks = use_case._build_chunk_entities(
@@ -257,17 +267,26 @@ class TestFileIngestionUseCase:
         assert chunks[0].tokens_count == 1  # Fallback: len("test") // 4 = 1
 
     def test_execute_rollback_on_failure(self, use_case_deps, mock_extractor):
-        from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+        from src.domain.entities.enums.content_source_status_enum import (
+            ContentSourceStatus,
+        )
+
         use_case = FileIngestionUseCase(**use_case_deps)
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=uuid4()
+        )
         job_mock = MagicMock(id=uuid4())
-        source_mock = MagicMock(id=uuid4(), source_type=SourceType.DOCX, external_source="f")
+        source_mock = MagicMock(
+            id=uuid4(), source_type=SourceType.DOCX, external_source="f"
+        )
         use_case_deps["ingestion_service"].create_job.return_value = job_mock
         use_case_deps["cs_service"].create_source.return_value = source_mock
 
         # Fail at vector indexing
         mock_extractor.extract.return_value = [MagicMock(page_content="c", metadata={})]
-        use_case_deps["vector_service"].index_documents.side_effect = Exception("Vector fail")
+        use_case_deps["vector_service"].index_documents.side_effect = Exception(
+            "Vector fail"
+        )
 
         cmd = IngestFileCommand(file_path="f", file_name="f", subject_id=uuid4())
         with pytest.raises(Exception, match="Vector fail"):
@@ -285,10 +304,13 @@ class TestFileIngestionUseCase:
     def test_execute_no_tokenizer_no_docs_fallback(self, use_case_deps, mock_extractor):
         # Trigger line 145: not docs
         del use_case_deps["model_loader_service"].model
-        use_case = FileIngestionUseCase(**use_case_deps)
 
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
-        use_case_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid4())
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=uuid4()
+        )
+        use_case_deps["ingestion_service"].create_job.return_value = MagicMock(
+            id=uuid4()
+        )
         use_case_deps["cs_service"].create_source.return_value = MagicMock(
             id=uuid4(), source_type=SourceType.DOCX, external_source="test.docx"
         )
