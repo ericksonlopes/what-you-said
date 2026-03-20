@@ -143,10 +143,13 @@ class DoclingExtractor:
         ]
 
         for pattern, replacement in replacements:
-            # Handle lowercase
-            text = re.sub(pattern, replacement, text)
-            # Handle uppercase
-            text = re.sub(pattern.upper(), replacement.upper(), text)
+            # We use a custom sub to handle case preservation for simple cases
+            def fix_case(match):
+                if match.group(0).isupper():
+                    return replacement.upper()
+                return replacement.lower()
+
+            text = re.sub(pattern, fix_case, text, flags=re.IGNORECASE)
 
         return text
 

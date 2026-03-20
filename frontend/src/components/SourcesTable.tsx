@@ -132,39 +132,50 @@ export function SourcesTable({
   const activeType = typeOptions.find(opt => opt.value === typeFilter) || typeOptions[0];
 
   return (
-    <div className="flex flex-col h-full border border-border-subtle rounded-xl bg-panel-bg overflow-hidden">
+    <div className="flex flex-col h-full glass-card rounded-2xl relative shadow-2xl transition-all duration-500 hover:shadow-emerald-500/5">
+      {/* Decorative top glow */}
+      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent z-20" />
+
       {/* Table Header / Toolbar */}
-      <div className="p-4 border-b border-border-subtle flex flex-col md:flex-row md:items-center justify-between gap-4 bg-black/20">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-medium text-zinc-200">{t('sources.title')}</h3>
-          <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-[10px] text-zinc-500 font-mono border border-zinc-700/50">
-            {totalCount} {t('search.results.total').toUpperCase()}
-          </span>
+      <div className="p-5 border-b border-white/5 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-black/40 backdrop-blur-xl z-20">
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
+            <Layers className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white tracking-tight leading-tight">{t('sources.title')}</h3>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] text-zinc-500 font-medium uppercase tracking-widest">
+                {totalCount} {t('search.results.total')}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
           {/* Custom Type Filter Dropdown */}
           <div className="relative">
             <button
               onClick={() => setIsTypeOpen(!isTypeOpen)}
               onBlur={() => setTimeout(() => setIsTypeOpen(false), 200)}
-              className="flex items-center gap-2 bg-zinc-900 border border-border-subtle hover:border-zinc-700 rounded-lg px-3 py-1.5 transition-colors min-w-[140px]"
+              className="flex items-center gap-2.5 bg-white/5 border border-white/10 hover:border-emerald-500/40 rounded-xl px-4 py-2 transition-all duration-300 min-w-[160px] group glass-shine"
             >
-              <activeType.icon className="w-3.5 h-3.5 text-zinc-500" />
-              <span className="text-sm text-zinc-300 flex-1 text-left">
+              <activeType.icon className="w-4 h-4 text-emerald-400/70 group-hover:text-emerald-400 transition-colors" />
+              <span className="text-sm text-zinc-300 flex-1 text-left font-medium">
                 {activeType.label}
               </span>
-              <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isTypeOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-300 ${isTypeOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <AnimatePresence>
               {isTypeOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute top-full right-0 mt-2 w-48 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden"
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="absolute top-full right-0 mt-3 w-56 bg-zinc-950/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-50 py-2 p-1.5 max-h-[60vh] overflow-y-auto custom-scrollbar"
                 >
                   {typeOptions.map((option) => (
                     <button
@@ -173,14 +184,20 @@ export function SourcesTable({
                         onTypeFilterChange(option.value);
                         setIsTypeOpen(false);
                       }}
-                      className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors ${typeFilter === option.value
-                          ? 'bg-emerald-500/10 text-emerald-400'
-                          : 'text-zinc-400 hover:bg-zinc-800 hover:text-white'
+                      className={`w-full flex items-center gap-3.5 px-3 py-2.5 text-sm rounded-xl transition-all duration-200 ${typeFilter === option.value
+                        ? 'bg-emerald-500/15 text-emerald-400'
+                        : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                         }`}
                     >
-                      <option.icon className={`w-4 h-4 ${typeFilter === option.value ? 'text-emerald-400' : 'text-zinc-500'}`} />
-                      <span className="flex-1 text-left">{option.label}</span>
-                      {typeFilter === option.value && <Check className="w-4 h-4 text-emerald-400" />}
+                      <div className={`p-1.5 rounded-lg transition-colors ${typeFilter === option.value ? 'bg-emerald-500/20' : 'bg-transparent'}`}>
+                        <option.icon className={`w-4 h-4 ${typeFilter === option.value ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                      </div>
+                      <span className="flex-1 text-left font-medium">{option.label}</span>
+                      {typeFilter === option.value && (
+                        <motion.div layoutId="active-check">
+                          <Check className="w-4 h-4 text-emerald-400" />
+                        </motion.div>
+                      )}
                     </button>
                   ))}
                 </motion.div>
@@ -189,164 +206,209 @@ export function SourcesTable({
           </div>
 
           {/* Search Input + Button */}
-          <div className="flex items-center bg-zinc-800 border border-border-subtle rounded-lg overflow-hidden group focus-within:border-emerald-500/50 transition-all">
-            <div className="relative flex items-center pl-3">
-              <Search className="w-4 h-4 text-zinc-500 group-focus-within/search:text-emerald-400 transition-colors" />
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden group focus-within:border-emerald-500/50 focus-within:ring-2 focus-within:ring-emerald-500/10 transition-all duration-300">
+            <div className="relative flex items-center pl-4 py-2">
+              <Search className="w-4 h-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
               <input
                 type="text"
                 placeholder={`${t('common.actions.search')}...`}
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onSearchSubmit()}
-                className="bg-transparent pl-2 pr-4 py-1.5 text-sm text-zinc-200 focus:outline-none w-48 lg:w-64"
+                className="bg-transparent pl-3 pr-4 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none w-48 lg:w-72 font-medium"
               />
             </div>
             <button
               onClick={onSearchSubmit}
-              className="bg-zinc-900 hover:bg-zinc-950 text-emerald-500 px-4 py-1.5 text-xs font-bold border-l border-border-subtle transition-all active:scale-95 flex items-center gap-2 uppercase tracking-wider group/btn"
+              className="bg-emerald-500 hover:bg-emerald-400 text-black px-5 py-2.5 text-xs font-bold transition-all active:scale-95 flex items-center gap-2 uppercase tracking-widest glass-shine"
             >
-              <Search className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
               {t('common.actions.search')}
             </button>
           </div>
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-emerald-500 hover:text-black hover:border-emerald-500 transition-all duration-300 active:scale-90 glass-shine"
+            title={t('common.actions.addData')}
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
       {/* Table Content */}
-      <div className="flex-1 overflow-auto">
-        <table className="w-full text-left text-sm text-zinc-400">
-          <thead className="text-xs text-zinc-500 uppercase bg-black/40 sticky top-0 backdrop-blur-md">
+      <div className="flex-1 overflow-x-hidden overflow-y-auto custom-scrollbar">
+        <table className="w-full text-left border-separate border-spacing-0 table-fixed">
+          <thead className="sticky top-0 z-10">
             <tr>
-              <th className="w-14 pl-4 pr-0 py-3"></th>
-              <th className="pl-0 pr-4 py-3 font-medium text-left">{t('sources.table.title')}</th>
-              <th className="px-4 py-3 font-medium text-left">{t('sources.table.type')}</th>
-              <th className="px-4 py-3 font-medium text-left">{t('sources.table.origin')}</th>
-              <th className="px-4 py-3 font-medium text-right">{t('sources.table.chunks')}</th>
-              <th className="px-4 py-3 font-medium text-center">{t('sources.table.status')}</th>
-              <th className="px-4 py-3 font-medium text-left">{t('sources.table.model')}</th>
-              <th className="px-4 py-3 font-medium text-right">{t('sources.table.dimensions') || 'Dimensions'}</th>
-              <th className="px-4 py-3 font-medium text-right">{t('sources.table.tokens')}</th>
-              <th className="px-4 py-3 font-medium text-right">{t('sources.table.tokens_chunk') || 'Tokens(Chunk)'}</th>
-              <th className="px-4 py-3 font-medium text-left">{t('sources.table.date')}</th>
-              <th className="px-4 py-3 font-medium text-center sticky right-0 bg-[#080808] backdrop-blur-md z-10 shadow-[-4px_0_10px_rgba(0,0,0,0.5)]">{t('sources.table.actions') || 'Actions'}</th>
+              <th className="w-14 pl-5 py-5 border-b border-white/5 font-semibold text-[11px] text-zinc-500 uppercase tracking-widest text-center italic">{t('sources.table.headers.icon')}</th>
+              <th className="w-[32%] pl-2 pr-4 py-5 border-b border-white/5 font-semibold text-[11px] text-zinc-500 uppercase tracking-widest text-left">{t('sources.table.title')}</th>
+              <th className="w-32 px-4 py-5 border-b border-white/5 font-semibold text-[11px] text-zinc-500 uppercase tracking-widest text-left">{t('sources.table.headers.type_date')}</th>
+              <th className="w-24 px-4 py-5 border-b border-white/5 font-semibold text-[11px] text-zinc-500 uppercase tracking-widest text-center">{t('sources.table.status')}</th>
+              <th className="w-auto px-4 py-5 border-b border-white/5 font-semibold text-[11px] text-zinc-500 uppercase tracking-widest text-left">{t('sources.table.headers.model_dims')}</th>
+              <th className="w-28 px-4 py-5 border-b border-white/5 font-semibold text-[11px] text-zinc-500 uppercase tracking-widest text-right">{t('sources.table.headers.volume')}</th>
+              <th className="w-24 px-6 py-5 border-b border-white/5 font-semibold text-[11px] text-zinc-500 uppercase tracking-widest text-center">
+                {t('sources.table.actions')}
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border-subtle">
-            {sources.length === 0 ? (
-              <tr>
-                <td colSpan={12} className="py-20 text-center">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                      <Search className="w-5 h-5 text-zinc-600" />
-                    </div>
-                    <div className="max-w-md mx-auto">
-                      <p className="text-zinc-300 font-medium">{t('sources.table.none')}</p>
-                      {emptyMessage && (
-                        <p className="text-sm text-zinc-500 mt-2 leading-relaxed italic">
-                          {emptyMessage}
-                        </p>
-                      )}
-                      <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="mt-6 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-black bg-emerald-500 rounded-lg hover:bg-emerald-400 transition-colors shadow-lg active:scale-95"
-                      >
-                        <Plus className="w-4 h-4" />
-                        {t('common.actions.addData')}
-                      </button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              sources.map((source) => {
-                const Icon = getIcon(source.type);
-                return (
-                  <tr
-                    key={source.id}
-                    onClick={() => onRowClick(source)}
-                    className="hover:bg-panel-hover cursor-pointer transition-colors group"
-                  >
-                    <td className="w-14 pl-4 pr-4 py-4 text-center">
-                      <Icon className={`w-6 h-6 text-zinc-500 group-hover:text-emerald-400 transition-colors mx-auto`} />
-                    </td>
-                    <td className="pl-0 pr-4 py-4 font-medium text-zinc-200">{source.title}</td>
-                    <td className="px-4 py-4">
-                      <span className="text-xs text-zinc-400 font-bold uppercase tracking-wider">
-                        {t(`ingestion.sources.${source.type.toLowerCase()}`, { defaultValue: source.type.toUpperCase() })}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-zinc-500 font-mono text-xs truncate max-w-[160px]" title={source.origin || ''}>
-                      {source.origin || 'n/a'}
-                    </td>
-                    <td className="px-4 py-4 text-right font-mono text-xs">{source.chunkCount}</td>
-                    <td className="px-4 py-4 text-center">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${['done', 'finished', 'active', 'ingested'].includes(source.processingStatus.toLowerCase())
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                        : ['failed', 'error'].includes(source.processingStatus.toLowerCase())
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse'
-                        }`}>
-                        {source.processingStatus.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-xs font-mono text-zinc-400">{source.model || 'Unknown'}</td>
-                    <td className="px-4 py-4 text-right text-xs font-mono text-zinc-400">{source.dimensions || '-'}</td>
-                    <td className="px-4 py-4 text-right text-xs font-mono text-zinc-400">{source.totalTokens || '-'}</td>
-                    <td className="px-4 py-4 text-right text-xs font-mono text-zinc-400">{source.maxTokensPerChunk || '-'}</td>
-                    <td className="px-4 py-4 font-mono text-xs">{new Date(source.date).toLocaleDateString()}</td>
-                    <td className="px-4 py-4 sticky right-0 bg-[#121212]/95 group-hover:bg-[#1C1C1E]/95 z-10 transition-colors shadow-[-4px_0_10px_rgba(0,0,0,0.3)]">
-                      <div className="flex items-center justify-center gap-2">
-                        {source.type.toLowerCase() === 'youtube' && (
-                          <button
-                            onClick={(e) => handleReprocess(e, source)}
-                            disabled={reprocessingIds.has(source.id)}
-                            title={t('common.actions.reprocess')}
-                            className="p-1.5 rounded-lg bg-zinc-800 border border-white/5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 transition-all active:scale-95 disabled:opacity-50"
-                          >
-                            <RotateCcw className={`w-3.5 h-3.5 ${reprocessingIds.has(source.id) ? 'animate-spin text-emerald-400' : ''}`} />
-                          </button>
-                        )}
-                        
+          <tbody className="divide-y divide-white/[0.03]">
+            <AnimatePresence mode="popLayout">
+              {sources.length === 0 ? (
+                <motion.tr
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <td colSpan={7} className="py-24 text-center">
+                    <div className="flex flex-col items-center justify-center gap-6">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-2xl bg-zinc-900/50 border border-white/5 flex items-center justify-center shadow-inner">
+                          <Search className="w-6 h-6 text-zinc-700" />
+                        </div>
+                      </div>
+                      <div className="max-w-md mx-auto space-y-2">
+                        <p className="text-zinc-200 font-semibold">{t('sources.table.none')}</p>
                         <button
-                          onClick={(e) => handleDelete(e, source)}
-                          title={t('common.actions.delete')}
-                          className="p-1.5 rounded-lg bg-zinc-800 border border-white/5 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all active:scale-95"
+                          onClick={() => setIsAddModalOpen(true)}
+                          className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-black bg-emerald-500 rounded-lg hover:bg-emerald-400 transition-all duration-300 shadow-[0_10px_20px_rgba(16,185,129,0.2)] active:scale-95 glass-shine"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Plus className="w-3.5 h-3.5" />
+                          {t('common.actions.addData')}
                         </button>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
+                    </div>
+                  </td>
+                </motion.tr>
+              ) : (
+                sources.map((source, index) => {
+                  const Icon = getIcon(source.type);
+                  const isProcessing = !['done', 'finished', 'active', 'ingested'].includes(source.processingStatus.toLowerCase()) && 
+                                     !['failed', 'error'].includes(source.processingStatus.toLowerCase());
+                  const isFailed = ['failed', 'error'].includes(source.processingStatus.toLowerCase());
+                  const isDone = ['done', 'finished', 'active', 'ingested'].includes(source.processingStatus.toLowerCase());
+
+                  return (
+                    <motion.tr
+                      key={source.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                      onClick={() => onRowClick(source)}
+                      className="hover:bg-white/[0.02] cursor-pointer transition-all duration-300 group relative"
+                    >
+                      <td className="pl-5 pr-2 py-5">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                          isDone ? 'bg-emerald-500/10 text-emerald-400/80 group-hover:text-emerald-400' :
+                          isFailed ? 'bg-rose-500/10 text-rose-400/80 group-hover:text-rose-400' :
+                          'bg-amber-500/10 text-amber-400/80 group-hover:text-amber-400'
+                        }`}>
+                           <Icon className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-110" />
+                        </div>
+                      </td>
+                      <td className="pl-2 pr-4 py-5">
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                          <span className="font-semibold text-zinc-100 group-hover:text-white transition-colors truncate text-sm">
+                            {source.title}
+                          </span>
+                          <span className="truncate text-[11px] text-zinc-500 font-medium opacity-60" title={source.origin || ''}>
+                            {source.origin || 'no-origin'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-5">
+                        <div className="flex flex-col gap-1.5">
+                           <span className="shrink-0 w-fit inline-flex items-center px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] font-black text-emerald-500/70 uppercase tracking-widest leading-none">
+                            {source.type}
+                          </span>
+                          <span className="shrink-0 flex items-center gap-1.5 text-[10px] text-zinc-600 font-medium font-mono">
+                             <FileText className="w-2.5 h-2.5 opacity-40" />
+                            {new Date(source.date).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-5">
+                        <div className="flex justify-center">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${
+                            isDone ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10 shadow-[0_4px_12px_rgba(16,185,129,0.1)]' :
+                            isFailed ? 'bg-rose-500/10 text-rose-400 border-rose-500/10' :
+                            'bg-amber-500/10 text-amber-400 border-amber-500/10 animate-pulse animate-glow'
+                          }`}>
+                            {source.processingStatus.toUpperCase()}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-5 min-w-0 overflow-hidden">
+                        <div className="flex flex-col gap-1.5 min-w-0">
+                           <div className="flex items-center gap-2 min-w-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                             <Database className="w-3 h-3 text-zinc-600 shrink-0" />
+                             <span className="text-[11px] text-zinc-300 font-medium truncate">{source.model || 'N/A'}</span>
+                           </div>
+                            <span className="text-[11px] text-zinc-500 font-mono pl-5">{source.dimensions || '0'} {t('sources.chunks.sidebar.dims')}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-5 text-right">
+                        <div className="flex flex-col gap-1.5 items-end">
+                           <div className="flex items-center gap-1.5">
+                             <span className="text-[11px] text-white font-mono font-bold leading-none">{source.totalTokens?.toLocaleString() || '0'}</span>
+                             <span className="text-[8px] text-zinc-600 font-bold uppercase tracking-tight">{t('sources.table.headers.tok')}</span>
+                           </div>
+                            <div className="flex flex-col items-end gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[11px] text-zinc-400 font-mono italic leading-none">{source.chunkCount || '0'} {t('sources.table.chunks').toLowerCase()}</span>
+                              <span className="text-[11px] text-zinc-500 font-mono leading-none">{source.maxTokensPerChunk || '0'} t/c</span>
+                            </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center justify-center gap-2.5">
+                          {source.type.toLowerCase() === 'youtube' && (
+                            <button
+                              onClick={(e) => handleReprocess(e, source)}
+                              disabled={reprocessingIds.has(source.id)}
+                              className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-zinc-400 hover:text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/10 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                              <RotateCcw className={`w-3.5 h-3.5 ${reprocessingIds.has(source.id) ? 'animate-spin' : ''}`} />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => handleDelete(e, source)}
+                            className="p-1.5 rounded-lg bg-white/5 border border-white/5 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/10 transition-all active:scale-95"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })
+              )}
+            </AnimatePresence>
           </tbody>
         </table>
       </div>
 
       {/* Pagination Footer */}
-      <div className="p-4 border-t border-border-subtle flex items-center justify-between bg-black/20">
-        <div className="flex items-center gap-6">
-          <span className="text-xs text-zinc-500">
-            {t('sources.table.pagination', { 
-              start: totalCount > 0 ? startIndex + 1 : 0, 
-              end: endIndex, 
-              total: totalCount 
-            })}
-          </span>
+      <div className="p-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 bg-black/40 backdrop-blur-xl z-20">
+        <div className="flex items-center gap-8">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Showing</span>
+            <span className="text-xs text-zinc-400 font-medium">
+              <span className="text-white font-bold">{totalCount > 0 ? startIndex + 1 : 0}</span> to <span className="text-white font-bold">{endIndex}</span> of <span className="text-white font-bold">{totalCount}</span>
+            </span>
+          </div>
 
           {onPageSizeChange && (
-            <div className="flex items-center gap-2 border-l border-white/5 pl-6">
-              <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Rows:</span>
-              <div className="flex items-center gap-1 bg-zinc-900/50 rounded-lg p-0.5 border border-white/5">
+            <div className="hidden md:flex items-center gap-3 border-l border-white/5 pl-8">
+              <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Rows per page</span>
+              <div className="flex items-center gap-1.5 bg-white/5 rounded-xl p-1 border border-white/5">
                 {[10, 20, 30, 50].map((size) => (
                   <button
                     key={size}
                     onClick={() => onPageSizeChange(size)}
-                    className={`px-2 py-1 text-[10px] font-bold rounded-md transition-all ${
+                    className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all duration-300 ${
                       pageSize === size 
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                        : 'text-zinc-500 hover:text-zinc-300'
+                        ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' 
+                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                     }`}
                   >
                     {size}
@@ -357,23 +419,27 @@ export function SourcesTable({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => onPageChange(page - 1)}
             disabled={page === 1}
-            className="p-1.5 rounded-md border border-border-subtle hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-2.5 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-300 active:scale-90"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4 text-zinc-300" />
           </button>
-          <span className="text-xs font-medium text-zinc-400 px-2">
-            {t('sources.chunks.page', { current: page, total: totalPages })}
-          </span>
+          
+          <div className="flex items-center gap-2 px-3">
+            <span className="text-xs font-bold text-white">{page}</span>
+            <span className="text-zinc-600 font-bold text-[10px]">/</span>
+            <span className="text-xs font-bold text-zinc-500">{totalPages || 1}</span>
+          </div>
+
           <button
             onClick={() => onPageChange(page + 1)}
-            disabled={page === totalPages}
-            className="p-1.5 rounded-md border border-border-subtle hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={page === totalPages || totalPages === 0}
+            className="p-2.5 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/20 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-300 active:scale-90"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 text-zinc-300" />
           </button>
         </div>
       </div>

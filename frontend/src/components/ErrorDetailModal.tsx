@@ -49,7 +49,7 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
                   <AlertCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-zinc-100 italic">Task Failed</h2>
+                   <h2 className="text-lg font-semibold text-zinc-100 italic">{t('error_modal.title')}</h2>
                   <div className="flex items-center gap-3 mt-0.5 text-xs text-zinc-500 font-medium">
                     <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {task.id.substring(0, 8)}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(task.createdAt).toLocaleString()}</span>
@@ -67,7 +67,7 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
             {/* Content */}
             <div className="p-6 flex-1 overflow-y-auto custom-scrollbar bg-[#09090b]">
                <div className="mb-4">
-                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Original Task</h3>
+                  <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">{t('error_modal.original_task')}</h3>
                   <p className="text-sm font-medium text-zinc-300 bg-zinc-900/50 p-3 rounded-lg border border-zinc-800/50">
                     {task.title}
                   </p>
@@ -75,7 +75,7 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
 
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-rose-400/80 uppercase tracking-widest">Full Error Message</h3>
+                  <h3 className="text-xs font-bold text-rose-400/80 uppercase tracking-widest">{t('error_modal.full_error')}</h3>
                   <button
                     onClick={handleCopy}
                     className="flex items-center gap-1.5 px-2 py-1 rounded md hover:bg-zinc-800 text-zinc-500 hover:text-emerald-400 transition-all text-[10px] font-bold uppercase tracking-wider border border-transparent hover:border-zinc-700"
@@ -83,12 +83,12 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
                     {copied ? (
                       <>
                         <Check className="w-3 h-3 text-emerald-500" />
-                        Copied
+                        {t('error_modal.copied')}
                       </>
                     ) : (
                       <>
                         <Copy className="w-3 h-3" />
-                        Copy Error
+                        {t('error_modal.copy')}
                       </>
                     )}
                   </button>
@@ -97,7 +97,7 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
                 <div className="mt-1 relative group">
                   <div className="absolute -inset-0.5 bg-gradient-to-b from-rose-500/10 to-transparent rounded-xl opacity-50 blur-sm pointer-events-none"></div>
                   <pre className="relative w-full bg-black/60 border border-rose-500/20 rounded-xl p-5 text-zinc-400 text-sm font-mono overflow-x-auto custom-scrollbar leading-relaxed selection:bg-rose-500/30">
-                    {task.errorMessage || 'No detailed error message available.'}
+                    {task.errorMessage || t('error_modal.no_message')}
                   </pre>
                 </div>
               </div>
@@ -105,7 +105,7 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
               <div className="mt-8 p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl flex items-center gap-3">
                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                  <p className="text-[11px] text-zinc-500 leading-tight">
-                   You can share this error trace with support or use it to debug the ingestion pipeline and source connectivity.
+                   {t('error_modal.support_hint')}
                  </p>
               </div>
             </div>

@@ -68,7 +68,8 @@
     },
     "profile": {
       "name": "Usuário",
-      "plan": "Rodando Localmente"
+      "plan": "Rodando Localmente",
+      "settings": "Configurações"
     }
   },
   "search": {
@@ -130,6 +131,13 @@
         "article": "Artigos",
         "transcript": "Transcrições",
         "youtube": "YouTube"
+      },
+      "headers": {
+        "icon": "Ícone",
+        "type_date": "Tipo / Data",
+        "model_dims": "Modelo / Dims",
+        "volume": "Volume",
+        "tok": "TOK"
       }
     },
     "notifications": {
@@ -139,12 +147,30 @@
     "chunks": {
       "title": "Fontes > Chunks",
       "subtitle": "Gerenciando segmentos armazenados no índice vetorial.",
+      "search_placeholder": "Buscar seus segmentos...",
+      "segment_prefix": "Fragmento",
       "pagination": "Mostrando {{start}} a {{end}} de {{total}} resultados",
       "page": "Página {{current}} de {{total}}",
       "chars": "Caracteres",
+      "tokens": "Tokens",
       "content_label": "Conteúdo",
       "content_placeholder": "Digite o conteúdo do fragmento...",
-      "edit_warning": "Editar este conteúdo disparará uma re-indexação no banco de dados vetorial. Isso garante que as futuras buscas semânticas reflitam o texto atualizado."
+      "edit_warning": "Editar este conteúdo disparará uma re-indexação no banco de dados vetorial. Isso garante que as futuras buscas semânticas reflitam o texto atualizado.",
+      "sidebar": {
+        "title_tech": "Detalhes técnicos",
+        "total_chunks": "Total de fragmentos",
+        "total_tokens": "Total de tokens",
+        "tokens_per_chunk": "Tokens por fragmento",
+        "title_doc": "Documento original",
+        "type": "Tipo",
+        "model": "Modelo",
+        "size": "Tamanho",
+        "dims": "dimensões",
+        "title_access": "Base de Conhecimento",
+        "subject": "Assunto",
+        "anonymous": "Usuário Anônimo",
+        "origin_url": "URL de Origem"
+      }
     }
   },
   "activity": {
@@ -298,6 +324,7 @@
       "shared_context": "Contexto compartilhado entre chunks",
       "model_limit": "Limite do Modelo",
       "tokens_label": "Tokens",
+      "optimized_tip": "Otimizado para recuperação {{strategy}}.",
       "strategies": {
         "balanced": {
           "name": "Equilibrado",
@@ -364,6 +391,7 @@
     },
     "chunk": {
       "updated": "Fragmento de conhecimento atualizado com sucesso!",
+      "deleted": "Fragmento de conhecimento excluído com sucesso!",
       "error": "Falha ao atualizar fragmento."
     }
   },

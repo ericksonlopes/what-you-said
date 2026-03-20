@@ -72,3 +72,12 @@ class TestTextSplitterService:
         docs = service.split_text(text="test")
         assert len(docs) == 1
         assert docs[0].page_content == "test"
+
+    def test_split_text_tokenizer_general_exception(self, mock_tokenizer):
+        # Test line 58-59: general exception fallback to len(text) // 4
+        mock_tokenizer.encode.side_effect = Exception("Fatal")
+        service = TextSplitterService(tokenizer=mock_tokenizer)
+        docs = service.split_text(text="test text")
+        assert len(docs) == 1
+        # len("test text") is 9. 9 // 4 = 2 tokens estimated.
+        assert docs[0].metadata["token_count"] == 2

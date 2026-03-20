@@ -241,7 +241,7 @@ export function Sidebar() {
           <button
             onClick={() => setIsSettingsModalOpen(true)}
             className="p-2 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-            title="Settings"
+            title={t('sidebar.profile.settings')}
           >
             <Settings className="w-4 h-4" />
           </button>

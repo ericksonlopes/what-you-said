@@ -68,7 +68,8 @@
     },
     "profile": {
       "name": "User",
-      "plan": "Local Instance"
+      "plan": "Local Instance",
+      "settings": "Settings"
     }
   },
   "search": {
@@ -130,6 +131,13 @@
         "article": "Articles",
         "transcript": "Transcripts",
         "youtube": "YouTube"
+      },
+      "headers": {
+        "icon": "Icon",
+        "type_date": "Type / Date",
+        "model_dims": "Model / Dims",
+        "volume": "Volume",
+        "tok": "TOK"
       }
     },
     "notifications": {
@@ -139,12 +147,30 @@
     "chunks": {
       "title": "Sources > Chunks",
       "subtitle": "Managing segments stored in vector index.",
+      "search_placeholder": "Search your segments...",
+      "segment_prefix": "Chunk",
       "pagination": "Showing {{start}} to {{end}} of {{total}} results",
       "page": "Page {{current}} of {{total}}",
       "chars": "Characters",
+      "tokens": "Tokens",
       "content_label": "Content",
       "content_placeholder": "Enter chunk content...",
-      "edit_warning": "Editing this content will trigger a re-indexing in the vector database. This ensures that future semantic searches will reflect the updated text."
+      "edit_warning": "Editing this content will trigger a re-indexing in the vector database. This ensures that future semantic searches will reflect the updated text.",
+      "sidebar": {
+        "title_tech": "Technical details",
+        "total_chunks": "Total chunks",
+        "total_tokens": "Total tokens",
+        "tokens_per_chunk": "Tokens per chunk",
+        "title_doc": "Original document",
+        "type": "Type",
+        "model": "Model",
+        "size": "Size",
+        "dims": "dims",
+        "title_access": "Knowledge Base",
+        "subject": "Subject",
+        "anonymous": "Anonymous User",
+        "origin_url": "Origin URL"
+      }
     }
   },
   "activity": {
@@ -298,6 +324,7 @@
       "shared_context": "Shared context between chunks",
       "model_limit": "Model Limit",
       "tokens_label": "Tokens",
+      "optimized_tip": "Optimized for {{strategy}} retrieval.",
       "strategies": {
         "balanced": {
           "name": "Balanced",
@@ -365,6 +392,7 @@
     },
     "chunk": {
       "updated": "Knowledge chunk updated successfully!",
+      "deleted": "Knowledge chunk deleted successfully.",
       "error": "Failed to update chunk."
     }
   },

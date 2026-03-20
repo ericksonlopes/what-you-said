@@ -76,6 +76,8 @@ def delete_source(
         return {"success": True, "message": f"Source {id} deleted successfully"}
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid UUID format")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error deleting source {id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))

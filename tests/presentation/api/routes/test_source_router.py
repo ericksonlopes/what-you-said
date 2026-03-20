@@ -2,7 +2,11 @@ import pytest
 from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 from main import app
-from src.presentation.api.dependencies import get_cs_service, get_model_loader
+from src.presentation.api.dependencies import (
+    get_cs_service,
+    get_model_loader,
+    get_content_source_use_case,
+)
 
 client = TestClient(app)
 
@@ -24,6 +28,14 @@ def mock_model_loader():
     app.dependency_overrides[get_model_loader] = lambda: mock
     yield mock
     app.dependency_overrides.pop(get_model_loader, None)
+
+
+@pytest.fixture
+def mock_delete_use_case():
+    mock = MagicMock()
+    app.dependency_overrides[get_content_source_use_case] = lambda: mock
+    yield mock
+    app.dependency_overrides.pop(get_content_source_use_case, None)
 
 
 def test_get_source_types():
@@ -64,21 +76,49 @@ def test_get_model_info_success(mock_model_loader):
 
 
 def test_get_model_info_error(mock_model_loader):
-    # ModelLoaderService is usually a mock here, but if we want to trigger the except block:
-    # We can use a property mock or just side_effect if it were a method
-    # Since it's accessing attributes, we might need to mock the whole service to fail on access
-    # but the router code accesses attributes.
+    # To trigger the router's internal try-except block, we mock an attribute access error.
+    type(mock_model_loader).model_name = property(lambda x: exec('raise(Exception("attr fail"))'))
 
-    # Let's mock it to raise exception on access if possible, or just mock the dependency to raise.
-    app.dependency_overrides[get_model_loader] = MagicMock(
-        side_effect=Exception("Error")
-    )
+    response = client.get("/rest/sources/model")
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Internal server error"
 
-    try:
-        client.get("/rest/sources/model")
-        # FastAPI handles dependency exception usually before the router try-except if it's in Depends
-        # but the router has its own try-except.
-        # If the dependency itself raises, it's a 500 from FastAPI.
-        # If the router code raises while using the service, it's our 500.
-    finally:
-        app.dependency_overrides.pop(get_model_loader, None)
+
+def test_delete_source_success(mock_delete_use_case):
+    from uuid import uuid4
+    source_id = uuid4()
+    mock_delete_use_case.delete.return_value = True
+
+    response = client.delete(f"/rest/sources/{source_id}")
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    mock_delete_use_case.delete.assert_called_once()
+
+
+def test_delete_source_not_found(mock_delete_use_case):
+    from uuid import uuid4
+    source_id = uuid4()
+    mock_delete_use_case.delete.return_value = False
+
+    response = client.delete(f"/rest/sources/{source_id}")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Content source not found"
+
+
+def test_delete_source_invalid_uuid():
+    response = client.delete("/rest/sources/not-a-uuid")
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid UUID format"
+
+
+def test_delete_source_internal_error(mock_delete_use_case):
+    from uuid import uuid4
+    source_id = uuid4()
+    mock_delete_use_case.delete.side_effect = Exception("Fatal error")
+
+    response = client.delete(f"/rest/sources/{source_id}")
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Fatal error"

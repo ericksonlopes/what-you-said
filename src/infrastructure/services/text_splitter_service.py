@@ -39,34 +39,51 @@ class TextSplitterService:
         step = tokens_per_chunk - tokens_overlap
 
         # 1. Tokenize the full text
-        try:
-            token_ids = self.tokenizer.encode(text, add_special_tokens=False)
-        except TypeError:
-            token_ids = self.tokenizer.encode(text)
-
-        n = len(token_ids)
         documents: List[Document] = []
-
-        i = 0
-        chunk_index = 0
-        while i < n:
-            chunk_ids = token_ids[i : i + tokens_per_chunk]
-
-            # 2. Decode back to text
+        n = 0
+        try:
             try:
-                chunk_text = self.tokenizer.decode(chunk_ids, skip_special_tokens=True)
-            except Exception:
-                chunk_text = self.tokenizer.decode(chunk_ids)
+                token_ids = self.tokenizer.encode(text, add_special_tokens=False)
+            except TypeError:
+                token_ids = self.tokenizer.encode(text)
 
-            chunk_metadata = (metadata or {}).copy()
-            chunk_metadata.update(
-                {"token_count": len(chunk_ids), "chunk_index": chunk_index}
+            n = len(token_ids)
+
+            i = 0
+            chunk_index = 0
+            while i < n:
+                chunk_ids = token_ids[i : i + tokens_per_chunk]
+
+                # 2. Decode back to text
+                try:
+                    chunk_text = self.tokenizer.decode(chunk_ids, skip_special_tokens=True)
+                except Exception:
+                    chunk_text = self.tokenizer.decode(chunk_ids)
+
+                chunk_metadata = (metadata or {}).copy()
+                chunk_metadata.update(
+                    {"token_count": len(chunk_ids), "chunk_index": chunk_index}
+                )
+
+                documents.append(Document(page_content=chunk_text, metadata=chunk_metadata))
+
+                i += step
+                chunk_index += 1
+        except Exception as e:
+            logger.error(
+                f"Error during text splitting: {e}. Falling back to simple split.",
+                context={"text_length": len(text)},
             )
-
-            documents.append(Document(page_content=chunk_text, metadata=chunk_metadata))
-
-            i += step
-            chunk_index += 1
+            documents.append(
+                Document(
+                    page_content=text,
+                    metadata={
+                        **(metadata or {}),
+                        "token_count": len(text) // 4,
+                        "chunk_index": 0,
+                    },
+                )
+            )
 
         logger.debug(
             f"Split text into {len(documents)} chunks.",

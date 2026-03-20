@@ -98,11 +98,14 @@ def make_ingestion_service():
         def get_by_id(self, id):
             return SimpleNamespace(id=id, content_source_id=None)
 
+        def delete_by_id(self, id):
+            return None
+
     return IS()
 
 
 def make_model_loader():
-    return SimpleNamespace(model_name="test-model", dimensions=768)
+    return SimpleNamespace(model_name="test-model", dimensions=768, max_seq_length=512)
 
 
 def make_chunk_service():
@@ -113,6 +116,12 @@ def make_chunk_service():
         def create_chunks(self, chunks):
             self.chunks_created = chunks
 
+        def delete_by_content_source(self, id):
+            return 0
+
+        def delete_by_job_id(self, id):
+            return 0
+
     return ChunkSvc()
 
 
@@ -120,6 +129,12 @@ def make_vector_service():
     class VecSvc:
         def index_documents(self, chunks):
             return [str(uuid.uuid4()) for _ in chunks]
+
+        def delete_by_video_id(self, vid):
+            return 0
+
+        def delete_by_job_id(self, jid):
+            return 0
 
     return VecSvc()
 
@@ -485,3 +500,111 @@ def test_url_extraction_edge_cases():
     assert extract("https://youtube.com/embed/dQw4w9WgXcQ") == "dQw4w9WgXcQ"
     # Test no match
     assert extract("too_short") is None
+
+def test_execute_job_recovery_success(monkeypatch):
+    ks = make_ks_service()
+    cs = make_cs_service()
+    isvc = make_ingestion_service()
+    job_id = uuid.uuid4()
+    source_id = uuid.uuid4()
+    
+    # Mock successful recovery
+    monkeypatch.setattr(isvc, "get_by_id", lambda id: SimpleNamespace(id=id, content_source_id=source_id))
+    monkeypatch.setattr(cs, "get_by_id", lambda id: SimpleNamespace(id=id, processing_status="pending"))
+    
+    use_case = YoutubeIngestionUseCase(ks, cs, isvc, make_model_loader(), None, make_chunk_service(), make_vector_service(), "weaviate")
+    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: "vid")
+    monkeypatch.setattr(use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("c")])
+
+    cmd = IngestYoutubeCommand(video_url="v", subject_name="s", ingestion_job_id=job_id)
+    result = use_case.execute(cmd)
+    assert result.job_id == job_id
+
+def test_execute_playlist_no_url():
+    ks = make_ks_service()
+    use_case = YoutubeIngestionUseCase(ks, None, None, None, None, None, None, "weaviate")
+    from src.application.dtos.enums.youtube_data_type import YoutubeDataType
+    cmd = IngestYoutubeCommand(video_url=None, video_urls=[], subject_name="s", data_type=YoutubeDataType.PLAYLIST)
+    with pytest.raises(ValueError, match="No video_url provided for playlist"):
+        use_case.execute(cmd)
+
+def test_execute_no_urls():
+    ks = make_ks_service()
+    use_case = YoutubeIngestionUseCase(ks, None, None, None, None, None, None, "weaviate")
+    cmd = IngestYoutubeCommand(video_url=None, video_urls=[], subject_name="s")
+    with pytest.raises(ValueError, match="No video_url\(s\) provided"):
+        use_case.execute(cmd)
+
+def test_process_single_video_reprocess(monkeypatch):
+    ks = make_ks_service()
+    cs = make_cs_service()
+    chunk_svc = make_chunk_service()
+    vec_svc = make_vector_service()
+    
+    source_id = uuid.uuid4()
+    existing_source = SimpleNamespace(id=source_id, processing_status="done", source_type="youtube", external_source="vid")
+    monkeypatch.setattr(cs, "get_by_source_info", lambda **kwargs: existing_source)
+    
+    # Track deletions
+    deleted = {"sql": False, "vec": False}
+    monkeypatch.setattr(chunk_svc, "delete_by_content_source", lambda sid: deleted.update({"sql": True}) or 1)
+    monkeypatch.setattr(vec_svc, "delete_by_video_id", lambda vid: deleted.update({"vec": True}) or 1)
+
+    use_case = YoutubeIngestionUseCase(ks, cs, make_ingestion_service(), make_model_loader(), None, chunk_svc, vec_svc, "weaviate")
+    monkeypatch.setattr(use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("c")])
+    from unittest.mock import patch
+    with patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor") as mock_yt:
+        mock_yt.return_value.extract_metadata.return_value = SimpleNamespace(full_title="Title", title="Title")
+        
+        cmd = IngestYoutubeCommand(video_url="vid", subject_name="s", reprocess=True)
+        result = use_case._process_single_video("url", "vid", SimpleNamespace(id=uuid.uuid4()), cmd)
+        
+        assert deleted["sql"] is True
+        assert deleted["vec"] is True
+        assert result["skipped"] is False
+
+def test_process_single_video_rollback_on_fail(monkeypatch):
+    ks = make_ks_service()
+    cs = make_cs_service()
+    isvc = make_ingestion_service()
+    chunk_svc = make_chunk_service()
+    vec_svc = make_vector_service()
+    
+    # Track rollback
+    rolled_back = {"sql": False, "vec": False}
+    monkeypatch.setattr(chunk_svc, "delete_by_job_id", lambda jid: rolled_back.update({"sql": True}) or 1)
+    monkeypatch.setattr(vec_svc, "delete_by_job_id", lambda jid: rolled_back.update({"vec": True}) or 1)
+    
+    use_case = YoutubeIngestionUseCase(ks, cs, isvc, make_model_loader(), None, chunk_svc, vec_svc, "weaviate")
+    monkeypatch.setattr(use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("c")])
+    
+    # Fail at index_chunks
+    monkeypatch.setattr(vec_svc, "index_documents", lambda chunks: exec('raise(Exception("Vec index fail"))'))
+
+    from unittest.mock import patch
+    with patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor") as mock_yt:
+        mock_yt.return_value.extract_metadata.return_value = SimpleNamespace(full_title="Title", title="Title")
+        
+        cmd = IngestYoutubeCommand(video_url="vid", subject_name="s")
+        with pytest.raises(Exception, match="Vec index fail"):
+            use_case._process_single_video("url", "vid", SimpleNamespace(id=uuid.uuid4()), cmd)
+        
+        assert rolled_back["sql"] is True
+        assert rolled_back["vec"] is True
+
+def test_resolve_subject_invalid_uuid(monkeypatch):
+    use_case = YoutubeIngestionUseCase(None, None, None, None, None, None, None, "weaviate")
+    cmd = IngestYoutubeCommand(video_url="v", subject_id="not-a-uuid")
+    with pytest.raises(ValueError, match="Invalid subject_id provided"):
+        use_case._resolve_subject(cmd)
+
+def test_process_single_video_fails_to_create_job(monkeypatch):
+    ks = make_ks_service()
+    cs = make_cs_service()
+    isvc = make_ingestion_service()
+    monkeypatch.setattr(isvc, "create_job", lambda **kwargs: None)
+    
+    use_case = YoutubeIngestionUseCase(ks, cs, isvc, make_model_loader(), None, make_chunk_service(), make_vector_service(), "weaviate")
+    cmd = IngestYoutubeCommand(video_url="vid", subject_name="s")
+    with pytest.raises(ValueError, match="Failed to create or retrieve ingestion job"):
+        use_case._process_single_video("url", "vid", SimpleNamespace(id=uuid.uuid4()), cmd)

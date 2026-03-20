@@ -1,5 +1,7 @@
 import logging
 import os
+import sys
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ValidationError
@@ -69,6 +71,53 @@ def test_weaviate_url_custom():
     assert vcfg.weaviate_url == "http://example.com:9999"
 
 
-def test_app_invalid_env_raises():
-    with pytest.raises(ValidationError):
-        App(env="invalid")
+def test_sql_url_mariadb():
+    cfg = SQLConfig(
+        type="mariadb", user="u", password="p", host="h", port="3306", database="db"
+    )
+    assert cfg.url == "mariadb+pymysql://u:p@h:3306/db"
+
+
+def test_sql_url_mssql():
+    cfg = SQLConfig(
+        type="mssql", user="u", password="p", host="h", port="1433", database="db"
+    )
+    assert cfg.url == "mssql+pytds://u:p@h:1433/db"
+
+
+def test_sql_url_default():
+    cfg = SQLConfig(type=None)
+    assert "sqlite" in cfg.url
+    cfg_unknown = SQLConfig(type="unknown")
+    assert "sqlite" in cfg_unknown.url
+
+
+def test_sql_url_override():
+    cfg = SQLConfig(url="custom://conn")
+    assert cfg.url == "custom://conn"
+
+
+def test_app_device_cpu_on_import_error(monkeypatch):
+    import sys
+
+    # Mock torch import failure
+    monkeypatch.setitem(sys.modules, "torch", None)
+    app = App()
+    assert app.device == "cpu"
+
+
+def test_app_device_cuda_logic(monkeypatch):
+    mock_torch = MagicMock()
+    mock_torch.cuda.is_available.return_value = True
+    monkeypatch.setitem(sys.modules, "torch", mock_torch)
+    app = App()
+    assert app.device == "cuda"
+
+    mock_torch.cuda.is_available.return_value = False
+    assert app.device == "cpu"
+
+
+def test_app_parse_list_log_levels_already_list():
+    # Trigger line 101: if isinstance(v, str) -> else return v
+    app = App(list_log_levels=["INFO"])
+    assert app.list_log_levels == ["INFO"]

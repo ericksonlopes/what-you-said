@@ -211,8 +211,11 @@ function ProcessingStrategy({
                 <Activity className="w-4 h-4 text-emerald-500/50 flex-shrink-0 animate-pulse"/>
                 <div className="flex-1">
                     <p className="text-[11px] text-zinc-400 italic leading-snug">
-                        {t('ingestion.options.optimized')} for <span
-                        className="text-emerald-500/90 font-bold tracking-wide uppercase text-[10px]">{activeStrategy === 'custom' ? t('ingestion.options.strategies.custom.name') : activeStrategy}</span> retrieval.
+                        {t('ingestion.options.optimized_tip', { 
+                            strategy: activeStrategy === 'custom' 
+                                ? t('ingestion.options.strategies.custom.name') 
+                                : t(`ingestion.options.strategies.${activeStrategy}.name`)
+                        })}
                         <span className="block mt-1 opacity-70 text-[10px] not-italic">
                {activeStrategy === 'balanced' && t('ingestion.options.strategies.balanced.long_description')}
                             {activeStrategy === 'granular' && t('ingestion.options.strategies.granular.long_description')}
