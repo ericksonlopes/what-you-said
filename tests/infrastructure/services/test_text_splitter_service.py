@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.infrastructure.services.text_splitter_service import TextSplitterService
 
 
