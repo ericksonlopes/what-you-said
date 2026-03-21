@@ -132,6 +132,7 @@ class FileIngestionUseCase:
                 language=cmd.language,
                 status=ContentSourceStatus.ACTIVE,
                 processing_status="processing",
+                source_metadata=docs[0].metadata,
             )
 
             self.ingestion_service.update_job(
@@ -220,6 +221,7 @@ class FileIngestionUseCase:
                 chunks=len(chunks),
                 total_tokens=total_tokens,
                 max_tokens_per_chunk=max_tokens,
+                source_metadata=docs[0].metadata,
             )
 
             return {

@@ -28,8 +28,10 @@ class ContentSourceSQLRepository:
         chars: Optional[int] = None,
         total_tokens: Optional[int] = None,
         max_tokens_per_chunk: Optional[int] = None,
+        source_metadata: Optional[dict] = None,
     ) -> UUID:
         with Connector() as session:
+            extra = {}
             try:
                 extra = {
                     "subject_id": subject_id,
@@ -45,6 +47,7 @@ class ContentSourceSQLRepository:
                     "chars": chars,
                     "total_tokens": total_tokens,
                     "max_tokens_per_chunk": max_tokens_per_chunk,
+                    "source_metadata": source_metadata,
                 }
                 logger.debug("Creating ContentSource", context=extra)
                 cs = ContentSourceModel(
@@ -60,6 +63,7 @@ class ContentSourceSQLRepository:
                     chunks=chunks or 0,
                     total_tokens=total_tokens,
                     max_tokens_per_chunk=max_tokens_per_chunk,
+                    source_metadata=source_metadata,
                 )
                 session.add(cs)
                 session.commit()
@@ -252,8 +256,10 @@ class ContentSourceSQLRepository:
         chunks: int,
         total_tokens: Optional[int] = None,
         max_tokens_per_chunk: Optional[int] = None,
+        source_metadata: Optional[dict] = None,
     ) -> None:
         with Connector() as session:
+            extra = {}
             try:
                 extra = {
                     "content_source_id": content_source_id,
@@ -262,6 +268,7 @@ class ContentSourceSQLRepository:
                     "chunks": chunks,
                     "total_tokens": total_tokens,
                     "max_tokens_per_chunk": max_tokens_per_chunk,
+                    "source_metadata": source_metadata,
                 }
                 logger.debug("Finishing ingestion for ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
@@ -279,6 +286,8 @@ class ContentSourceSQLRepository:
                 cs.chunks = chunks
                 cs.total_tokens = total_tokens
                 cs.max_tokens_per_chunk = max_tokens_per_chunk
+                if source_metadata:
+                    cs.source_metadata = source_metadata
 
                 session.commit()
                 logger.debug(

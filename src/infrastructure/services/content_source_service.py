@@ -36,6 +36,7 @@ class ContentSourceService:
         processing_status: Optional[str] = None,
         total_tokens: Optional[int] = None,
         max_tokens_per_chunk: Optional[int] = None,
+        source_metadata: Optional[dict] = None,
     ) -> ContentSourceEntity:
         """Create a content source and return a domain entity."""
         self._logger.debug(
@@ -58,6 +59,7 @@ class ContentSourceService:
             processing_status=effective_processing_status,
             total_tokens=total_tokens,
             max_tokens_per_chunk=max_tokens_per_chunk,
+            source_metadata=source_metadata,
         )  # Ingestion status
         model = self._repo.get_by_id(created_id)
         entity = ContentSourceMapper.model_to_entity(model)
@@ -130,6 +132,7 @@ class ContentSourceService:
         chunks: int,
         total_tokens: Optional[int] = None,
         max_tokens_per_chunk: Optional[int] = None,
+        source_metadata: Optional[dict] = None,
     ) -> None:
         """Update the content source record when ingestion is finished."""
         self._repo.finish_ingestion(
@@ -139,6 +142,7 @@ class ContentSourceService:
             chunks=chunks,
             total_tokens=total_tokens,
             max_tokens_per_chunk=max_tokens_per_chunk,
+            source_metadata=source_metadata,
         )
 
     def update_title(self, content_source_id: UUID, title: str) -> None:

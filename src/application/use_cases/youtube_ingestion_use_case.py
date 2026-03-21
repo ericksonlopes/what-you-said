@@ -378,7 +378,7 @@ class YoutubeIngestionUseCase:
                     context={"video_id": video_id, "title": extracted_title},
                 )
                 source = self._create_content_source(
-                    subject, cmd, video_id, title=extracted_title
+                    subject, cmd, video_id, title=extracted_title, source_metadata=metadata.model_dump()
                 )
 
             # Update Job with source info and status
@@ -440,7 +440,7 @@ class YoutubeIngestionUseCase:
                 c.tokens_count for c in chunks if c.tokens_count is not None
             )
             max_tokens = cmd.tokens_per_chunk
-            self._finish_ingestion(source, len(chunks), total_tokens, max_tokens)
+            self._finish_ingestion(source, len(chunks), total_tokens, max_tokens, source_metadata=metadata.model_dump())
 
             return {
                 "video_url": video_url,
@@ -597,6 +597,7 @@ class YoutubeIngestionUseCase:
         cmd: IngestYoutubeCommand,
         video_id: str,
         title: Optional[str] = None,
+        source_metadata: Optional[dict] = None,
     ):
         source = self.cs_service.create_source(
             subject_id=subject.id,
@@ -606,6 +607,7 @@ class YoutubeIngestionUseCase:
             language=cmd.language,
             status=ContentSourceStatus.ACTIVE,
             processing_status="pending",
+            source_metadata=source_metadata,
         )
         logger.debug(
             "Content source created",
@@ -731,6 +733,7 @@ class YoutubeIngestionUseCase:
         num_chunks: int,
         total_tokens: int = 0,
         max_tokens_per_chunk: Optional[int] = None,
+        source_metadata: Optional[dict] = None,
     ) -> None:
         dims = getattr(self.model_loader_service, "dimensions", None)
         dims_val: int = int(dims) if dims is not None else 0
@@ -742,6 +745,7 @@ class YoutubeIngestionUseCase:
             chunks=num_chunks,
             total_tokens=total_tokens,
             max_tokens_per_chunk=max_tokens_per_chunk,
+            source_metadata=source_metadata,
         )
         logger.info(
             "Ingestion finished",

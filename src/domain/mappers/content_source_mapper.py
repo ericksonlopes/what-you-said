@@ -35,6 +35,7 @@ class ContentSourceMapper:
             ),
             status=cast(str, getattr(model, "status", "active")),
             chunks=cast(int, getattr(model, "chunks", 0)),
+            source_metadata=cast(Optional[dict], getattr(model, "source_metadata", None)),
         )
 
     @staticmethod
@@ -56,4 +57,5 @@ class ContentSourceMapper:
             "dimensions": entity.dimensions,
             "status": entity.status,
             "chunks": entity.chunks,
+            "source_metadata": entity.source_metadata,
         }

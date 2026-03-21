@@ -41,6 +41,7 @@ export type ContentSource = {
   maxTokensPerChunk?: number;
   origin?: string;
   processingStatus: string;
+  sourceMetadata?: Record<string, any>;
 };
 
 export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts';

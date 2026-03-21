@@ -122,11 +122,19 @@ class DoclingExtractor:
             global_metadata = {
                 "source": file_path,
                 "file_name": origin_filename,
-                "file_type": extension,
                 "source_type": extension,
                 "docling_source_type": docling_source_type,
                 "image_count": image_count,
-                "is_structural_chunk": False,  # No longer pre-chunked
+                "is_structural_chunk": False,
+                # Flattened docling stats
+                "num_pages": len(result.document.pages) if hasattr(result.document, "pages") else 0,
+                "num_pictures": len(result.document.pictures) if hasattr(result.document, "pictures") else 0,
+                "num_tables": len(result.document.tables) if hasattr(result.document, "tables") else 0,
+                "num_groups": len(result.document.groups) if hasattr(result.document, "groups") else 0,
+                "texts_count": len(result.document.texts) if hasattr(result.document, "texts") else 0,
+                "key_value_items_count": len(result.document.key_value_items) if hasattr(result.document, "key_value_items") else 0,
+                "form_items_count": len(result.document.form_items) if hasattr(result.document, "form_items") else 0,
+                "field_items_count": len(result.document.field_items) if hasattr(result.document, "field_items") else 0,
             }
 
             if doc_meta:
@@ -136,8 +144,6 @@ class DoclingExtractor:
                 if hasattr(doc_meta, "date") and doc_meta.date:
                     global_metadata["date"] = str(doc_meta.date)
 
-            # 3. Export to Markdown
-            # Docling's result.document can be exported to markdown
             raw_markdown = result.document.export_to_markdown()
 
             # 4. Clean text

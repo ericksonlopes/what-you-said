@@ -292,7 +292,7 @@ export function ChunksViewer() {
         </div>
 
         {/* Sidebar: Metadata */}
-        <div className="hidden lg:flex flex-col gap-10 py-4 overflow-y-auto custom-scrollbar-premium">
+        <div className="hidden lg:flex flex-col gap-10 py-4 pr-4 overflow-y-auto custom-scrollbar-premium">
           <section className="space-y-4">
             <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-500">{t('sources.chunks.sidebar.title_tech')}</h3>
             <div className="space-y-3">
@@ -361,6 +361,26 @@ export function ChunksViewer() {
                    {currentSource.origin}
                  </a>
                </div>
+            </section>
+          )}
+
+          {/* Source Metadata Section */}
+          {currentSource?.sourceMetadata && Object.keys(currentSource.sourceMetadata).length > 0 && (
+            <section className="space-y-3 pt-6 border-t border-white/10">
+              <h3 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.1em] flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50" />
+                {t('common.source_details', 'Source Details')}
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                {Object.entries(currentSource.sourceMetadata).map(([key, value]) => (
+                  <div key={key} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] group hover:bg-white/[0.04] transition-all duration-300">
+                    <span className="text-[10px] text-zinc-500 font-mono block uppercase mb-1.5 tracking-wider">{key.replace(/_/g, ' ')}</span>
+                    <span className="text-[11px] text-zinc-300 font-medium break-all block leading-relaxed selection:bg-emerald-500/30">
+                      {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
         </div>

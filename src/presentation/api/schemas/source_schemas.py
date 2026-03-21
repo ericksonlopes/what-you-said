@@ -17,6 +17,7 @@ class SourceResponse(BaseModel):
     total_tokens: Optional[int] = None
     max_tokens_per_chunk: Optional[int] = None
     chunks: Optional[int] = None
+    source_metadata: Optional[dict] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

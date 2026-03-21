@@ -15,6 +15,7 @@ from sqlalchemy import (
     text,
     UniqueConstraint,
     Index,
+    JSON,
 )
 from sqlalchemy.orm import relationship
 
@@ -51,6 +52,7 @@ class ContentSourceModel(Base):
     total_tokens = Column(Integer, nullable=True)
     max_tokens_per_chunk = Column(Integer, nullable=True)
     chunks = Column(Integer, nullable=False, server_default=text("0"))
+    source_metadata = Column(JSON, nullable=True)
     subject = relationship("KnowledgeSubjectModel", back_populates="content_sources")
     ingestion_jobs = relationship(
         "IngestionJobModel",
