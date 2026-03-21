@@ -4,20 +4,22 @@
 
 [![codecov](https://codecov.io/github/ericksonlopes/WhatYouSaid/branch/main/graph/badge.svg?token=8CZJARVJUE)](https://codecov.io/github/ericksonlopes/WhatYouSaid)
 
-[![Tests](https://github.com/ericksonlopes/what-you-said/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/what-you-said/actions/workflows/python-tests.yml)
-[![Code Quality](https://github.com/ericksonlopes/what-you-said/actions/workflows/code-quality.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/what-you-said/actions/workflows/code-quality.yml)
-[![Security](https://github.com/ericksonlopes/what-you-said/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/what-you-said/actions/workflows/security.ymll)
+[![Tests](https://github.com/ericksonlopes/WhatYouSaid/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/WhatYouSaid/actions/workflows/tests.yml)
+[![Code Quality](https://github.com/ericksonlopes/WhatYouSaid/actions/workflows/code-quality.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/WhatYouSaid/actions/workflows/code-quality.yml)
+[![Security](https://github.com/ericksonlopes/WhatYouSaid/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/ericksonlopes/WhatYouSaid/actions/workflows/security.yml)
 
 ![Python](https://img.shields.io/badge/-Python-3776AB?&logo=Python&logoColor=FFFFFF)
-![LangChain](https://img.shields.io/badge/-LangChain-1C3C3C?&logo=LangChain&logoColor=FFFFFF)
-![Pytest|63](https://img.shields.io/badge/-Pytest-0A9EDC?&logo=Pytest&logoColor=FFFFFF)
+![React](https://img.shields.io/badge/-React-61DAFB?&logo=React&logoColor=000000)
+![Tailwind CSS](https://img.shields.io/badge/-Tailwind_CSS-38B2AC?&logo=Tailwind%20CSS&logoColor=FFFFFF)
+![Redis](https://img.shields.io/badge/-Redis-DC382D?&logo=Redis&logoColor=FFFFFF)
+![Pytest](https://img.shields.io/badge/-Pytest-0A9EDC?&logo=Pytest&logoColor=FFFFFF)
 ![GitHub Actions](https://img.shields.io/badge/-GitHub%20Actions-2088FF?&logo=GitHub%20Actions&logoColor=FFFFFF)
 
 </div>
 
-WhatYouSaid is a vectorized data hub designed to explore any topic or knowledge domain, extracting, processing, and indexing content from video, audio, and text to enable advanced semantic search and Retrieval-Augmented Generation (RAG) workflows.
+WhatYouSaid is a vectorized data hub designed to explore any topic or knowledge domain. It extracts, processes, and indexes content from YouTube videos, local files, and remote URLs to enable advanced semantic search and Retrieval-Augmented Generation (RAG) workflows.
 
-This repository provides modular extractors, splitting utilities, embedding integration, and vector-store-friendly artifacts so you can build scalable, searchable profiles and knowledge bases about individuals.
+This repository provides modular extractors, robust splitting utilities, and a scalable background processing pipeline to build searchable knowledge bases efficiently.
 
 ---
 
@@ -31,12 +33,14 @@ Detailed guides for specific topics:
 
 ## 🚀 Features
 
-- **Multi-source extraction**: ingest data from video (YouTube), audio transcripts, and plain text sources.
-- **Transcript processing and temporal splitting**: break long transcripts into semantically coherent chunks suitable for embeddings and dense retrieval.
-- **Embeddings and model loader**: abstracted model loading so you can swap embedding providers easily.
-- **Pluggable Vector Stores**: support for **FAISS** (local/lite), **ChromaDB** (local/server), and **Weaviate** (scalable/cloud) out of the box.
-- **Pluggable SQL Databases**: support for **SQLite**, **PostgreSQL**, **MySQL**, **MariaDB**, and **MSSQL**.
-- **Built for RAG**: designed to support retrieval-augmented generation workflows and semantic search over people-centric data.
+- **Multi-source Extraction**: Ingest data from YouTube (transcripts), local files (PDF, DOCX, TXT), and **remote URLs** via the Docling engine.
+- **Robust Fallbacks**: Integrated `PlainTextExtractor` ensuring successful ingestion even for formats not supported by specialized extractors.
+- **Async Task Queue**: High-performance background processing powered by **Redis**, ensuring responsive ingestion workflows.
+- **Real-time Updates**: Live ingestion status and progress monitoring via a **Redis Event Bus** (SSE-ready).
+- **Advanced Search**: Semantic, keyword (BM25), and **Hybrid Search** with cross-encoder re-ranking for maximum precision.
+- **Pluggable Vector Stores**: Support for **FAISS** (local), **ChromaDB**, and **Weaviate** (scalable).
+- **Pluggable SQL Databases**: Support for **SQLite**, **PostgreSQL**, **MySQL**, **MariaDB**, and **MSSQL**.
+- **Modern Dashboard**: A clean React + Tailwind CSS frontend for managing knowledge subjects, content sources, and monitoring background tasks.
 
 ---
 
@@ -44,157 +48,80 @@ Detailed guides for specific topics:
 
 WhatYouSaid is designed to be flexible, from a lightweight local setup to a scalable production-ready environment.
 
-### 1. Storage Options
+### 1. Storage & Messaging Options
 
-| Component | Lightweight (Local) | Scalable / Production                                              |
-| :--- | :--- |:-------------------------------------------------------------------|
-| **Relational Database** | **SQLite** (Default, file-based) | **PostgreSQL**, **MySQL**, **MariaDB**, **MSSQL**                  |
-| **Vector Store** | **FAISS** (Local, file-based) | **Weaviate** (Container or Cloud), **ChromaDB** (Container) |
+| Component | Lightweight (Local) | Scalable / Production |
+| :--- | :--- | :--- |
+| **Relational Database** | **SQLite** (Default, file-based) | **PostgreSQL**, **MySQL**, **MariaDB**, **MSSQL** |
+| **Vector Store** | **FAISS** (Local, file-based) | **Weaviate** (Container or Cloud), **ChromaDB** |
+| **Task Queue & Bus** | **In-memory** (Limited) | **Redis** (Default in Docker) |
 
 ### 2. Docker Compose Profiles
 
 We use **Docker Profiles** to keep the environment lean. Only the services you need are started.
 
-> 📘 **Detailed Guide**: For a step-by-step tutorial on different deployment scenarios (MySQL, Postgres, Weaviate, etc.), see our [Docker Deployment Guide](docs/docker-deployment.md).
+> 📘 **Detailed Guide**: For a step-by-step tutorial on different deployment scenarios, see our [Docker Deployment Guide](docs/docker-deployment.md).
 
 #### **Scenario A: Lite (Default)**
-Uses **SQLite** (SQL) and **FAISS** (Vector). No external database containers are started.
+Uses **SQLite**, **FAISS**, and **Redis**.
 ```bash
 docker-compose up -d
 ```
 
 #### **Scenario B: Scalable (Base)**
-Starts **PostgreSQL** (SQL) and **Weaviate** (Vector).
+Starts **PostgreSQL**, **Weaviate**, and **Redis**.
 ```bash
-# Starts Postgres and Weaviate containers
 docker-compose --profile base up -d
-
-# Note: For the backend to use these, set SQL__TYPE=postgres and VECTOR__STORE_TYPE=weaviate
-```
-
-#### **Scenario C: Custom Database**
-You can mix and match services using specific profiles:
-- `--profile postgres`: Starts only the PostgreSQL container.
-- `--profile mysql`: Starts only the MySQL container.
-- `--profile weaviate`: Starts only the Weaviate container.
-
-**Example: Running with MySQL only**
-```bash
-# Start MySQL container
-docker-compose --profile mysql up -d
-
-# Run backend pointing to MySQL (local or docker)
-SQL__TYPE=mysql docker-compose up -d
-```
-
-**Example: Running with Weaviate only**
-```bash
-# Start Weaviate container
-docker-compose --profile weaviate up -d
-
-# Run backend pointing to Weaviate
-VECTOR__STORE_TYPE=weaviate docker-compose up -d
-```
-
-**Example: Running with MySQL + Weaviate**
-```bash
-# Start both containers
-docker-compose --profile mysql --profile weaviate up -d
-
-# Run backend pointing to both
-SQL__TYPE=mysql VECTOR__STORE_TYPE=weaviate docker-compose up -d
-```
-
-### 3. Environment Variables
-
-We use **Pydantic Settings** with double underscores (`__`) for nested configurations. 
-
-| Category | Prefix | Examples |
-| :--- | :--- | :--- |
-| **Application** | `APP__` | `APP__ENV`, `APP__LIST_LOG_LEVELS` |
-| **SQL Database** | `SQL__` | `SQL__TYPE`, `SQL__HOST`, `SQL__USER`, `SQL__PASSWORD` |
-| **Vector Store** | `VECTOR__` | `VECTOR__STORE_TYPE`, `VECTOR__WEAVIATE_HOST`, `VECTOR__CHROMA_HOST` |
-| **Embeddings** | `MODEL_EMBEDDING__` | `MODEL_EMBEDDING__NAME` |
-| **Re-ranking** | `MODEL_RERANK__` | `MODEL_RERANK__NAME` |
-
-> 💡 **Full Reference**: For a complete list of all available variables and their default values, check the [Configuration Reference in our Deployment Guide](docs/docker-deployment.md#configuration-reference).
-
-### 4. Example `.env` file
-Create a `.env` file in the root directory:
-```env
-# Relational DB (Choose: sqlite, postgres, mysql, mariadb, mssql)
-SQL__TYPE=sqlite
-
-# Vector Store (Choose: faiss, weaviate)
-VECTOR__STORE_TYPE=faiss
-VECTOR__WEAVIATE_API_KEY=your-optional-api-key
-
-# Optional: Custom embedding model
-MODEL_EMBEDDING__NAME=BAAI/bge-m3
-```
-
----
-
-## 💻 Local Setup (without Docker)
-
-**Prerequisites:**
-- Python 3.12+
-- [uv](https://github.com/astral-sh/uv) (recommended)
-
-**Install with all drivers:**
-```bash
-# Installs core + drivers for FAISS, Weaviate, MySQL and Postgres
-uv sync --all-extras
-```
-
-**Install only what you need (recommended for local development):**
-```bash
-# Example: Install only Postgres and Weaviate drivers
-uv sync --extra postgres --extra weaviate
-
-# Example: Install only MySQL support
-uv sync --extra mysql
-```
-
-**Run tests:**
-```bash
-uv run pytest
+# Note: Set SQL__TYPE=postgres and VECTOR__STORE_TYPE=weaviate in .env
 ```
 
 ---
 
 ## 🏗️ Architecture
 
-- `src/infrastructure/extractors`: code to fetch raw content (e.g., YouTube transcripts, audio-to-text pipelines).
-- `src/infrastructure/services`: processing and orchestration (splitting, model loading, embedding preparation).
-- `src/config`: environment and settings management.
-- `tests/`: unit and integration tests with coverage settings in pytest.ini.
+The system follows a clean architecture approach, ensuring separation of concerns:
+
+- **Application Layer**: Contains use cases (e.g., `FileIngestionUseCase`, `SearchUseCase`) and a `ServiceRegistry` for background worker dependency resolution.
+- **Infrastructure Layer**:
+  - `extractors/`: Fetch raw content (Docling, YouTube, PlainText).
+  - `repositories/`: Data persistence (SQLAlchemy for relational, specialized clients for Vector Stores).
+  - `services/`: Core logic (text splitting, embedding, re-ranking, Redis task queue).
+- **Presentation Layer**: FastAPI-based REST API with real-time SSE notifications.
+
+---
+
+## 🧪 Quality & Testing
+
+We maintain a high standard of code quality and test coverage:
+
+- **417+ Automated Tests**: Covering unit, integration, and complex edge cases.
+- **93% Code Coverage**: Verified via `pytest-cov`.
+- **Strict Linting**: Powered by `ruff` for code style and `mypy` for static type checking.
+- **Security Scanning**: Integrated `bandit` scans for vulnerability detection.
+
+**Run tests locally:**
+```bash
+uv run pytest
+```
 
 ---
 
 ## 🤝 Contributing
 
 Contributions are welcome. Please:
-
 - Open an issue to discuss major changes.
-- Create a branch for your feature or fix, add tests, and submit a pull request.
-- Keep code style consistent and run tests locally before submitting.
+- Add tests for any new feature or bug fix.
+- Ensure `ruff check .` and `mypy .` pass before submitting.
 
 ---
 
 ## 📄 License
 
-This project includes a LICENSE file; see it for licensing details.
-
----
-
-## 🙏 Acknowledgements
-
-Built to be an extensible foundation for building searchable, vectorized RAG-enabled applications.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 <div align="center">
     <p>Made with ❤️ by Erickson Lopes </p>
 
-[![LinkedIn|150](https://img.shields.io/badge/LinkedIn-Erickson_Lopes-blue)](https://www.linkedin.com/in/ericksonlopes/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Erickson_Lopes-blue)](https://www.linkedin.com/in/ericksonlopes/)
 
 </div>
