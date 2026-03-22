@@ -91,7 +91,10 @@ class WebScrapingUseCase:
                     )
                     ingestion = self.ingestion_service.get_by_id(jid)
                 except Exception as e:
-                    logger.warning(f"Could not retrieve ingestion job {cmd.ingestion_job_id}: {e}")
+                    logger.warning(
+                        "Could not retrieve ingestion job",
+                        context={"job_id": str(cmd.ingestion_job_id), "error": str(e)},
+                    )
 
             if ingestion is None:
                 ingestion = self.ingestion_service.create_job(
@@ -128,7 +131,7 @@ class WebScrapingUseCase:
                     source=cmd.url, css_selector=cmd.css_selector, depth=cmd.depth
                 )
             except Exception as e:
-                logger.error(f"Scraping failed for {cmd.url}: {e}")
+                logger.error(e, context={"url": cmd.url})
                 raise e
 
             if not docs:
@@ -177,7 +180,8 @@ class WebScrapingUseCase:
                         )
                     except Exception as ce:
                         logger.warning(
-                            f"Error during reprocessing cleanup for source {source.id}: {ce}"
+                            "Error during reprocessing cleanup",
+                            context={"source_id": str(source.id), "error": str(ce)},
                         )
 
             # 4. Generate chunks and Embeddings
@@ -280,7 +284,7 @@ class WebScrapingUseCase:
             }
 
         except Exception as e:
-            logger.error(f"Error in WebScrapingUseCase: {e}")
+            logger.error(e, context={"action": "web_scraping_execute"})
             if ingestion:
                 self.ingestion_service.update_job(
                     job_id=ingestion.id,

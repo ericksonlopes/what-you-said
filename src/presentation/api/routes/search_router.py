@@ -39,8 +39,8 @@ def search_chunks(
         )
         return result
     except ValueError as ve:
-        logger.warning(f"Validation error in search: {ve}")
+        logger.warning("Validation error in search", context={"error": str(ve)})
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        logger.error(f"Error executing search: {e}")
+        logger.error(e, context={"action": "search_chunks"})
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -38,7 +38,8 @@ interface AppState {
   setJobStatusFilter: (status: any) => void;
   jobSearchQuery: string;
   setJobSearchQuery: (query: string) => void;
-  addOptimisticJob: (title: string) => void;
+  addOptimisticJob: (title: string, externalSource?: string) => string;
+  removeOptimisticJob: (id: string) => void;
   toasts: Toast[];
   addToast: (message: string, type?: ToastType) => void;
   removeToast: (id: string) => void;
@@ -171,17 +172,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Preserve optimistic jobs that aren't yet in the server results
       setJobs((prev) => {
         const optimisticJobs = prev.filter(job => job.id.startsWith('optimistic-'));
-        // If a real job with a matching title exists, we could remove the optimistic one,
-        // but for now, we'll keep them until they are replaced by a real job from the server.
-        // Simple heuristic: if we have server results, only keep optimistic jobs that were created very recently (e.g. < 30s ago)
+        
+        // Keep only optimistic jobs that were created in the last 2 minutes
+        const now = Date.now();
         const recentOptimisticJobs = optimisticJobs.filter(job => {
           const createdAt = new Date(job.createdAt).getTime();
-          return Date.now() - createdAt < 30000; // 30 seconds
+          return now - createdAt < 120000; // 2 minutes
         });
         
         // Final list is server jobs + recent optimistic jobs that don't look like they are already in the list
-        // (matching by title is a bit risky but we can just show both if unsure)
-        return [...data.items, ...recentOptimisticJobs.filter(oj => !data.items.some(rj => rj.title === oj.title))];
+        // IMPROVED DEDUPLICATION: Check both title AND externalSource (normalized)
+        return [...data.items, ...recentOptimisticJobs.filter(oj => {
+          const normalize = (s: string | undefined) => {
+            if (!s) return '';
+            // Handle YouTube URLs/IDs
+            if (s.includes('youtube.com') || s.includes('youtu.be')) {
+              const match = s.match(/(?:v=|v\/|embed\/|watch\?v=|&v=|youtu\.be\/|\/v\/|watch\?feature=player_embedded&v=)([a-zA-Z0-9_-]{11})/);
+              return match ? match[1] : s;
+            }
+            return s;
+          };
+
+          const ojNorm = normalize(oj.externalSource || oj.title);
+          
+          const isAlreadyInRealJobs = data.items.some(rj => {
+            if (rj.title === oj.title) return true;
+            if (rj.externalSource && oj.externalSource) {
+              const rjNorm = normalize(rj.externalSource);
+              if (rjNorm === ojNorm) return true;
+            }
+            return false;
+          });
+          return !isAlreadyInRealJobs;
+        })];
       });
       
       setTotalJobs(data.total);
@@ -193,16 +216,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [jobPage, jobPageSize, jobStatusFilter, jobSearchQuery]);
 
-  const addOptimisticJob = useCallback((title: string) => {
+  const addOptimisticJob = useCallback((title: string, externalSource?: string) => {
+    const id = `optimistic-${Date.now()}`;
     const optimisticJob: IngestionTask = {
-      id: `optimistic-${Date.now()}`,
+      id,
       title,
       status: 'processing',
       progress: 0,
       subjectId: '',
       createdAt: new Date().toISOString(),
+      externalSource,
     };
     setJobs((prev) => [optimisticJob, ...prev]);
+    return id;
+  }, []);
+
+  const removeOptimisticJob = useCallback((id: string) => {
+    setJobs((prev) => prev.filter(job => job.id !== id));
   }, []);
 
   const refreshModelInfo = useCallback(async () => {
@@ -382,6 +412,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         jobSearchQuery,
         setJobSearchQuery,
         addOptimisticJob,
+        removeOptimisticJob,
         toasts,
         addToast,
         removeToast,

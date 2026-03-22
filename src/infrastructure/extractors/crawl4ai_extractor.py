@@ -35,7 +35,7 @@ class Crawl4AIExtractor(IBaseExtractor):
         Returns:
             List[Document]: A list containing the scraped content as a LangChain Document.
         """
-        logger.info(f"Scraping web content from: {source}", context={"url": source})
+        logger.info("Scraping web content", context={"url": source})
 
         css_selector = kwargs.get("css_selector")
         word_count_threshold = kwargs.get("word_count_threshold", 200)
@@ -58,7 +58,8 @@ class Crawl4AIExtractor(IBaseExtractor):
 
                 if not result.success:
                     logger.error(
-                        f"Crawl4AI failed to scrape {source}: {result.error_message}"
+                        "Crawl4AI failed to scrape",
+                        context={"url": source, "error": result.error_message},
                     )
                     raise ValueError(
                         f"Failed to scrape {source}: {result.error_message}"
@@ -81,10 +82,10 @@ class Crawl4AIExtractor(IBaseExtractor):
                     Document(page_content=main_markdown, metadata=metadata)
                 )
 
-                # 2. Handle Depth 2
                 if depth > 1:
                     logger.info(
-                        f"Depth {depth} requested. Extracting links from {source}..."
+                        "Extracting links for multi-depth crawl",
+                        context={"source": source, "depth": depth},
                     )
 
                     # Get internal links
@@ -111,8 +112,8 @@ class Crawl4AIExtractor(IBaseExtractor):
 
                         if sub_urls:
                             logger.info(
-                                f"Following {len(sub_urls)} internal links for Depth 2",
-                                context={"sub_urls": sub_urls},
+                                "Following internal links for Depth 2",
+                                context={"sub_urls": sub_urls, "count": len(sub_urls)},
                             )
                             sub_results = await crawler.arun_many(
                                 urls=sub_urls, config=run_config
@@ -139,15 +140,16 @@ class Crawl4AIExtractor(IBaseExtractor):
                                     )
 
                 logger.info(
-                    f"Successfully scraped web content with depth {depth}",
-                    context={"url": source, "page_count": len(documents)},
+                    "Scraped web content",
+                    context={
+                        "url": source,
+                        "depth": depth,
+                        "page_count": len(documents),
+                    },
                 )
 
                 return documents
 
         except Exception as e:
-            logger.error(
-                f"Unexpected error during Crawl4AI extraction: {e}",
-                context={"url": source},
-            )
+            logger.error(e, context={"url": source, "action": "web_scrape"})
             raise e

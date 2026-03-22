@@ -3,16 +3,29 @@ from typing import Any
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.service_registry import registry
+from src.infrastructure.loggers.std_logger import (
+    set_global_context,
+    clear_global_context,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def run_file_ingestion_worker(cmd: IngestFileCommand):
     """Picklable worker function for file ingestion."""
+    set_global_context(
+        {
+            "correlation_id": str(cmd.ingestion_job_id)
+            if hasattr(cmd, "ingestion_job_id") and cmd.ingestion_job_id
+            else "worker-file"
+        }
+    )
+
     # We need a dummy request or a way to get the app state
     app = registry.get("app")
     if not app:
         logger.error("ServiceRegistry: 'app' not registered. Cannot run worker.")
+        clear_global_context()
         return
 
     # Manually resolve the use case using the same logic as dependencies.py
@@ -66,14 +79,25 @@ def run_file_ingestion_worker(cmd: IngestFileCommand):
         logger.error(
             f"Worker Error: Failed to execute file ingestion: {e}", exc_info=True
         )
+    finally:
+        clear_global_context()
 
 
 def run_youtube_ingestion_worker(cmd: IngestYoutubeCommand):
     """Picklable worker function for YouTube ingestion."""
+    set_global_context(
+        {
+            "correlation_id": str(cmd.ingestion_job_id)
+            if hasattr(cmd, "ingestion_job_id") and cmd.ingestion_job_id
+            else "worker-youtube"
+        }
+    )
+
     from src.application.service_registry import registry
 
     app = registry.get("app")
     if not app:
+        clear_global_context()
         return
 
     from unittest.mock import MagicMock
@@ -120,15 +144,26 @@ def run_youtube_ingestion_worker(cmd: IngestYoutubeCommand):
         logger.error(
             f"Worker Error: Failed to execute YouTube ingestion: {e}", exc_info=True
         )
+    finally:
+        clear_global_context()
 
 
 def run_web_ingestion_worker(cmd: Any):
     """Picklable worker function for Web Scraping ingestion."""
+    set_global_context(
+        {
+            "correlation_id": str(cmd.ingestion_job_id)
+            if hasattr(cmd, "ingestion_job_id") and cmd.ingestion_job_id
+            else "worker-web"
+        }
+    )
+
     import asyncio
     from src.application.service_registry import registry
 
     app = registry.get("app")
     if not app:
+        clear_global_context()
         return
 
     from unittest.mock import MagicMock
@@ -182,5 +217,7 @@ def run_web_ingestion_worker(cmd: Any):
             logging.getLogger(__name__).error(
                 f"Worker Error: Failed to execute Web Scraping: {e}", exc_info=True
             )
+        finally:
+            clear_global_context()
 
     asyncio.run(_run())

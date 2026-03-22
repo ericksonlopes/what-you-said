@@ -52,6 +52,6 @@ class WeaviateVector:
                 # Use the wrapper to close the connection
                 self._client_wrapper.__exit__(exc_type, exc_val, exc_tb)
             except Exception as e:
-                logger.error(f"Error closing Weaviate connection: {e}")
+                logger.error(e, context={"action": "close_weaviate_connection"})
             finally:
                 self._active_client = None

@@ -39,7 +39,7 @@ def create_subject(
         )
         return created
     except Exception as e:
-        logger.error(f"Error creating subject: {e}")
+        logger.error(e, context={"action": "create_subject"})
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -56,7 +56,7 @@ def get_subjects(
         subjects = ks_service.list_subjects()
         return subjects
     except Exception as e:
-        logger.error(f"Error fetching subjects: {e}")
+        logger.error(e, context={"action": "list_subjects"})
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -82,7 +82,9 @@ def update_subject(
             icon=subject.icon,
         )
     except Exception as e:
-        logger.error(f"Error updating subject: {e}")
+        logger.error(
+            e, context={"action": "update_subject", "subject_id": str(subject_id)}
+        )
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -106,5 +108,7 @@ def delete_subject(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting subject: {e}")
+        logger.error(
+            e, context={"action": "delete_subject", "subject_id": str(subject_id)}
+        )
         raise HTTPException(status_code=500, detail="Internal server error")

@@ -21,6 +21,7 @@ case "$VEC_VAL" in
 esac
 
 echo "🚀 Automating environment for SQL:$SQL__TYPE and Vector:$VECTOR__STORE_TYPE"
+echo "📂 UV Cache Dir: $UV_CACHE_DIR"
 
 if [ -n "$EXTRAS" ]; then
     echo "📦 Installing: $EXTRAS"
@@ -34,4 +35,4 @@ echo "🔄 Running migrations..."
 uv run alembic upgrade head || echo "⚠️ Migration failed, but trying to start app..."
 
 echo "🎬 Starting application..."
-exec uv run uvicorn main:app --host 0.0.0.0 --port 5000
+exec uv run uvicorn main:app --host 0.0.0.0 --port ${PORT:-5000}

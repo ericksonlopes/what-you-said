@@ -88,6 +88,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         include_object=include_object,
         process_revision_directives=writer,
+        render_as_batch=True,
     )
 
     with context.begin_transaction():
@@ -114,6 +115,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             include_object=include_object,
             process_revision_directives=writer,
+            render_as_batch=True,
         )
 
         with context.begin_transaction():

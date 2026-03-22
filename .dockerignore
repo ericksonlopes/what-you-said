@@ -47,3 +47,7 @@ docker-compose.yml
 
 # Playwright
 .ms-playwright/
+
+# HuggingFace Cache
+huggingface_cache/
+huggingface_home/

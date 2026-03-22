@@ -37,5 +37,7 @@ def get_jobs(
             stats=result["stats"],
         )
     except Exception as e:
-        logger.error(f"Error fetching jobs: {e}")
+        logger.error(
+            e, context={"action": "list_jobs", "page": page, "page_size": page_size}
+        )
         raise HTTPException(status_code=500, detail="Internal server error")

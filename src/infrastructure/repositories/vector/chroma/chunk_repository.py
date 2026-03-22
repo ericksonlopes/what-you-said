@@ -39,10 +39,15 @@ class ChunkChromaRepository(IVectorRepository):
                 embedding_function=self._embedding_service,
             )
             logger.info(
-                f"Connected to ChromaDB at {host}:{port}, collection: {collection_name}"
+                "Connected to ChromaDB",
+                context={
+                    "host": host,
+                    "port": port,
+                    "collection": collection_name,
+                },
             )
         except Exception as e:
-            logger.error(f"Failed to initialize ChromaDB client: {e}")
+            logger.error(e, context={"action": "initialize_chroma_client"})
             self._chroma_client = None
 
     def create_documents(self, documents: List[ChunkModel]) -> List[str]:
@@ -147,7 +152,8 @@ class ChunkChromaRepository(IVectorRepository):
                 return self._hybrid_search(query, top_kn, chroma_filter)
             else:
                 logger.warning(
-                    f"Unknown search mode {search_mode}, falling back to SEMANTIC"
+                    "Unknown search mode, falling back to SEMANTIC",
+                    context={"search_mode": str(search_mode)},
                 )
                 return self._semantic_search(query, top_kn, chroma_filter)
 
@@ -214,7 +220,10 @@ class ChunkChromaRepository(IVectorRepository):
         try:
             from rank_bm25 import BM25Okapi
         except ImportError:
-            logger.error("rank_bm25 is not installed. Run: pip install rank-bm25")
+            logger.error(
+                "rank_bm25 is not installed",
+                context={"hint": "Run: pip install rank-bm25"},
+            )
             return []
 
         all_docs = self._get_all_docs(chroma_filter)

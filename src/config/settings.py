@@ -27,6 +27,22 @@ class SQLConfig(BaseModel):
         alias="url",
     )
 
+    @field_validator("host", mode="after")
+    @classmethod
+    def _fallback_host(cls, v: Optional[str]) -> Optional[str]:
+        """Fallback to localhost if docker service names are used on Windows/non-docker."""
+        import os
+        import sys
+
+        docker_hosts = {"postgres", "mysql", "mariadb", "mssql", "db"}
+        if (
+            v in docker_hosts
+            and sys.platform == "win32"
+            and not os.path.exists("/.dockerenv")
+        ):
+            return "localhost"
+        return v
+
     @property
     def url(self) -> str:
         if self.url_override:
@@ -73,6 +89,22 @@ class VectorConfig(BaseSettings):
 
     chroma_host: str = Field(default="localhost", description="ChromaDB host URL")
     chroma_port: int = Field(default=8000, description="ChromaDB port")
+
+    @field_validator("weaviate_host", "chroma_host", mode="after")
+    @classmethod
+    def _fallback_host(cls, v: str) -> str:
+        """Fallback to localhost if docker service names are used on Windows/non-docker."""
+        import os
+        import sys
+
+        docker_hosts = {"weaviate", "chroma", "vector-db"}
+        if (
+            v in docker_hosts
+            and sys.platform == "win32"
+            and not os.path.exists("/.dockerenv")
+        ):
+            return "localhost"
+        return v
 
     collection_name_chunks: str = Field(
         default="chunks",
@@ -165,6 +197,22 @@ class RedisConfig(BaseSettings):
     port: int = Field(default=6379, description="Redis port")
     db: int = Field(default=0, description="Redis database index")
     password: Optional[str] = Field(default=None, description="Redis password")
+
+    @field_validator("host", mode="after")
+    @classmethod
+    def _fallback_host(cls, v: str) -> str:
+        """Fallback to localhost if 'redis' host is not reachable (e.g., local development)."""
+        import os
+        import sys
+
+        # If explicitly 'redis' and on windows without being in docker
+        if (
+            v == "redis"
+            and sys.platform == "win32"
+            and not os.path.exists("/.dockerenv")
+        ):
+            return "localhost"
+        return v
 
 
 class YoutubeConfig(BaseSettings):

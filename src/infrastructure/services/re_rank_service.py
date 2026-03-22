@@ -11,12 +11,12 @@ class ReRankService:
 
     def __init__(self, model_name: str = "ms-marco-MiniLM-L-12-v2"):
         try:
-            logger.info(f"Initializing FlashRank with model: {model_name}")
+            logger.info("Initializing FlashRank", context={"model_name": model_name})
             self._ranker = Ranker(
                 model_name=model_name, cache_dir="/tmp/flashrank_cache"
             )
         except Exception as e:
-            logger.error(f"Failed to initialize FlashRank: {e}")
+            logger.error(e, context={"action": "initialize_flashrank"})
             self._ranker = None
 
     def rerank(self, query: str, documents: List[ChunkModel]) -> List[ChunkModel]:
@@ -25,7 +25,10 @@ class ReRankService:
             return documents
 
         try:
-            logger.debug(f"Re-ranking {len(documents)} documents for query: {query}")
+            logger.debug(
+                "Re-ranking documents",
+                context={"query": query, "count": len(documents)},
+            )
 
             # FlashRank expects a list of dicts with 'id' and 'text'
             passages = [
@@ -46,5 +49,5 @@ class ReRankService:
 
             return reranked_docs
         except Exception as e:
-            logger.error(f"Error during re-ranking: {e}")
+            logger.error(e, context={"action": "rerank", "query": query})
             return documents

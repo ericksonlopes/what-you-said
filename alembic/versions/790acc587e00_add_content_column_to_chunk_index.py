@@ -20,9 +20,21 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column("chunk_index", sa.Column("content", sa.Text(), nullable=True))
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    columns = [c["name"] for c in insp.get_columns("chunk_index")]
+
+    if "content" not in columns:
+        with op.batch_alter_table("chunk_index", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("content", sa.Text(), nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_column("chunk_index", "content")
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    columns = [c["name"] for c in insp.get_columns("chunk_index")]
+
+    if "content" in columns:
+        with op.batch_alter_table("chunk_index", schema=None) as batch_op:
+            batch_op.drop_column("content")

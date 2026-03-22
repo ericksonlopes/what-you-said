@@ -35,7 +35,7 @@ def get_chunks(
         )
         return chunks
     except Exception as e:
-        logger.error(f"Error fetching chunks: {e}")
+        logger.error(e, context={"action": "list_chunks"})
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -80,7 +80,7 @@ def update_chunk(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating chunk: {e}")
+        logger.error(e, context={"action": "update_chunk", "chunk_id": str(chunk_id)})
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -114,5 +114,5 @@ def delete_chunk(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting chunk: {e}")
+        logger.error(e, context={"action": "delete_chunk", "chunk_id": str(chunk_id)})
         raise HTTPException(status_code=500, detail=str(e))

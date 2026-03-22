@@ -126,7 +126,8 @@ class FileIngestionUseCase:
                 error_str = str(e).lower()
                 if "format not allowed" in error_str or "unsupported" in error_str:
                     logger.info(
-                        f"Docling does not support format, falling back to PlainTextExtractor for {cmd.file_name}"
+                        "Docling does not support format, falling back to PlainTextExtractor",
+                        context={"file_name": cmd.file_name},
                     )
                     docs = self.plain_text_extractor.extract(source_path)
                 else:
@@ -158,8 +159,12 @@ class FileIngestionUseCase:
                         if refined != SourceType.OTHER:
                             source_type = refined
                             logger.info(
-                                f"Refined source_type to {source_type.value} based on {ext_str}",
-                                context={"file_name": cmd.file_name},
+                                "Refined source_type",
+                                context={
+                                    "file_name": cmd.file_name,
+                                    "source_type": source_type.value,
+                                    "detected_ext": ext_str,
+                                },
                             )
                             break
                     except ValueError:
@@ -287,8 +292,13 @@ class FileIngestionUseCase:
 
             max_tokens = cmd.tokens_per_chunk
             logger.info(
-                f"FileIngestion: finishing with requested={cmd.tokens_per_chunk}, limit={self.model_loader_service.max_seq_length}, effective={max_tokens}",
-                context={"source_id": str(source.id)},
+                "FileIngestion finished",
+                context={
+                    "source_id": str(source.id),
+                    "requested_tokens": cmd.tokens_per_chunk,
+                    "limit": self.model_loader_service.max_seq_length,
+                    "effective_tokens": max_tokens,
+                },
             )
 
             self.cs_service.finish_ingestion(
@@ -310,7 +320,7 @@ class FileIngestionUseCase:
             }
 
         except Exception as e:
-            logger.error(f"Error in FileIngestionUseCase: {e}")
+            logger.error(e, context={"action": "file_ingestion_execute"})
             if ingestion:
                 error_msg = str(e).lower()
                 status = IngestionJobStatus.FAILED
@@ -351,9 +361,15 @@ class FileIngestionUseCase:
                         shutil.rmtree(parent_dir, ignore_errors=True)
                     else:
                         os.remove(cmd.file_path)
-                    logger.info(f"Cleaned up temporary file/directory: {cmd.file_path}")
+                    logger.info(
+                        "Cleaned up temporary file/directory",
+                        context={"path": cmd.file_path},
+                    )
                 except Exception as ex:
-                    logger.warning(f"Failed to cleanup {cmd.file_path}: {ex}")
+                    logger.warning(
+                        "Failed to cleanup temporary files",
+                        context={"path": cmd.file_path, "error": str(ex)},
+                    )
 
     def _resolve_subject(self, cmd: IngestFileCommand):
         if cmd.subject_id:

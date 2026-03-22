@@ -21,11 +21,33 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column("chunk_index", sa.Column("index", sa.Integer(), nullable=True))
-    op.add_column("ingestion_jobs", sa.Column("source_title", sa.Text(), nullable=True))
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+
+    # chunk_index
+    columns_chunk = [c["name"] for c in insp.get_columns("chunk_index")]
+    if "index" not in columns_chunk:
+        with op.batch_alter_table("chunk_index", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("index", sa.Integer(), nullable=True))
+
+    # ingestion_jobs
+    columns_jobs = [c["name"] for c in insp.get_columns("ingestion_jobs")]
+    if "source_title" not in columns_jobs:
+        with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("source_title", sa.Text(), nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_column("ingestion_jobs", "source_title")
-    op.drop_column("chunk_index", "index")
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+
+    columns_jobs = [c["name"] for c in insp.get_columns("ingestion_jobs")]
+    if "source_title" in columns_jobs:
+        with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
+            batch_op.drop_column("source_title")
+
+    columns_chunk = [c["name"] for c in insp.get_columns("chunk_index")]
+    if "index" in columns_chunk:
+        with op.batch_alter_table("chunk_index", schema=None) as batch_op:
+            batch_op.drop_column("index")

@@ -2,11 +2,29 @@ import inspect
 import logging
 import os
 import sys
+from contextvars import ContextVar
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 from src.config.settings import settings
 from src.domain.interfaces.logger.logger import ILogger
+
+
+# Global context for logging via contextvars
+_global_log_context: ContextVar[Dict[str, Any]] = ContextVar(
+    "global_log_context", default={}
+)
+
+
+def set_global_context(context: Dict[str, Any]) -> None:
+    """Set global context for all subsequent logs in the current execution context."""
+    current = _global_log_context.get()
+    _global_log_context.set({**current, **context})
+
+
+def clear_global_context() -> None:
+    """Clear all global context."""
+    _global_log_context.set({})
 
 
 class StdLogger(ILogger):
@@ -129,19 +147,34 @@ class StdLogger(ILogger):
             raise RuntimeError(f"Unexpected error in _is_allowed: {exc}") from exc
 
     def _log(
-        self, level: str, message: str, context: dict[str, Any] | None = None
+        self, level: str, message: str, context: dict[str, Any] | Optional[Any] = None
     ) -> None:
         if not self._is_allowed(level):
             return
         ctx = StdLogger.get_log_record(level, message)
-        # Adiciona o contexto como string (JSON ou str) ao campo 'context'
+
+        # Merge local context with global context from contextvars
+        global_ctx = _global_log_context.get()
+
+        # Ensure context is a mapping if it's not None
+        safe_context: dict[str, Any] = {}
         if context:
+            if isinstance(context, dict):
+                safe_context = context
+            else:
+                # If it's not a dict, we put it into a default key to avoid crash
+                safe_context = {"extra": context}
+
+        full_context = {**global_ctx, **safe_context}
+
+        # Adiciona o contexto como string (JSON ou str) ao campo 'context'
+        if full_context:
             import json
 
             try:
-                ctx["context"] = json.dumps(context, ensure_ascii=False)
+                ctx["context"] = json.dumps(full_context, ensure_ascii=False)
             except TypeError:
-                ctx["context"] = str(context)
+                ctx["context"] = str(full_context)
         else:
             ctx["context"] = ""
         formatted_message = self.log_format.format(**ctx)

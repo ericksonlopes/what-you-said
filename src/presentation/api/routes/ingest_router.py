@@ -101,10 +101,12 @@ def ingest_youtube(
     except HTTPException:
         raise
     except ValueError as ve:
-        logger.warning(f"Validation error in youtube ingestion: {ve}")
+        logger.warning(
+            "Validation error in youtube ingestion", context={"error": str(ve)}
+        )
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        logger.error(f"Error executing youtube ingestion: {str(e)}")
+        logger.error(e, context={"action": "youtube_ingestion"})
         raise HTTPException(status_code=500, detail=str(e))
 
 

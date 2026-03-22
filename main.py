@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.logger import setup_logging
+from src.presentation.api.middleware.trace_middleware import TraceMiddleware
 from src.presentation.api.routes import (
     chunk_router,
     ingest_router,
@@ -44,15 +45,23 @@ async def lifespan(app: FastAPI):
 
         # Load Embedding Model
         logger.info(
-            f"Loading Embedding Model: {_settings.model_embedding.name} on {_settings.app.device}..."
+            "Loading Embedding Model",
+            context={
+                "model_name": _settings.model_embedding.name,
+                "device": _settings.app.device,
+            },
         )
+
         app.state.model_loader = ModelLoaderService(
             model_name=_settings.model_embedding.name
         )
         logger.info("Embedding model pre-loaded successfully.")
 
         # Load Re-rank Model
-        logger.info(f"Loading Re-rank Model: {_settings.model_rerank.name}...")
+        logger.info(
+            "Loading Re-rank Model",
+            context={"model_name": _settings.model_rerank.name},
+        )
         app.state.rerank_service = ReRankService(model_name=_settings.model_rerank.name)
         logger.info("Re-rank model pre-loaded successfully.")
 
@@ -63,7 +72,7 @@ async def lifespan(app: FastAPI):
         logger.info("RedisTaskQueueService started.")
 
     except Exception as e:
-        logger.error(f"Error pre-loading models: {e}")
+        logger.error(e, context={"action": "pre_load_models"})
         if not hasattr(app.state, "model_loader"):
             app.state.model_loader = None
         if not hasattr(app.state, "rerank_service"):
@@ -86,6 +95,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+app.add_middleware(TraceMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https?://localhost(:\d+)?",

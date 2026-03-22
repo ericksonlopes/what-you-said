@@ -24,7 +24,9 @@ class TaskQueueService:
     def start(self):
         """Starts the background worker threads."""
         if self._workers:
-            logger.warning("TaskQueueService already started.", context="start")
+            logger.warning(
+                "TaskQueueService already started.", context={"where": "start"}
+            )
             return
 
         self._should_stop = False

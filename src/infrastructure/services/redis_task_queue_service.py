@@ -32,7 +32,9 @@ class RedisTaskQueueService(ITaskQueue):
 
     def start(self):
         if self._workers:
-            logger.warning("RedisTaskQueueService already started.", context="start")
+            logger.warning(
+                "RedisTaskQueueService already started.", context={"where": "start"}
+            )
             return
 
         self._should_stop = False

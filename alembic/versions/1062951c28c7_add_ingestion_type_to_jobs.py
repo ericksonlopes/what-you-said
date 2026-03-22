@@ -21,11 +21,21 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column(
-        "ingestion_jobs", sa.Column("ingestion_type", sa.Text(), nullable=True)
-    )
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    columns = [c["name"] for c in insp.get_columns("ingestion_jobs")]
+
+    if "ingestion_type" not in columns:
+        with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
+            batch_op.add_column(sa.Column("ingestion_type", sa.Text(), nullable=True))
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_column("ingestion_jobs", "ingestion_type")
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    columns = [c["name"] for c in insp.get_columns("ingestion_jobs")]
+
+    if "ingestion_type" in columns:
+        with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
+            batch_op.drop_column("ingestion_type")

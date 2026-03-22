@@ -21,15 +21,37 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column(
-        "chunk_index", sa.Column("vector_store_type", sa.Text(), nullable=True)
-    )
-    op.add_column(
-        "ingestion_jobs", sa.Column("vector_store_type", sa.Text(), nullable=True)
-    )
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+
+    # chunk_index
+    columns_chunk = [c["name"] for c in insp.get_columns("chunk_index")]
+    if "vector_store_type" not in columns_chunk:
+        with op.batch_alter_table("chunk_index", schema=None) as batch_op:
+            batch_op.add_column(
+                sa.Column("vector_store_type", sa.Text(), nullable=True)
+            )
+
+    # ingestion_jobs
+    columns_jobs = [c["name"] for c in insp.get_columns("ingestion_jobs")]
+    if "vector_store_type" not in columns_jobs:
+        with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
+            batch_op.add_column(
+                sa.Column("vector_store_type", sa.Text(), nullable=True)
+            )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_column("ingestion_jobs", "vector_store_type")
-    op.drop_column("chunk_index", "vector_store_type")
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+
+    columns_jobs = [c["name"] for c in insp.get_columns("ingestion_jobs")]
+    if "vector_store_type" in columns_jobs:
+        with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
+            batch_op.drop_column("vector_store_type")
+
+    columns_chunk = [c["name"] for c in insp.get_columns("chunk_index")]
+    if "vector_store_type" in columns_chunk:
+        with op.batch_alter_table("chunk_index", schema=None) as batch_op:
+            batch_op.drop_column("vector_store_type")

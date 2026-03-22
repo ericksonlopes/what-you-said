@@ -45,7 +45,9 @@ class ModelLoaderService(IModelLoaderService):
                     self.model_name, device=self.device
                 )
             except Exception as e:
-                logger.error(f"Error loading models: {e}")
+                logger.error(
+                    e, context={"action": "load_model", "model_name": self.model_name}
+                )
                 raise RuntimeError(f"Failed to load models '{self.model_name}': {e}")
 
     @property

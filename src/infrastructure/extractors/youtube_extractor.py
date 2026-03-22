@@ -84,7 +84,10 @@ class YoutubeExtractor(IYoutubeExtractor):
                     context={"original": playlist_url, "normalized": playlist_url},
                 )
         except Exception as e:
-            logger.warning(f"Could not normalize playlist URL: {e}")
+            logger.warning(
+                "Could not normalize playlist URL",
+                context={"playlist_url": playlist_url, "error": str(e)},
+            )
 
         logger.info(
             "Starting playlist extraction", context={"playlist_url": playlist_url}
@@ -119,7 +122,7 @@ class YoutubeExtractor(IYoutubeExtractor):
                 )
                 return urls
         except Exception as e:
-            logger.error(f"Error extracting playlist {playlist_url}: {e}")
+            logger.error(e, context={"playlist_url": playlist_url})
             return []
 
     def extract_transcript(self) -> FetchedTranscript:
@@ -161,10 +164,10 @@ class YoutubeExtractor(IYoutubeExtractor):
                     fallback_transcript = next(iter(transcript_list))
 
                     logger.warning(
-                        f"Preferred languages {preferred_languages} not found. "
-                        f"Falling back to available language: '{fallback_transcript.language_code}'",
+                        "Preferred languages not found. Falling back to available language",
                         context={
                             "video_id": self.video_id,
+                            "preferred_languages": preferred_languages,
                             "fallback_lang": fallback_transcript.language_code,
                         },
                     )
@@ -177,23 +180,31 @@ class YoutubeExtractor(IYoutubeExtractor):
                     ) or "Failed to establish a new connection" in str(e):
                         last_error = e
                         logger.warning(
-                            f"Network error during transcript listing (attempt {attempt + 1}/{retries}). Retrying in {2**attempt}s..."
+                            "Network error during transcript listing. Retrying",
+                            context={
+                                "attempt": attempt + 1,
+                                "max_retries": retries,
+                                "wait_time": 2**attempt,
+                                "video_id": self.video_id,
+                            },
                         )
                         time.sleep(2**attempt)
                         continue
 
                     # If even listing fails or no transcripts at all exist
-                    msg = f"No transcript available for video {self.video_id} in ANY language."
                     logger.error(
-                        msg, context={"video_id": self.video_id, "error": str(e)}
+                        "No transcript available for video in ANY language",
+                        context={"video_id": self.video_id, "error": str(e)},
                     )
                     raise YoutubeTranscriptNotFoundException(
                         self.video_id, self.language
                     )
 
             except TranscriptsDisabled:
-                msg = f"Transcripts are disabled for video {self.video_id}."
-                logger.warning(msg, context={"video_id": self.video_id})
+                logger.warning(
+                    "Transcripts are disabled for video",
+                    context={"video_id": self.video_id},
+                )
                 raise YoutubeTranscriptsDisabledException(self.video_id)
 
             except Exception as error:
@@ -213,13 +224,22 @@ class YoutubeExtractor(IYoutubeExtractor):
                     or "Failed to establish a new connection" in error_msg
                 ):
                     logger.warning(
-                        f"Network error during transcript fetch (attempt {attempt + 1}/{retries}). Retrying in {2**attempt}s..."
+                        "Network error during transcript fetch. Retrying",
+                        context={
+                            "attempt": attempt + 1,
+                            "max_retries": retries,
+                            "wait_time": 2**attempt,
+                            "video_id": self.video_id,
+                        },
                     )
                     time.sleep(2**attempt)
                     continue
 
                 msg = f"Unexpected error while fetching transcript for video {self.video_id}: {error_msg}"
-                logger.error(msg, context={"video_id": self.video_id})
+                logger.error(
+                    error,
+                    context={"video_id": self.video_id, "action": "fetch_transcript"},
+                )
                 raise ValueError(msg)
 
         # If we reached here, all retries failed due to network errors

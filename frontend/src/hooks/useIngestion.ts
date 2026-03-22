@@ -6,7 +6,7 @@ import { api } from '../services/api';
 
 export function useIngestion() {
   const { t } = useTranslation();
-  const { addToast, addOptimisticJob, refreshJobs } = useAppContext();
+  const { addToast, addOptimisticJob, removeOptimisticJob, refreshJobs } = useAppContext();
 
   /**
    * Universal ingestion function that handles optimistic updates and refreshes
@@ -33,7 +33,7 @@ export function useIngestion() {
     
     // 2. Add optimistic job card
     const title = file ? file.name : (url || `Ingesting ${displayType}...`);
-    addOptimisticJob(title);
+    const optJobId = addOptimisticJob(title, file ? file.name : url);
 
     try {
       let response;
@@ -78,16 +78,20 @@ export function useIngestion() {
       return response;
     } catch (error: any) {
       console.error(`${inputType} ingestion error:`, error);
+      
+      // Remove optimistic job on error
+      removeOptimisticJob(optJobId);
+
       const errorMsg = error?.message === 'DUPLICATE_SOURCE' 
         ? t('notifications.ingestion.duplicate') 
         : t('notifications.ingestion.error');
       addToast(errorMsg, 'error');
       throw error;
     } finally {
-      // 3. Refresh jobs to replace optimistic card
+      // 3. Refresh jobs to replace optimistic card (if it hasn't been removed yet)
       await refreshJobs();
     }
-  }, [addToast, addOptimisticJob, refreshJobs, t]);
+  }, [addToast, addOptimisticJob, removeOptimisticJob, refreshJobs, t]);
 
   return { startIngestion };
 }

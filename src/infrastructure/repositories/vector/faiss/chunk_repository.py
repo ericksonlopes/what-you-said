@@ -32,7 +32,9 @@ class ChunkFAISSRepository(IVectorRepository):
         from langchain_community.vectorstores import FAISS
 
         if os.path.exists(os.path.join(self._index_path, f"{self._index_name}.faiss")):
-            logger.debug(f"Loading existing FAISS index from {self._index_path}")
+            logger.debug(
+                "Loading existing FAISS index", context={"path": self._index_path}
+            )
             try:
                 self._vector_store = FAISS.load_local(
                     folder_path=self._index_path,
@@ -41,7 +43,9 @@ class ChunkFAISSRepository(IVectorRepository):
                     allow_dangerous_deserialization=True,
                 )
             except Exception as e:
-                logger.error(f"Error loading FAISS index: {e}")
+                logger.error(
+                    e, context={"action": "load_faiss_index", "path": self._index_path}
+                )
                 self._vector_store = None
         else:
             logger.debug(
@@ -200,7 +204,10 @@ class ChunkFAISSRepository(IVectorRepository):
         try:
             from rank_bm25 import BM25Okapi
         except ImportError:
-            logger.error("rank_bm25 is not installed. Run: pip install rank-bm25")
+            logger.error(
+                "rank_bm25 is not installed",
+                context={"hint": "Run: pip install rank-bm25"},
+            )
             raise ImportError(
                 "rank-bm25 package required for BM25 search. Install with: pip install rank-bm25"
             )

@@ -42,7 +42,7 @@ def update_source_title(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error updating source {id}: {e}")
+        logger.error(e, context={"action": "update_source_title", "source_id": id})
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -63,7 +63,7 @@ def get_sources(cs_service: Annotated[ContentSourceService, Depends(get_cs_servi
         sources = cs_service.list_all()
         return sources
     except Exception as e:
-        logger.error(e)
+        logger.error(e, context={"action": "list_sources"})
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -83,7 +83,7 @@ def get_model_info(
             "max_seq_length": model_loader.max_seq_length,
         }
     except Exception as e:
-        logger.error(e)
+        logger.error(e, context={"action": "get_model_info"})
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
@@ -106,5 +106,5 @@ def delete_source(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error deleting source {id}: {e}")
+        logger.error(e, context={"action": "delete_source", "source_id": id})
         raise HTTPException(status_code=500, detail=str(e))

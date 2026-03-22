@@ -110,7 +110,10 @@ class YoutubeIngestionUseCase:
                 if ingestion and ingestion.content_source_id:
                     source = self.cs_service.get_by_id(ingestion.content_source_id)
             except Exception as context_error:
-                logger.debug(f"Could not recover job context: {context_error}")
+                logger.debug(
+                    "Could not recover job context",
+                    context={"error": str(context_error)},
+                )
 
         try:
             subject = self._resolve_subject(cmd)
@@ -167,14 +170,19 @@ class YoutubeIngestionUseCase:
                         )
                     return self._process_single_video(video_url, video_id, subject, cmd)
                 except YoutubeNetworkException as e:
-                    logger.error(f"Network error processing {video_url}: {e}")
+                    logger.error(
+                        e,
+                        context={"video_url": video_url, "error_type": "network_error"},
+                    )
                     return {
                         "video_url": video_url,
                         "error": str(e),
                         "is_network_error": True,
                     }
                 except Exception as e:
-                    logger.error(e, context={"video_url": video_url})
+                    logger.error(
+                        e, context={"video_url": video_url, "action": "process_video"}
+                    )
                     return {"video_url": video_url, "error": str(e)}
 
             batch_size = settings.youtube.throttle_batch_size
@@ -221,8 +229,11 @@ class YoutubeIngestionUseCase:
                         current_wait_time * 2, 600
                     )  # Max 10 minutes
                     logger.warning(
-                        f"Network error detected in batch. Increasing wait time to {current_wait_time} seconds.",
-                        context={"new_wait_time": current_wait_time},
+                        "Network error detected in batch. Increasing wait time",
+                        context={
+                            "new_wait_time": current_wait_time,
+                            "batch_index": i // batch_size + 1,
+                        },
                     )
 
                 # Wait if there are more batches to process
@@ -231,7 +242,7 @@ class YoutubeIngestionUseCase:
                     jitter = random.uniform(0, 5)
                     total_wait = current_wait_time + jitter
                     logger.info(
-                        f"Throttling: waiting {total_wait:.2f} seconds before next batch...",
+                        "Throttling: waiting before next batch",
                         context={
                             "wait_time": total_wait,
                             "jitter": jitter,
@@ -336,20 +347,32 @@ class YoutubeIngestionUseCase:
         except Exception as e:
             error_msg = str(e)
             logger.error(
-                error_msg, context={"video_urls": getattr(cmd, "video_urls", None)}
+                e,
+                context={
+                    "video_urls": getattr(cmd, "video_urls", None),
+                    "action": "youtube_ingestion_execute",
+                },
             )
 
             if source:
                 try:
                     self._fail_ingestion(source)
                 except Exception as ef:
-                    logger.error(f"Failed to mark source as FAILED: {ef}")
+                    logger.error(
+                        ef,
+                        context={
+                            "action": "fail_ingestion",
+                            "source_id": str(source.id),
+                        },
+                    )
 
             if ingestion:
                 try:
                     self._fail_job(ingestion, error_msg)
                 except Exception as ej:
-                    logger.error(f"Failed to mark job as FAILED: {ej}")
+                    logger.error(
+                        ej, context={"action": "fail_job", "job_id": str(ingestion.id)}
+                    )
 
             raise e
 
@@ -394,7 +417,9 @@ class YoutubeIngestionUseCase:
                     context={"job_id": failed_job_id, "video_id": video_id},
                 )
             except Exception as ej:
-                logger.error(f"Failed to create CANCELLED job for duplicate: {ej}")
+                logger.error(
+                    ej, context={"action": "create_cancelled_job", "video_id": video_id}
+                )
 
             return {
                 "video_url": video_url,
@@ -423,7 +448,8 @@ class YoutubeIngestionUseCase:
                     )
                 except Exception as ce:
                     logger.warning(
-                        f"Error during reprocessing cleanup for source {source.id}: {ce}"
+                        "Error during reprocessing cleanup",
+                        context={"source_id": str(source.id), "error": str(ce)},
                     )
 
             # 1. Reuse or create Ingestion Job EARLY (even before source exists)
@@ -439,7 +465,8 @@ class YoutubeIngestionUseCase:
                     ingestion = self.ingestion_service.get_by_id(jid)
                     if ingestion is None:
                         logger.warning(
-                            f"Job {cmd.ingestion_job_id} not found, creating new one"
+                            "Job not found, creating new one",
+                            context={"job_id": str(cmd.ingestion_job_id)},
                         )
                         ingestion = self._create_ingestion_job(
                             source=source,
@@ -453,7 +480,8 @@ class YoutubeIngestionUseCase:
                         )
                 except Exception as ej:
                     logger.warning(
-                        f"Failed to retrieve pre-created job {cmd.ingestion_job_id}, creating new one: {ej}"
+                        "Failed to retrieve pre-created job, creating new one",
+                        context={"job_id": str(cmd.ingestion_job_id), "error": str(ej)},
                     )
                     ingestion = self._create_ingestion_job(
                         source=source, external_source=video_id, subject_id=subject.id
@@ -617,8 +645,12 @@ class YoutubeIngestionUseCase:
         ) as e:
             error_msg = str(e)
             logger.warning(
-                f"Known limitation for video {video_id}: {error_msg}",
-                context={"video_url": video_url},
+                "Known limitation for video",
+                context={
+                    "video_id": video_id,
+                    "video_url": video_url,
+                    "error": error_msg,
+                },
             )
 
             if ingestion:
@@ -637,7 +669,9 @@ class YoutubeIngestionUseCase:
                         },
                     )
                 except Exception as ej:
-                    logger.error(f"Failed to mark job as FAILED: {ej}")
+                    logger.error(
+                        ej, context={"action": "fail_job", "job_id": str(ingestion.id)}
+                    )
 
             if source:
                 try:
@@ -646,7 +680,13 @@ class YoutubeIngestionUseCase:
                         status=ContentSourceStatus.CANCELLED,
                     )
                 except Exception as ef:
-                    logger.error(f"Failed to mark source as CANCELLED: {ef}")
+                    logger.error(
+                        ef,
+                        context={
+                            "action": "cancel_source",
+                            "source_id": str(source.id),
+                        },
+                    )
 
             return {
                 "video_url": video_url,
@@ -660,8 +700,12 @@ class YoutubeIngestionUseCase:
         except Exception as e:
             error_msg = str(e)
             logger.error(
-                f"Error processing video {video_id}: {error_msg}",
-                context={"video_url": video_url},
+                e,
+                context={
+                    "video_id": video_id,
+                    "video_url": video_url,
+                    "action": "process_single_video",
+                },
             )
 
             # --- ROLLBACK LOGIC ---
@@ -685,20 +729,29 @@ class YoutubeIngestionUseCase:
                     )
                 except Exception as er:
                     logger.error(
-                        f"Failed to perform rollback for job {ingestion.id}: {er}"
+                        er,
+                        context={
+                            "action": "rollback_ingestion",
+                            "job_id": str(ingestion.id),
+                        },
                     )
 
             if source:
                 try:
                     self._fail_ingestion(source)
                 except Exception as ef:
-                    logger.error(f"Failed to mark source as FAILED: {ef}")
+                    logger.error(
+                        ef,
+                        context={"action": "fail_source", "source_id": str(source.id)},
+                    )
 
             if ingestion:
                 try:
                     self._fail_job(ingestion, error_msg)
                 except Exception as ej:
-                    logger.error(f"Failed to mark job as FAILED: {ej}")
+                    logger.error(
+                        ej, context={"action": "fail_job", "job_id": str(ingestion.id)}
+                    )
 
             raise e
 

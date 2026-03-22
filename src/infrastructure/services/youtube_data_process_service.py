@@ -114,7 +114,7 @@ class YoutubeDataProcessService:
                 )
 
         logger.debug(
-            f"Transcript split into {len(documents)} windows.",
+            "Transcript split into windows",
             context={**context, "windows_created": len(documents)},
         )
         return documents
@@ -147,7 +147,7 @@ class YoutubeDataProcessService:
             token_ids, token_meta, tokens_per_chunk, step, transcript, context
         )
         logger.debug(
-            f"Transcript split into {len(documents)} token windows.",
+            "Transcript split into token windows",
             context={**context, "token_windows_created": len(documents)},
         )
         return documents
