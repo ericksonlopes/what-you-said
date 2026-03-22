@@ -91,7 +91,9 @@ class WebScrapingUseCase:
                     )
                     ingestion = self.ingestion_service.get_by_id(jid)
                 except Exception as e:
-                    logger.warning(f"Could not retrieve ingestion job {cmd.ingestion_job_id}: {e}")
+                    logger.warning(
+                        f"Could not retrieve ingestion job {cmd.ingestion_job_id}: {e}"
+                    )
 
             if ingestion is None:
                 ingestion = self.ingestion_service.create_job(

@@ -37,9 +37,10 @@ SQL__TYPE=postgres VECTOR__STORE_TYPE=weaviate docker-compose up -d
 
 ---
 
-### 3. Scenario: MySQL / MariaDB Focused
-**Stack**: MySQL or MariaDB + FAISS
-- **Best for**: Environments where MySQL/MariaDB is the standard.
+
+### 3. Scenario: MySQL Focused
+**Stack**: MySQL + FAISS
+- **Best for**: Environments where MySQL is the standard.
 
 ```bash
 # Start MySQL container

@@ -77,9 +77,11 @@ def test_throttling_logic(monkeypatch):
 
     monkeypatch.setattr(time, "sleep", mock_sleep)
     import random
+
     monkeypatch.setattr(random, "uniform", lambda a, b: 0.0)
 
-    cmd = IngestYoutubeCommand(        video_url="https://youtube.com/playlist?list=PL123",
+    cmd = IngestYoutubeCommand(
+        video_url="https://youtube.com/playlist?list=PL123",
         subject_name="s",
         data_type=YoutubeDataType.PLAYLIST,
     )
