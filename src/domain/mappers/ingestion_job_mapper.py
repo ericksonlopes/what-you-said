@@ -26,7 +26,7 @@ class IngestionJobMapper:
 
         source_title = getattr(model, "source_title", None)
         subject_id = getattr(model, "subject_id", None)
-        
+
         if hasattr(model, "content_source") and model.content_source:
             if not source_title:
                 source_title = getattr(model.content_source, "title", None)

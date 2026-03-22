@@ -52,11 +52,16 @@ class PlainTextExtractor:
 
                 return [Document(page_content=content, metadata=metadata)]
         except Exception as e:
-            logger.error("Error downloading plain text from URL", context={"url": url, "error": str(e)})
+            logger.error(
+                "Error downloading plain text from URL",
+                context={"url": url, "error": str(e)},
+            )
             raise ValueError(f"Failed to download content from {url}: {str(e)}")
 
     def _extract_from_local(self, file_path: str) -> List[Document]:
-        logger.info("Extracting plain text from local file", context={"file_path": file_path})
+        logger.info(
+            "Extracting plain text from local file", context={"file_path": file_path}
+        )
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -71,7 +76,10 @@ class PlainTextExtractor:
 
             return [Document(page_content=content, metadata=metadata)]
         except Exception as e:
-            logger.error("Error reading local plain text file", context={"file_path": file_path, "error": str(e)})
+            logger.error(
+                "Error reading local plain text file",
+                context={"file_path": file_path, "error": str(e)},
+            )
             raise ValueError(f"Failed to read content from {file_path}: {str(e)}")
 
     @staticmethod

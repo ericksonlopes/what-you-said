@@ -22,5 +22,5 @@ class ServiceRegistry:
 registry = ServiceRegistry()
 
 # Registering services for worker access
-# Note: Dependencies are mostly resolved in dependencies.py, 
+# Note: Dependencies are mostly resolved in dependencies.py,
 # but workers use the registry to get the app state.

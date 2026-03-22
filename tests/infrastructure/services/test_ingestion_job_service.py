@@ -62,6 +62,7 @@ class TestIngestionJobService:
             vector_store_type="weaviate",
             source_title=None,
             external_source=None,
+            subject_id=None,
         )
 
     def test_update_job(self, service, mock_repo):

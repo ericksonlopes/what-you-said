@@ -55,7 +55,10 @@ class YoutubeExtractor(IYoutubeExtractor):
                 raise YoutubeVideoPrivateException(self.video_id)
             if "unplayable" in error_msg.lower():
                 raise YoutubeVideoUnplayableException(self.video_id, reason=error_msg)
-            if "getaddrinfo failed" in error_msg or "Failed to establish a new connection" in error_msg:
+            if (
+                "getaddrinfo failed" in error_msg
+                or "Failed to establish a new connection" in error_msg
+            ):
                 raise YoutubeNetworkException(self.video_id, error_msg)
 
             logger.error(
@@ -169,16 +172,24 @@ class YoutubeExtractor(IYoutubeExtractor):
                     return fallback_transcript.fetch()
                 except Exception as e:
                     # If listing fails with network error, we might want to retry
-                    if "getaddrinfo failed" in str(e) or "Failed to establish a new connection" in str(e):
+                    if "getaddrinfo failed" in str(
+                        e
+                    ) or "Failed to establish a new connection" in str(e):
                         last_error = e
-                        logger.warning(f"Network error during transcript listing (attempt {attempt + 1}/{retries}). Retrying in {2 ** attempt}s...")
-                        time.sleep(2 ** attempt)
+                        logger.warning(
+                            f"Network error during transcript listing (attempt {attempt + 1}/{retries}). Retrying in {2**attempt}s..."
+                        )
+                        time.sleep(2**attempt)
                         continue
-                        
+
                     # If even listing fails or no transcripts at all exist
                     msg = f"No transcript available for video {self.video_id} in ANY language."
-                    logger.error(msg, context={"video_id": self.video_id, "error": str(e)})
-                    raise YoutubeTranscriptNotFoundException(self.video_id, self.language)
+                    logger.error(
+                        msg, context={"video_id": self.video_id, "error": str(e)}
+                    )
+                    raise YoutubeTranscriptNotFoundException(
+                        self.video_id, self.language
+                    )
 
             except TranscriptsDisabled:
                 msg = f"Transcripts are disabled for video {self.video_id}."
@@ -188,16 +199,23 @@ class YoutubeExtractor(IYoutubeExtractor):
             except Exception as error:
                 error_msg = str(error)
                 last_error = error
-                
+
                 if "This video is private" in error_msg:
                     raise YoutubeVideoPrivateException(self.video_id)
                 if "unplayable" in error_msg.lower():
-                    raise YoutubeVideoUnplayableException(self.video_id, reason=error_msg)
-                
+                    raise YoutubeVideoUnplayableException(
+                        self.video_id, reason=error_msg
+                    )
+
                 # Connection/DNS errors
-                if "getaddrinfo failed" in error_msg or "Failed to establish a new connection" in error_msg:
-                    logger.warning(f"Network error during transcript fetch (attempt {attempt + 1}/{retries}). Retrying in {2 ** attempt}s...")
-                    time.sleep(2 ** attempt)
+                if (
+                    "getaddrinfo failed" in error_msg
+                    or "Failed to establish a new connection" in error_msg
+                ):
+                    logger.warning(
+                        f"Network error during transcript fetch (attempt {attempt + 1}/{retries}). Retrying in {2**attempt}s..."
+                    )
+                    time.sleep(2**attempt)
                     continue
 
                 msg = f"Unexpected error while fetching transcript for video {self.video_id}: {error_msg}"

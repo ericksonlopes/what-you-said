@@ -101,6 +101,7 @@ def test_more_sql_paths():
                 "job_id": job_id,
                 "chunk_id": "filter-chunk",
                 "chars": 1,
+                "external_source": "v_extra",
             }
         ]
     )

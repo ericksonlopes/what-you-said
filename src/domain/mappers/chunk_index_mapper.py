@@ -74,7 +74,8 @@ def _build_entity_kwargs(
             or getattr(model, "chunk_id", None),
         ),
         "subject_id": cast(
-            Optional[UUID], getattr(model, "subject_id", None) or cs_meta.get("subject_id")
+            Optional[UUID],
+            getattr(model, "subject_id", None) or cs_meta.get("subject_id"),
         ),
         "index": cast(Optional[int], getattr(model, "index", None)),
         "content": cast(Optional[str], getattr(model, "content", None)),

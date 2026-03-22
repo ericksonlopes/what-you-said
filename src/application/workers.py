@@ -126,19 +126,20 @@ def run_web_ingestion_worker(cmd: Any):
     """Picklable worker function for Web Scraping ingestion."""
     import asyncio
     from src.application.service_registry import registry
-    
+
     app = registry.get("app")
     if not app:
         return
 
     from unittest.mock import MagicMock
+
     mock_request = MagicMock()
     mock_request.app = app
 
     async def _run():
         try:
             from src.presentation.api import dependencies as deps
-            
+
             settings = deps.get_settings()
             ks_svc = deps.get_ks_service(repo=deps.get_subject_repo())
             cs_svc = deps.get_cs_service(repo=deps.get_source_repo())
@@ -146,7 +147,7 @@ def run_web_ingestion_worker(cmd: Any):
             model_loader = deps.get_model_loader(mock_request)
             embed_svc = deps.get_embedding_service(model_loader=model_loader)
             chunk_svc = deps.get_chunk_index_service(repo=deps.get_chunk_repo())
-            
+
             vector_repo = deps.get_vector_repository(
                 settings=settings, model_loader=model_loader
             )
@@ -157,8 +158,10 @@ def run_web_ingestion_worker(cmd: Any):
             event_bus = deps.get_event_bus(request=mock_request)
             extractor = deps.get_web_extractor()
 
-            from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
-            
+            from src.application.use_cases.web_scraping_use_case import (
+                WebScrapingUseCase,
+            )
+
             use_case = WebScrapingUseCase(
                 ks_service=ks_svc,
                 cs_service=cs_svc,
@@ -169,12 +172,13 @@ def run_web_ingestion_worker(cmd: Any):
                 vector_service=vector_svc,
                 vector_store_type=settings.vector.store_type.value,
                 event_bus=event_bus,
-                extractor=extractor
+                extractor=extractor,
             )
 
             await use_case.execute(cmd)
         except Exception as e:
             import logging
+
             logging.getLogger(__name__).error(
                 f"Worker Error: Failed to execute Web Scraping: {e}", exc_info=True
             )

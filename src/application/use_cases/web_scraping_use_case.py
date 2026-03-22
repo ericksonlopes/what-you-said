@@ -80,14 +80,18 @@ class WebScrapingUseCase:
 
         try:
             subject = self._resolve_subject(cmd)
-            
+
             # 1. Create or retrieve Ingestion Job
             if cmd.ingestion_job_id:
                 try:
-                    jid = UUID(cmd.ingestion_job_id) if isinstance(cmd.ingestion_job_id, str) else cmd.ingestion_job_id
+                    jid = (
+                        UUID(cmd.ingestion_job_id)
+                        if isinstance(cmd.ingestion_job_id, str)
+                        else cmd.ingestion_job_id
+                    )
                     ingestion = self.ingestion_service.get_by_id(jid)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning(f"Could not retrieve ingestion job {cmd.ingestion_job_id}: {e}")
 
             if ingestion is None:
                 ingestion = self.ingestion_service.create_job(
@@ -121,9 +125,7 @@ class WebScrapingUseCase:
 
             try:
                 docs = await self.extractor.extract(
-                    source=cmd.url, 
-                    css_selector=cmd.css_selector,
-                    depth=cmd.depth
+                    source=cmd.url, css_selector=cmd.css_selector, depth=cmd.depth
                 )
             except Exception as e:
                 logger.error(f"Scraping failed for {cmd.url}: {e}")
@@ -134,13 +136,13 @@ class WebScrapingUseCase:
 
             # 3. Create or Get Source
             extracted_title = docs[0].metadata.get("title") or cmd.title or cmd.url
-            
+
             source = self.cs_service.get_by_source_info(
                 source_type=SourceType.WEB,
                 external_source=cmd.url,
                 subject_id=subject.id,
             )
-            
+
             if not source:
                 source = self.cs_service.create_source(
                     subject_id=subject.id,
@@ -153,8 +155,10 @@ class WebScrapingUseCase:
                 )
             else:
                 # Update title and metadata if it exists
-                self.cs_service.update_processing_status(source.id, ContentSourceStatus.PROCESSING)
-                
+                self.cs_service.update_processing_status(
+                    source.id, ContentSourceStatus.PROCESSING
+                )
+
                 # --- REPROCESSING CLEANUP ---
                 if cmd.reprocess:
                     logger.info(
@@ -166,7 +170,7 @@ class WebScrapingUseCase:
                         # We use a filter to target only this source's chunks
                         filters = {"content_source_id": str(source.id)}
                         vec_del = self.vector_service.delete(filters=filters)
-                        
+
                         logger.info(
                             "Web reprocessing cleanup finished",
                             context={"sql_deleted": sql_del, "vector_deleted": vec_del},
@@ -185,7 +189,7 @@ class WebScrapingUseCase:
                 total_steps=4,
                 content_source_id=source.id,
             )
-            
+
             tokenizer = (
                 self.model_loader_service.model.tokenizer
                 if hasattr(self.model_loader_service, "model")
@@ -206,6 +210,7 @@ class WebScrapingUseCase:
                 )
             else:
                 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
                 langchain_splitter = RecursiveCharacterTextSplitter(
                     chunk_size=cmd.tokens_per_chunk * 4,
                     chunk_overlap=cmd.tokens_overlap * 4,
@@ -227,7 +232,7 @@ class WebScrapingUseCase:
                 current_step=3,
                 total_steps=4,
             )
-            
+
             created_ids = self.vector_service.index_documents(chunks)
 
             # 7. Finalize
@@ -239,10 +244,12 @@ class WebScrapingUseCase:
                 total_steps=4,
                 chunks_count=len(chunks),
             )
-            
-            total_tokens = sum(c.tokens_count for c in chunks if c.tokens_count is not None)
+
+            total_tokens = sum(
+                c.tokens_count for c in chunks if c.tokens_count is not None
+            )
             dims = getattr(self.model_loader_service, "dimensions", 0)
-            
+
             self.cs_service.finish_ingestion(
                 content_source_id=source.id,
                 embedding_model=self.model_loader_service.model_name,
@@ -296,7 +303,11 @@ class WebScrapingUseCase:
 
     def _resolve_subject(self, cmd: IngestWebCommand):
         if cmd.subject_id:
-            subject = self.ks_service.get_subject_by_id(UUID(cmd.subject_id) if isinstance(cmd.subject_id, str) else cmd.subject_id)
+            subject = self.ks_service.get_subject_by_id(
+                UUID(cmd.subject_id)
+                if isinstance(cmd.subject_id, str)
+                else cmd.subject_id
+            )
             if not subject:
                 raise ValueError(f"Subject not found: {cmd.subject_id}")
             return subject
@@ -316,16 +327,20 @@ class WebScrapingUseCase:
         job_id: UUID,
     ) -> List[ChunkEntity]:
         list_chunks: List[ChunkEntity] = []
-        
+
         tokenizer = None
-        if hasattr(self.model_loader_service, "model") and hasattr(self.model_loader_service.model, "tokenizer"):
+        if hasattr(self.model_loader_service, "model") and hasattr(
+            self.model_loader_service.model, "tokenizer"
+        ):
             tokenizer = self.model_loader_service.model.tokenizer
 
         for i, doc in enumerate(docs):
             tokens_count = None
             if tokenizer:
                 try:
-                    tokens = tokenizer.encode(doc.page_content, add_special_tokens=False)
+                    tokens = tokenizer.encode(
+                        doc.page_content, add_special_tokens=False
+                    )
                     tokens_count = len(tokens)
                 except Exception:
                     tokens_count = len(doc.page_content) // 4
