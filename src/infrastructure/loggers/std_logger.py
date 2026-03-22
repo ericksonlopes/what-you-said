@@ -155,9 +155,9 @@ class StdLogger(ILogger):
 
         # Merge local context with global context from contextvars
         global_ctx = _global_log_context.get()
-        
+
         # Ensure context is a mapping if it's not None
-        safe_context = {}
+        safe_context: dict[str, Any] = {}
         if context:
             if isinstance(context, dict):
                 safe_context = context

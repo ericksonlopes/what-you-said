@@ -174,7 +174,11 @@ class RedisConfig(BaseSettings):
         import sys
 
         # If explicitly 'redis' and on windows without being in docker
-        if v == "redis" and sys.platform == "win32" and not os.path.exists("/.dockerenv"):
+        if (
+            v == "redis"
+            and sys.platform == "win32"
+            and not os.path.exists("/.dockerenv")
+        ):
             return "localhost"
         return v
 

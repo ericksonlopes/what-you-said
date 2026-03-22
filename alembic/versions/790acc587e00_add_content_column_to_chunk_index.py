@@ -23,7 +23,7 @@ def upgrade() -> None:
     bind = op.get_bind()
     insp = sa.inspect(bind)
     columns = [c["name"] for c in insp.get_columns("chunk_index")]
-    
+
     if "content" not in columns:
         with op.batch_alter_table("chunk_index", schema=None) as batch_op:
             batch_op.add_column(sa.Column("content", sa.Text(), nullable=True))
@@ -34,7 +34,7 @@ def downgrade() -> None:
     bind = op.get_bind()
     insp = sa.inspect(bind)
     columns = [c["name"] for c in insp.get_columns("chunk_index")]
-    
+
     if "content" in columns:
         with op.batch_alter_table("chunk_index", schema=None) as batch_op:
             batch_op.drop_column("content")
