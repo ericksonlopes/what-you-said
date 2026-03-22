@@ -101,6 +101,16 @@ This keeps the image small and ensures you only run the code you actually need.
 
 ---
 
+### 7. GPU (NVIDIA) Support
+By default, WhatYouSaid starts in **CPU mode** to ensure compatibility with all systems. If you have an NVIDIA GPU and want to accelerate embedding and re-ranking:
+
+1. Ensure you have the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed.
+2. Run Docker Compose with the GPU override:
+   ```bash
+   docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+   ```
+   *Alternatively, you can uncomment the `deploy` section in the main `docker-compose.yml`.*
+
 ---
 
 ## ⚙️ Configuration Reference

@@ -43,13 +43,15 @@ services:
       - ./data/app:/app/data
     restart: always
     shm_size: '2gb'
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    # GPU support (Optional):
+    # Uncomment the following block or use docker-compose.gpu.yml if you have an NVIDIA GPU
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
 
   frontend:
     build:
