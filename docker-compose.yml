@@ -19,6 +19,7 @@ services:
       - APP__ENV=${APP__ENV:-production}
       - APP__LIST_LOG_LEVELS=${APP__LIST_LOG_LEVELS:-INFO,WARNING,ERROR,CRITICAL}
       - MODEL_EMBEDDING__NAME=${MODEL_EMBEDDING__NAME:-paraphrase-multilingual-MiniLM-L12-v2}
+      # Vector store settings
       - VECTOR__STORE_TYPE=${VECTOR__STORE_TYPE:-faiss}
       - VECTOR__COLLECTION_NAME_CHUNKS=${VECTOR__COLLECTION_NAME_CHUNKS:-chunks}
       - VECTOR__WEAVIATE_HOST=${VECTOR__WEAVIATE_HOST:-weaviate}
@@ -38,8 +39,10 @@ services:
     volumes:
       - .:/app
       - /app/.venv
-      - ./data/app:/data/app
+      - /app/data/.ms-playwright
+      - ./data/app:/app/data
     restart: always
+    shm_size: '2gb'
     deploy:
       resources:
         reservations:
