@@ -27,30 +27,24 @@ dependencies = [
     "urllib3<2.0.0",
     "requests>=2.32.0",
     "chardet<6.0.0",
+    "sentence-transformers>=5.2.3",
+    "flashrank>=0.2.0",
+    "docling>=2.80.0",
+    "transformers>=4.48.0",
+    "tokenizers>=0.21.0",
+    "scipy>=1.15.1",
+    "crawl4ai[all]>=0.4.311",
 ]
 
 [project.optional-dependencies]
 cpu = [
-    "torch==2.5.1",
-    "torchvision==0.20.1",
-    "sentence-transformers>=5.2.3",
-    "flashrank>=0.2.0",
-    "docling>=2.80.0",
-    "transformers>=4.48.0",
-    "tokenizers>=0.21.0",
-    "scipy>=1.15.1",
-    "crawl4ai[all]>=0.4.311",
+    "torch==2.5.1+cpu",
+    "torchvision==0.20.1+cpu"
+
 ]
 gpu = [
-    "torch==2.5.1",
-    "torchvision==0.20.1",
-    "sentence-transformers>=5.2.3",
-    "flashrank>=0.2.0",
-    "docling>=2.80.0",
-    "transformers>=4.48.0",
-    "tokenizers>=0.21.0",
-    "scipy>=1.15.1",
-    "crawl4ai[all]>=0.4.311",
+    "torch==2.5.1+cu124",
+    "torchvision==0.20.1+cu124"
 ]
 chroma = [
     "chromadb>=0.4.24",
