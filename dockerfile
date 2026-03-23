@@ -29,9 +29,9 @@ COPY pyproject.toml uv.lock ./
 # Install dependencies using cache mount
 # Installing all extras to avoid runtime uv sync
 RUN if [ "$INSTALL_GPU" = "true" ]; then \
-        uv sync --no-dev --no-install-project --locked --extra gpu; \
+        uv sync --no-dev --no-install-project --extra gpu; \
     else \
-        uv sync --no-dev --no-install-project --locked --extra cpu; \
+        uv sync --no-dev --no-install-project --extra cpu; \
     fi
 
 # Install Playwright browsers (deps will be installed in runtime)
