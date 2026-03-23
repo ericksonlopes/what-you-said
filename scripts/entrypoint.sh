@@ -22,6 +22,8 @@ esac
 
 if [ "$INSTALL_GPU" = "true" ]; then
     EXTRAS="$EXTRAS --extra gpu"
+else
+    EXTRAS="$EXTRAS --extra cpu"
 fi
 
 echo "🚀 Automating environment for SQL:$SQL__TYPE and Vector:$VECTOR__STORE_TYPE"

@@ -12,26 +12,17 @@ dependencies = [
     "langchain-text-splitters>=1.1.1",
     "pydantic>=2.8.0",
     "pydantic-settings>=2.7.0",
-    "sentence-transformers>=5.2.3",
     "youtube-transcript-api>=1.2.4",
-    "torch==2.5.1",
-    "torchvision==0.20.1",
     "yt-dlp>=2026.3.17",
     "uvicorn>=0.42.0",
     "alembic>=1.18.4",
     "fastapi>=0.135.1",
     "langchain-community>=0.4.1",
     "rank-bm25>=0.2.2",
-    "flashrank>=0.2.0",
-    "docling>=2.80.0",
     "python-multipart>=0.0.22",
-    "transformers>=4.48.0",
-    "tokenizers>=0.21.0",
     "huggingface-hub>=0.28.0",
-    "scipy>=1.15.1",
     "redis>=5.0.0",
     "sse-starlette>=3.3.3",
-    "crawl4ai[all]>=0.4.311",
     "playwright>=1.50.1",
     "urllib3<2.0.0",
     "requests>=2.32.0",
@@ -39,6 +30,28 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cpu = [
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+    "sentence-transformers>=5.2.3",
+    "flashrank>=0.2.0",
+    "docling>=2.80.0",
+    "transformers>=4.48.0",
+    "tokenizers>=0.21.0",
+    "scipy>=1.15.1",
+    "crawl4ai[all]>=0.4.311",
+]
+gpu = [
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+    "sentence-transformers>=5.2.3",
+    "flashrank>=0.2.0",
+    "docling>=2.80.0",
+    "transformers>=4.48.0",
+    "tokenizers>=0.21.0",
+    "scipy>=1.15.1",
+    "crawl4ai[all]>=0.4.311",
+]
 chroma = [
     "chromadb>=0.4.24",
     "langchain-chroma>=0.1.0",
@@ -63,7 +76,6 @@ mssql = [
 postgres = [
     "psycopg2-binary>=2.9.10",
 ]
-gpu = []
 
 [dependency-groups]
 dev = [
@@ -86,16 +98,16 @@ explicit = true
 
 [tool.uv.sources]
 torch = [
-    { index = "pytorch-cu124", marker = "(sys_platform == 'win32' or sys_platform == 'linux') and extra == 'gpu'" },
-    { index = "pytorch-cpu", marker = "extra != 'gpu'" }
+    { index = "pytorch-cu124", marker = "extra == 'gpu'" },
+    { index = "pytorch-cpu", marker = "extra == 'cpu'" }
 ]
 torchvision = [
-    { index = "pytorch-cu124", marker = "(sys_platform == 'win32' or sys_platform == 'linux') and extra == 'gpu'" },
-    { index = "pytorch-cpu", marker = "extra != 'gpu'" }
+    { index = "pytorch-cu124", marker = "extra == 'gpu'" },
+    { index = "pytorch-cpu", marker = "extra == 'cpu'" }
 ]
 torchaudio = [
-    { index = "pytorch-cu124", marker = "(sys_platform == 'win32' or sys_platform == 'linux') and extra == 'gpu'" },
-    { index = "pytorch-cpu", marker = "extra != 'gpu'" }
+    { index = "pytorch-cu124", marker = "extra == 'gpu'" },
+    { index = "pytorch-cpu", marker = "extra == 'cpu'" }
 ]
 
 [tool.setuptools.packages.find]

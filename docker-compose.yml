@@ -39,7 +39,6 @@ services:
       - SQL__DATABASE=${SQL__DATABASE:-}
       - SQL__URL=${SQL__URL:-}
       - INSTALL_GPU=${INSTALL_GPU:-false}
-      - DOCKER_BUILDKIT=1
     volumes:
       - .:/app
       - /app/.venv
