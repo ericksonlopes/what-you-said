@@ -21,23 +21,21 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uvx /bin/uvx
 WORKDIR /app
 
 # Copy dependency files using link for faster builds
-COPY --link pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies using cache mount
 # Installing all extras to avoid runtime uv sync
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev --no-install-project --locked
+RUN uv sync --no-dev --no-install-project --locked
 
 # Install Playwright browsers (deps will be installed in runtime)
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/data/.ms-playwright
-RUN --mount=type=cache,target=/root/.cache/uv \
-    mkdir -p /app/data/.ms-playwright && uv run playwright install chromium
+RUN mkdir -p /app/data/.ms-playwright && uv run playwright install chromium
 
 # Copy the rest of the application code
 # Only do this if needed for a production-like build in this stage
 # For dev, we usually volume mount, but for CI/prod we need it.
 # Moving this to the end of the builder or skipping if solely using builder for venv.
-COPY --link . .
+COPY . .
 
 # Final Stage: Runtime
 FROM python:3.12-slim AS runtime
@@ -77,8 +75,7 @@ RUN mkdir -p /app/data/huggingface_cache /app/data/huggingface_home
 # This prevents `uv run` from re-downloading all Python packages just to install Playwright deps.
 COPY --from=builder /app/.venv /app/.venv
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv run playwright install-deps chromium
+RUN uv run playwright install-deps chromium
 
 # Copy the rest of the application code from the builder
 COPY --from=builder /app /app

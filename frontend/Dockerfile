@@ -4,15 +4,14 @@ FROM node:20 AS build
 WORKDIR /app
 
 # Copy package files
-COPY --link package.json package-lock.json* ./
+COPY package.json package-lock.json* ./
 
 # Install dependencies 
 # Using ci for faster and more reliable builds
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+RUN npm ci
 
 # Copy source code
-COPY --link . .
+COPY . .
 
 # Build the application
 RUN npm run build && ls -la /app/dist
