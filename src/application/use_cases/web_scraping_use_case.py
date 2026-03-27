@@ -128,10 +128,10 @@ class WebScrapingUseCase:
 
             try:
                 docs = await self.extractor.extract(
-                    source=cmd.url, 
-                    css_selector=cmd.css_selector, 
+                    source=cmd.url,
+                    css_selector=cmd.css_selector,
                     depth=cmd.depth,
-                    exclude_links=cmd.exclude_links
+                    exclude_links=cmd.exclude_links,
                 )
             except Exception as e:
                 logger.error(e, context={"url": cmd.url})

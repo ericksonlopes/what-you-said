@@ -38,6 +38,7 @@ services:
       - SQL__URL=${SQL__URL:-}
       - REDIS__HOST=${REDIS__HOST:-redis}
       - REDIS__PORT=${REDIS__PORT:-6379}
+      - REDIS__PASSWORD=${REDIS__PASSWORD:-}
       - INSTALL_GPU=${INSTALL_GPU:-false}
     restart: always
     shm_size: '2gb'
@@ -154,6 +155,7 @@ services:
     networks:
       - wys_network
     restart: always
+    command: redis-server --requirepass ${REDIS__PASSWORD:-password}
 
 networks:
   wys_network:

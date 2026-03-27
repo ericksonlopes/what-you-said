@@ -162,7 +162,9 @@ class Crawl4AIExtractor(IBaseExtractor):
                                     }
                                     documents.append(
                                         Document(
-                                            page_content=clean_markdown(sub_res.markdown),
+                                            page_content=clean_markdown(
+                                                sub_res.markdown
+                                            ),
                                             metadata=sub_metadata,
                                         )
                                     )
