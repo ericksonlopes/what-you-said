@@ -218,6 +218,8 @@
       "details": "Detalhes do Ambiente"
     },
     "labels": {
+      "sql_type": "Data Source",
+      "redis_desc": "Fila de Tarefas",
       "log_levels": "Níveis de Log",
       "store_type": "Tipo de Store",
       "production_ready": "Pronto para produção",
@@ -238,8 +240,9 @@
       "type": "Tipo"
     },
     "checks": {
-      "test_db": "Testar DB",
-      "test_model": "Testar Modelo",
+      "test_db": "Testar Conexão SQL",
+      "test_redis": "Testar Conexão Redis",
+      "test_model": "Verificar Status do Modelo",
       "test_store": "Testar Store",
       "ping_api": "Ping API"
     },

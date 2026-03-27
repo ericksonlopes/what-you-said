@@ -48,7 +48,8 @@ async def lifespan(app: FastAPI):
                     ngrok.set_auth_token(_settings.app.ngrok_authtoken)
                 tunnel = ngrok.connect(str(_settings.app.port))
                 logger.info(
-                    "Ngrok tunnel established", context={"public_url": tunnel.public_url}
+                    "Ngrok tunnel established",
+                    context={"public_url": tunnel.public_url},
                 )
             except Exception as e:
                 logger.error(e, context={"action": "start_ngrok_tunnel"})

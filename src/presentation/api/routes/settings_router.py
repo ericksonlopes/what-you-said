@@ -13,6 +13,7 @@ from src.presentation.api.schemas.settings_schemas import (
     VectorSettingsSchema,
     ModelSettingsSchema,
     SQLSettingsSchema,
+    RedisSettingsSchema,
     HealthCheckResponse,
 )
 from src.infrastructure.repositories.sql.connector import Connector
@@ -39,6 +40,11 @@ def get_current_settings(settings: Annotated[Settings, Depends(get_settings)]):
             type=settings.sql.type or "sqlite",
             database=settings.sql.database or "app.sqlite",
         ),
+        redis=RedisSettingsSchema(
+            host=settings.redis.host,
+            port=settings.redis.port,
+            db=settings.redis.db,
+        ),
     )
 
 
@@ -50,6 +56,7 @@ def get_current_settings(settings: Annotated[Settings, Depends(get_settings)]):
 def check_component_health(
     component: str,
     vector_repo: Annotated[IVectorRepository, Depends(get_vector_repository)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ):
     """Perform health check for a specific component"""
     start_time = time.time()
@@ -69,6 +76,24 @@ def check_component_health(
                 status="success",
                 latency_ms=latency,
                 message="SQL connection successful",
+            )
+
+        elif component == "redis":
+            import redis
+
+            client = redis.Redis(
+                host=settings.redis.host,
+                port=settings.redis.port,
+                db=settings.redis.db,
+                password=settings.redis.password,
+                socket_timeout=2,
+            )
+            client.ping()
+            latency = int((time.time() - start_time) * 1000)
+            return HealthCheckResponse(
+                status="success",
+                latency_ms=latency,
+                message="Redis connection successful",
             )
 
         elif component == "vector":

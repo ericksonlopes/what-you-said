@@ -157,7 +157,6 @@ class Crawl4AIExtractor(IBaseExtractor):
                                         )
                                     )
 
-
                 logger.info(
                     "Scraped web content",
                     context={

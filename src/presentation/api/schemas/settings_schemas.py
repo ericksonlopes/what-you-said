@@ -25,11 +25,18 @@ class SQLSettingsSchema(BaseModel):
     database: Optional[str] = None
 
 
+class RedisSettingsSchema(BaseModel):
+    host: str
+    port: int
+    db: int
+
+
 class SettingsResponse(BaseModel):
     app: AppSettingsSchema
     vector: VectorSettingsSchema
     model: ModelSettingsSchema
     sql: SQLSettingsSchema
+    redis: RedisSettingsSchema
 
 
 class HealthCheckResponse(BaseModel):

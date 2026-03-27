@@ -127,9 +127,7 @@ class App(BaseSettings):
         default=False, description="Enable Ngrok tunnel for local development"
     )
     port: int = Field(default=5000, description="Application port")
-    ngrok_authtoken: Optional[str] = Field(
-        default=None, description="Ngrok authtoken"
-    )
+    ngrok_authtoken: Optional[str] = Field(default=None, description="Ngrok authtoken")
 
     @field_validator("env")
     @classmethod

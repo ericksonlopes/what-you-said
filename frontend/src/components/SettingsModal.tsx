@@ -187,6 +187,21 @@ function UnifiedSettings({ settings }: { settings: any }) {
             checkLabel={t('settings.checks.test_db')}
             componentId="sql"
           />
+          <DetailedEnvCard 
+            title="Redis" 
+            value={settings?.redis?.host || "n/a"} 
+            description={t('settings.labels.redis_desc')}
+            details={[
+              { label: t('settings.labels.host'), value: settings?.redis?.host || 'n/a' },
+              { label: t('settings.labels.port'), value: settings?.redis?.port?.toString() || 'n/a' },
+              { label: "DB", value: settings?.redis?.db?.toString() || '0' }
+            ]}
+            icon={Activity} 
+            color="text-red-400" 
+            bg="bg-red-500/10" 
+            checkLabel={t('settings.checks.test_redis')}
+            componentId="redis"
+          />
         </div>
       </div>
 

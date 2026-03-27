@@ -25,6 +25,11 @@ def mock_settings():
     settings.sql.type = "sqlite"
     settings.sql.database = "test.sqlite"
 
+    settings.redis.host = "localhost"
+    settings.redis.port = 6379
+    settings.redis.db = 0
+    settings.redis.password = None
+
     app.dependency_overrides[get_settings] = lambda: settings
     yield settings
     app.dependency_overrides.pop(get_settings, None)
@@ -101,3 +106,15 @@ def test_check_health_exception():
         assert response.status_code == 200
         assert response.json()["status"] == "error"
         assert "Connection failed" in response.json()["message"]
+
+
+def test_check_health_redis(mock_settings, mock_vector_repo):
+    with patch("redis.Redis") as mock_redis_class:
+        mock_redis = MagicMock()
+        mock_redis_class.return_value = mock_redis
+        mock_redis.ping.return_value = True
+
+        response = client.get("/rest/settings/check/redis")
+        assert response.status_code == 200
+        assert response.json()["status"] == "success"
+        mock_redis.ping.assert_called_once()

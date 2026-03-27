@@ -218,6 +218,8 @@
       "details": "Environment Details"
     },
     "labels": {
+      "sql_type": "Data Source",
+      "redis_desc": "Task Queue Storage",
       "log_levels": "Log Levels",
       "store_type": "Store Type",
       "production_ready": "Production ready",
@@ -238,8 +240,9 @@
       "type": "Type"
     },
     "checks": {
-      "test_db": "Test DB",
-      "test_model": "Test Model",
+      "test_db": "Test SQL Connection",
+      "test_redis": "Test Redis Connection",
+      "test_model": "Verify Model Status",
       "test_store": "Test Store",
       "ping_api": "Ping API"
     },
