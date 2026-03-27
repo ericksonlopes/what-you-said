@@ -29,10 +29,13 @@ echo "📂 UV Cache Dir: $UV_CACHE_DIR"
 
 if [ -n "$EXTRAS" ]; then
     echo "📦 Installing: $EXTRAS"
-    uv sync --no-dev $EXTRAS
+    uv sync --no-dev $EXTRAS || {
+        echo "❌ Runtime 'uv sync' failed. This might be due to network issues or missing system dependencies in the container."
+        echo "⚠️ Attempting to continue anyway, but the application might fail if extras are required."
+    }
 else
-    echo "✅ No extras needed, using core dependencies."
-    uv sync --no-dev
+    echo "✅ No extras needed, ensuring core dependencies are synchronized."
+    uv sync --no-dev || echo "⚠️ Core sync failed, but environment might already be prepared from build stage."
 fi
 
 echo "🔄 Running migrations..."

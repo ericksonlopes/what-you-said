@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: Dockerfile
       args:
         - INSTALL_GPU=${INSTALL_GPU:-false}
     ports:

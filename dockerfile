@@ -5,17 +5,18 @@ FROM python:3.12-slim AS builder
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_LINK_MODE=copy \
-    UV_COMPILE_BYTECODE=1
+    UV_COMPILE_BYTECODE=1 \
+    UV_CACHE_DIR=/root/.cache/uv
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install uv by copying from the official image
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uvx /bin/uvx
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set the working directory
 WORKDIR /app
@@ -23,25 +24,24 @@ WORKDIR /app
 # Add build-time argument for GPU support
 ARG INSTALL_GPU=false
 
-# Copy dependency files using link for faster builds
+# Copy only dependency files first to leverage Docker cache
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies using cache mount
-# Installing all extras to avoid runtime uv sync
-RUN if [ "$INSTALL_GPU" = "true" ]; then \
-        uv sync --no-dev --no-install-project --extra gpu; \
+# --no-install-project is used because we haven't copied the source code yet
+RUN --mount=type=cache,target=/root/.cache/uv \
+    if [ "$INSTALL_GPU" = "true" ]; then \
+        uv sync --frozen --no-dev --no-install-project --extra gpu; \
     else \
-        uv sync --no-dev --no-install-project; \
+        uv sync --frozen --no-dev --no-install-project; \
     fi
 
 # Install Playwright browsers (deps will be installed in runtime)
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/data/.ms-playwright
-RUN mkdir -p /app/data/.ms-playwright && uv run playwright install chromium
+RUN mkdir -p /app/data/.ms-playwright && \
+    uv run playwright install chromium
 
 # Copy the rest of the application code
-# Only do this if needed for a production-like build in this stage
-# For dev, we usually volume mount, but for CI/prod we need it.
-# Moving this to the end of the builder or skipping if solely using builder for venv.
 COPY . .
 
 # Final Stage: Runtime
@@ -51,7 +51,6 @@ FROM python:3.12-slim AS runtime
 WORKDIR /app
 
 # Set runtime environment variables
-# Note: HF_HOME and TRANSFORMERS_CACHE point to /app/data to persist across container restarts if mounted
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -62,37 +61,31 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PORT=5000
 
 # Install runtime dependencies
-# ffmpeg for transcription, curl for healthchecks
-# Explicitly install some common missing libs if install-deps is flaky in slim images
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     curl \
-    plocate \
+    ca-certificates \
     libnspr4 libnss3 libnss3-tools libgbm1 libasound2 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install uv for runtime entrypoint
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uvx /bin/uvx
+# Install uv for runtime entrypoint (useful for dynamic extras)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Create data directory
-RUN mkdir -p /app/data/huggingface_cache /app/data/huggingface_home
+# Create data directories
+RUN mkdir -p /app/data/huggingface_cache /app/data/huggingface_home /app/data/.ms-playwright
 
-# Copy ONLY the virtual environment first
-# This prevents `uv run` from re-downloading all Python packages just to install Playwright deps.
-COPY --from=builder /app/.venv /app/.venv
-
-RUN uv run playwright install-deps chromium
-
-# Copy the rest of the application code from the builder
+# Copy the virtual environment and application code from the builder
 COPY --from=builder /app /app
 
-# Make entrypoint executable
-RUN sed -i 's/\r$//' scripts/entrypoint.sh && chmod +x scripts/entrypoint.sh
+# Install Playwright dependencies in the runtime environment
+RUN uv run playwright install-deps chromium
+
+# Make entrypoint executable and fix line endings
+RUN sed -i 's/\r$//' scripts/entrypoint.sh && \
+    chmod +x scripts/entrypoint.sh
 
 # Expose FastAPI port
 EXPOSE 5000
 
 # Use entrypoint for setup (migrations) and start
-# We point to the virtual environment's bin for direct access if needed
 ENTRYPOINT ["scripts/entrypoint.sh"]
