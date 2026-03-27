@@ -9,8 +9,6 @@ services:
       - 5000:5000
     networks:
       - wys_network
-    env_file:
-      - .env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
       interval: 15s
