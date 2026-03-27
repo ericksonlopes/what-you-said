@@ -36,6 +36,8 @@ services:
       - SQL__PASSWORD=${SQL__PASSWORD:-}
       - SQL__DATABASE=${SQL__DATABASE:-}
       - SQL__URL=${SQL__URL:-}
+      - REDIS__HOST=${REDIS__HOST:-redis}
+      - REDIS__PORT=${REDIS__PORT:-6379}
       - INSTALL_GPU=${INSTALL_GPU:-false}
     restart: always
     shm_size: '2gb'
