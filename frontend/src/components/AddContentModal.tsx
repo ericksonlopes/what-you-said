@@ -265,6 +265,7 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
     const [doOcr, setDoOcr] = useState(false);
     const [webDepth, setWebDepth] = useState(1);
     const [cssSelector, setCssSelector] = useState('');
+    const [excludeLinks, setExcludeLinks] = useState(true);
 
     const strategyProps = {
         tokensPerChunk,
@@ -313,7 +314,8 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                     subject: targetSubject,
                     tokensPerChunk,
                     tokensOverlap,
-                    cssSelector
+                    cssSelector,
+                    excludeLinks
                 });
             } else if (contentType === 'pdf' && fileInputMode === 'url' && inputValue.trim()) {
                 setUploadStatus('chunking');
@@ -699,6 +701,38 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                                 <p className="text-xs text-zinc-400 leading-relaxed">
                                                                     {t('ingestion.descriptions.web')}
                                                                 </p>
+                                                            </div>
+
+                                                            {/* Exclude Links Toggle */}
+                                                            <div className="bg-black/40 rounded-xl border border-zinc-800/50 p-4 space-y-3">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className={`p-2 rounded-lg transition-colors ${excludeLinks ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800/80 text-zinc-500'}`}>
+                                                                            <X className="w-4 h-4" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-semibold text-zinc-200">
+                                                                                {t('ingestion.options.types.exclude_links')}
+                                                                            </h4>
+                                                                            <p className="text-xs text-zinc-400 font-medium">
+                                                                                {t('ingestion.options.types.exclude_links_desc')}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setExcludeLinks(!excludeLinks)}
+                                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                                                                            excludeLinks ? 'bg-emerald-500' : 'bg-zinc-700'
+                                                                        }`}
+                                                                    >
+                                                                        <span
+                                                                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                                                                                excludeLinks ? 'translate-x-6' : 'translate-x-1'
+                                                                            }`}
+                                                                        />
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ) : contentType === 'pdf' ? (

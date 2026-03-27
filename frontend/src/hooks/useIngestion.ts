@@ -22,9 +22,10 @@ export function useIngestion() {
       file?: File;
       doOcr?: boolean;
       cssSelector?: string;
+      excludeLinks?: boolean;
     }
   ) => {
-    const { subject, tokensPerChunk, tokensOverlap, url, youtubeDataType, file, doOcr, cssSelector } = params;
+    const { subject, tokensPerChunk, tokensOverlap, url, youtubeDataType, file, doOcr, cssSelector, excludeLinks } = params;
     if (!subject) return;
 
     // 1. Immediate feedback
@@ -52,6 +53,7 @@ export function useIngestion() {
           tokens_per_chunk: tokensPerChunk,
           tokens_overlap: tokensOverlap,
           css_selector: cssSelector,
+          exclude_links: excludeLinks,
           language: 'pt'
         });
       } else if (inputType === 'file_url') {

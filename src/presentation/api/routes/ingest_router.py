@@ -273,6 +273,7 @@ async def ingest_web(
         tokens_per_chunk=request.tokens_per_chunk,
         tokens_overlap=request.tokens_overlap,
         depth=request.depth,
+        exclude_links=request.exclude_links,
         ingestion_job_id=request.ingestion_job_id,
         reprocess=request.reprocess,
     )

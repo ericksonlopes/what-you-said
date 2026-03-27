@@ -379,6 +379,8 @@
         "depth_desc": "Define quantos níveis de links internos o robô deve seguir. No momento, o sistema processa apenas o nível 1 para garantir estabilidade.",
         "css_selector": "Seletor CSS (Opcional)",
         "css_selector_placeholder": ".conteudo-principal ou #artigo",
+        "exclude_links": "Excluir links",
+        "exclude_links_desc": "Remove os links do conteúdo extraído para reduzir o ruído e melhorar a qualidade do RAG.",
         "web_url": "URL da Página"
       }
     },

@@ -51,5 +51,6 @@ class WebIngestRequest(BaseModel):
     tokens_overlap: int = 50
     css_selector: Optional[str] = None
     depth: int = 1
+    exclude_links: bool = True
     ingestion_job_id: Optional[str] = None
     reprocess: bool = False

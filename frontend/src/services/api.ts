@@ -255,6 +255,7 @@ export const api = {
     tokens_overlap?: number;
     css_selector?: string;
     depth?: number;
+    exclude_links?: boolean;
     ingestion_job_id?: string;
     reprocess?: boolean;
   }): Promise<any> {

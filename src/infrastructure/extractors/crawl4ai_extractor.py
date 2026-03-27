@@ -1,3 +1,4 @@
+import re
 from typing import Any, List
 from langchain_core.documents import Document
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
@@ -62,6 +63,15 @@ class Crawl4AIExtractor(IBaseExtractor):
             cache_mode=CacheMode.BYPASS if bypass_cache else CacheMode.ENABLED,
         )
 
+        exclude_links = kwargs.get("exclude_links", True)
+
+        def clean_markdown(text: str) -> str:
+            if not exclude_links:
+                return text
+            # Regex to match [text](url) and replace with just "text"
+            # It handles both [text](url) and [text](url "title")
+            return re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+
         try:
             async with AsyncWebCrawler(config=self.browser_config) as crawler:
                 # 1. First Crawl (Landing Page)
@@ -78,7 +88,7 @@ class Crawl4AIExtractor(IBaseExtractor):
 
                 documents = []
                 # Main page content
-                main_markdown = result.markdown
+                main_markdown = clean_markdown(result.markdown)
                 metadata = {
                     "source": source,
                     "title": result.metadata.get("title", "")
@@ -152,7 +162,7 @@ class Crawl4AIExtractor(IBaseExtractor):
                                     }
                                     documents.append(
                                         Document(
-                                            page_content=sub_res.markdown,
+                                            page_content=clean_markdown(sub_res.markdown),
                                             metadata=sub_metadata,
                                         )
                                     )

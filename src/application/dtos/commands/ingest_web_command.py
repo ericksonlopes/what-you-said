@@ -23,6 +23,7 @@ class IngestWebCommand:
 
     # Scraping parameters
     depth: int = 1
+    exclude_links: bool = True
 
     # Optional pre-created job id to avoid duplicates
     ingestion_job_id: Optional[str] = None

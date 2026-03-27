@@ -379,6 +379,8 @@
         "depth_desc": "Defines how many levels of internal links the crawler should follow. Currently, the system only processes level 1 to ensure stability.",
         "css_selector": "CSS Selector (Optional)",
         "css_selector_placeholder": ".main-content or #article",
+        "exclude_links": "Exclude links",
+        "exclude_links_desc": "Remove links from extracted content to improve RAG quality.",
         "web_url": "Page URL"
       }
     },
