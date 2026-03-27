@@ -277,12 +277,19 @@ async def ingest_web(
         reprocess=request.reprocess,
     )
 
-    task_queue.enqueue(
-        run_web_ingestion_worker,
-        cmd,
-        task_title=request.title or request.url,
-        metadata={"url": request.url},
-    )
+    logger.info("Enqueuing web ingestion task...", context={"url": request.url})
+    
+    try:
+        task_queue.enqueue(
+            run_web_ingestion_worker,
+            cmd,
+            task_title=request.title or request.url,
+            metadata={"url": request.url},
+        )
+        logger.info("Web ingestion task enqueued successfully", context={"url": request.url})
+    except Exception as e:
+        logger.error(f"Failed to enqueue web ingestion task: {e}", context={"url": request.url})
+        raise HTTPException(status_code=500, detail=f"Failed to enqueue task: {str(e)}")
 
     return {
         "message": "Web scraping ingestion started in background.",

@@ -19,6 +19,13 @@ class Crawl4AIExtractor(IBaseExtractor):
             headless=headless,
             viewport_width=1280,
             viewport_height=720,
+            extra_args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-audio-output",
+            ],
         )
 
     async def extract(self, source: str, **kwargs: Any) -> List[Document]:
@@ -31,6 +38,9 @@ class Crawl4AIExtractor(IBaseExtractor):
                 css_selector: Optional CSS selector to target specific content.
                 word_count_threshold: Min words to keep a chunk.
                 bypass_cache: Whether to ignore existing cache.
+                depth: Crawl depth (default 1).
+                max_sub_pages: Max sub-pages to crawl (default 10).
+                concurrency_count: Concurrency for arun_many (default 2).
 
         Returns:
             List[Document]: A list containing the scraped content as a LangChain Document.
@@ -44,6 +54,7 @@ class Crawl4AIExtractor(IBaseExtractor):
         max_sub_pages = kwargs.get(
             "max_sub_pages", 10
         )  # Limit to 10 sub-pages per crawl
+        concurrency_count = kwargs.get("concurrency_count", 2)
 
         run_config = CrawlerRunConfig(
             css_selector=css_selector,
@@ -113,10 +124,17 @@ class Crawl4AIExtractor(IBaseExtractor):
                         if sub_urls:
                             logger.info(
                                 "Following internal links for Depth 2",
-                                context={"sub_urls": sub_urls, "count": len(sub_urls)},
+                                context={
+                                    "sub_urls": sub_urls,
+                                    "count": len(sub_urls),
+                                    "concurrency": concurrency_count,
+                                },
                             )
+                            # Using concurrency_count to avoid overwhelming the VPS
                             sub_results = await crawler.arun_many(
-                                urls=sub_urls, config=run_config
+                                urls=sub_urls,
+                                config=run_config,
+                                concurrency_count=concurrency_count,
                             )
 
                             for sub_res in sub_results:
@@ -138,6 +156,7 @@ class Crawl4AIExtractor(IBaseExtractor):
                                             metadata=sub_metadata,
                                         )
                                     )
+
 
                 logger.info(
                     "Scraped web content",

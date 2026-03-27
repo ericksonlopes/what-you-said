@@ -54,7 +54,6 @@ WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    TRANSFORMERS_CACHE=/app/data/huggingface_cache \
     HF_HOME=/app/data/huggingface_home \
     PLAYWRIGHT_BROWSERS_PATH=/app/data/.ms-playwright \
     UV_CACHE_DIR=/root/.cache/uv \
@@ -72,13 +71,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Create data directories
-RUN mkdir -p /app/data/huggingface_cache /app/data/huggingface_home /app/data/.ms-playwright
+RUN mkdir -p /app/data/huggingface_home /app/data/.ms-playwright
 
 # Copy the virtual environment and application code from the builder
 COPY --from=builder /app /app
 
-# Install Playwright dependencies in the runtime environment
-RUN uv run playwright install-deps chromium
+# Install Playwright dependencies and Crawl4AI setup in the runtime environment
+RUN uv run playwright install-deps chromium && \
+    uv run crawl4ai-setup
 
 # Make entrypoint executable and fix line endings
 RUN sed -i 's/\r$//' scripts/entrypoint.sh && \
