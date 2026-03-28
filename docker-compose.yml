@@ -44,6 +44,7 @@ services:
       - REDIS__PORT=${REDIS__PORT:-6379}
       - REDIS__PASSWORD=${REDIS__PASSWORD:-}
       - INSTALL_GPU=${INSTALL_GPU:-false}
+      - YOUTUBE__PROXY_URL=${YOUTUBE__PROXY_URL:-}
     restart: always
     shm_size: '2gb'
 

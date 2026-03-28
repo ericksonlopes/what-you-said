@@ -38,7 +38,7 @@ class YoutubeExtractor(IYoutubeExtractor):
         """Extracts metadata from the video using yt_dlp."""
         logger.info("Starting metadata extraction", context={"video_id": self.video_id})
 
-        ydl_opts = {"logger": logger}
+        ydl_opts: dict = {"logger": logger}
 
         # Handle Proxy for yt-dlp
         proxy = settings.youtube.proxy_url
@@ -198,7 +198,7 @@ class YoutubeExtractor(IYoutubeExtractor):
             except NoTranscriptFound:
                 # Second attempt: Fallback to ANY available transcript
                 try:
-                    transcript_list = api.list_transcripts(self.video_id)
+                    transcript_list = api.list_transcripts(self.video_id)  # type: ignore[attr-defined]
                     # Pick the first one available (this will prefer manual over generated usually)
                     fallback_transcript = next(iter(transcript_list))
 
