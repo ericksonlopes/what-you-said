@@ -163,8 +163,8 @@ class YoutubeExtractor(IYoutubeExtractor):
         if settings.youtube.webshare_username and settings.youtube.webshare_password:
             logger.debug("Using WebshareProxyConfig for transcript fetch")
             proxy_config = WebshareProxyConfig(
-                username=settings.youtube.webshare_username,
-                password=settings.youtube.webshare_password,
+                proxy_username=settings.youtube.webshare_username,
+                proxy_password=settings.youtube.webshare_password,
             )
         elif settings.youtube.proxy_url:
             logger.debug(
@@ -183,11 +183,7 @@ class YoutubeExtractor(IYoutubeExtractor):
         for attempt in range(retries):
             try:
                 # Initialize API with proxy/session if available
-                api = YouTubeTranscriptApi()
-                if proxy_config:
-                    api = YouTubeTranscriptApi(proxy_config=proxy_config)
-                elif session:
-                    api = YouTubeTranscriptApi(session=session)
+                api = YouTubeTranscriptApi(proxy_config=proxy_config, http_client=session)
 
                 # First attempt: Try preferred languages in order
                 transcript = api.fetch(
