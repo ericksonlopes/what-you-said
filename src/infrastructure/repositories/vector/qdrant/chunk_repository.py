@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional, Any, Dict, cast, Sequence
+from typing import List, Optional, Any, Dict, cast, Sequence, Union
 from uuid import UUID
 
 from qdrant_client.http import models as rest
@@ -190,9 +190,20 @@ class ChunkQdrantRepository(IVectorRepository):
         # Combine with existing filters
         if filters:
             if filters.must:
-                current_must = text_filter.must or []
-                additional_must = filters.must or []
-                text_filter.must = current_must + list(additional_must)
+                # Ensure we have a list to work with
+                if isinstance(text_filter.must, list):
+                    current_must = text_filter.must
+                elif text_filter.must is not None:
+                    current_must = [text_filter.must]
+                else:
+                    current_must = []
+
+                if isinstance(filters.must, list):
+                    additional_must = filters.must
+                else:
+                    additional_must = [filters.must]
+
+                text_filter.must = current_must + additional_must
             if filters.should:
                 text_filter.should = filters.should
             if filters.must_not:
@@ -270,7 +281,17 @@ class ChunkQdrantRepository(IVectorRepository):
             return filters
 
         if isinstance(filters, dict):
-            must_conditions = []
+            must_conditions: List[
+                Union[
+                    rest.FieldCondition,
+                    rest.IsEmptyCondition,
+                    rest.IsNullCondition,
+                    rest.HasIdCondition,
+                    rest.HasVectorCondition,
+                    rest.NestedCondition,
+                    rest.Filter,
+                ]
+            ] = []
             for k, v in filters.items():
                 if k == "id":
                     must_conditions.append(rest.HasIdCondition(has_id=[str(v)]))
