@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 import { Subject, ViewState, Toast, ToastType, ContentSource, IngestionTask, ModelInfo } from '../types';
 import { api } from '../services/api';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from './AuthContext';
 
 // 1. Estrutura de classes/objetos para gerenciar o estado da aplicação.
 // Utilizamos a Context API do React para simular o st.session_state de forma reativa e tipada.
@@ -57,6 +58,7 @@ const AppContext = createContext<AppState | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
+  const { isAuthEnabled, isAuthenticated } = useAuth();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjects, setSelectedSubjects] = useState<Subject[]>([]);
   const [sources, setSources] = useState<ContentSource[]>([]);
@@ -117,6 +119,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [previousView]);
 
   const refreshSubjects = useCallback(async () => {
+    if (isAuthEnabled && !isAuthenticated) return;
     try {
       const data = await api.fetchSubjects();
       setSubjects(data);
@@ -145,6 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [selectedSubjects.length]);
 
   const refreshSources = useCallback(async () => {
+    if (isAuthEnabled && !isAuthenticated) return;
     try {
       const [sourcesData, typesData] = await Promise.all([
         api.fetchSources(),
@@ -160,6 +164,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshJobs = useCallback(async (params?: { page?: number; pageSize?: number; status?: string; search?: string }) => {
+    if (isAuthEnabled && !isAuthenticated) return;
     try {
       const fetchParams = params || { 
         page: jobPage, 
@@ -236,6 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshModelInfo = useCallback(async () => {
+    if (isAuthEnabled && !isAuthenticated) return;
     try {
       const data = await api.fetchModelInfo();
       setModelInfo(data);
@@ -250,7 +256,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshSources();
     refreshJobs();
     refreshModelInfo();
-  }, [refreshSubjects, refreshSources, refreshJobs, refreshModelInfo]);
+  }, [refreshSubjects, refreshSources, refreshJobs, refreshModelInfo, isAuthEnabled, isAuthenticated]);
 
   // Ref to store current filters for use in polling intervals without triggering re-renders
   const jobFiltersRef = React.useRef({ 
@@ -273,6 +279,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Periodic refresh for state (Polling-based updates)
   useEffect(() => {
+    if (isAuthEnabled && !isAuthenticated) return;
+
     const interval = setInterval(() => {
       refreshJobs(jobFiltersRef.current);
       refreshSources();
@@ -280,7 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }, 5000); // 5s polling for all active state
 
     return () => clearInterval(interval);
-  }, [refreshJobs, refreshSources, refreshSubjects]);
+  }, [refreshJobs, refreshSources, refreshSubjects, isAuthEnabled, isAuthenticated]);
 
   // Persist currentView
   useEffect(() => {

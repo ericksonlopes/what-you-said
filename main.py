@@ -1,11 +1,13 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config.logger import setup_logging
+from src.presentation.api.dependencies import get_current_user
 from src.presentation.api.middleware.trace_middleware import TraceMiddleware
 from src.presentation.api.routes import (
+    auth_router,
     chunk_router,
     ingest_router,
     job_router,
@@ -133,15 +135,56 @@ app.add_middleware(
 )
 
 # Include routes with the /rest prefix
-app.include_router(search_router.router, prefix="/rest/search", tags=["Search"])
-app.include_router(ingest_router.router, prefix="/rest/ingest", tags=["Ingestion"])
-app.include_router(subject_router.router, prefix="/rest/subjects", tags=["Subjects"])
-app.include_router(source_router.router, prefix="/rest/sources", tags=["Sources"])
-app.include_router(job_router.router, prefix="/rest/jobs", tags=["Jobs"])
-app.include_router(settings_router.router, prefix="/rest/settings", tags=["Settings"])
-app.include_router(chunk_router.router, prefix="/rest/chunks", tags=["Chunks"])
+
+# Public routes
+app.include_router(auth_router.router, prefix="/rest/auth", tags=["Auth"])
+
+# Secured routes (require authentication if enabled)
+secured_deps = [Depends(get_current_user)]
 app.include_router(
-    notification_router.router, prefix="/rest/notifications", tags=["Notifications"]
+    search_router.router,
+    prefix="/rest/search",
+    tags=["Search"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    ingest_router.router,
+    prefix="/rest/ingest",
+    tags=["Ingestion"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    subject_router.router,
+    prefix="/rest/subjects",
+    tags=["Subjects"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    source_router.router,
+    prefix="/rest/sources",
+    tags=["Sources"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    job_router.router, prefix="/rest/jobs", tags=["Jobs"], dependencies=secured_deps
+)
+app.include_router(
+    settings_router.router,
+    prefix="/rest/settings",
+    tags=["Settings"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    chunk_router.router,
+    prefix="/rest/chunks",
+    tags=["Chunks"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    notification_router.router,
+    prefix="/rest/notifications",
+    tags=["Notifications"],
+    dependencies=secured_deps,
 )
 
 

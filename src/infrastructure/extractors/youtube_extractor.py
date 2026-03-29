@@ -52,7 +52,9 @@ class YoutubeExtractor(IYoutubeExtractor):
 
         if proxy:
             ydl_opts["proxy"] = proxy
-            logger.debug("Using proxy for metadata extraction", context={"proxy": proxy})
+            logger.debug(
+                "Using proxy for metadata extraction", context={"proxy": proxy}
+            )
 
         try:
             with YoutubeDL(ydl_opts) as ydl:

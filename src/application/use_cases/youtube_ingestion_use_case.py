@@ -789,7 +789,7 @@ class YoutubeIngestionUseCase:
                 vid = q["v"][0]
                 if len(vid) == 11:
                     return vid
-            
+
             path_parts = [p for p in parsed.path.split("/") if p]
             for i, part in enumerate(path_parts):
                 if part in ("embed", "v") and i + 1 < len(path_parts):
@@ -798,11 +798,17 @@ class YoutubeIngestionUseCase:
                         return vid
             if path_parts:
                 potential_id = path_parts[-1]
-                # YouTube video IDs are strictly 11 characters. 
+                # YouTube video IDs are strictly 11 characters.
                 # Avoid common navigation sub-paths.
-                if len(potential_id) == 11 and potential_id not in ("videos", "shorts", "about", "featured", "playlists"):
+                if len(potential_id) == 11 and potential_id not in (
+                    "videos",
+                    "shorts",
+                    "about",
+                    "featured",
+                    "playlists",
+                ):
                     return potential_id
-        
+
         # Stricter regex for 11-character IDs in common YouTube URL patterns
         m = re.search(r"(?:v=|be/|embed/|shorts/)([A-Za-z0-9_-]{11})", url)
         if m:

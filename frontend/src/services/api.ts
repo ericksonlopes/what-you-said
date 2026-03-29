@@ -3,6 +3,14 @@ import { Subject, IngestionTask, ContentSource, ChatMessage, Chunk, PaginatedRes
 const API_BASE_URL = '/rest';
 
 async function handleResponseError(response: Response, defaultMessage: string) {
+  if (response.status === 401) {
+    // Standard handling for unauthorized: clear token and reload
+    localStorage.removeItem('auth_token');
+    if (!window.location.pathname.includes('/auth/google/callback')) {
+      // Avoid redirect loops during callback
+    }
+  }
+
   if (response.ok) return;
   
   let errorMessage = defaultMessage;
@@ -16,6 +24,14 @@ async function handleResponseError(response: Response, defaultMessage: string) {
   }
   
   throw new Error(errorMessage);
+}
+
+function getHeaders(contentType: string | null = 'application/json') {
+  const token = localStorage.getItem('auth_token');
+  const headers: Record<string, string> = {};
+  if (contentType) headers['Content-Type'] = contentType;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
 }
 
 export const api = {
@@ -39,7 +55,9 @@ export const api = {
   },
 
   async fetchSubjects(): Promise<Subject[]> {
-    const response = await fetch(`${API_BASE_URL}/subjects`);
+    const response = await fetch(`${API_BASE_URL}/subjects`, {
+      headers: getHeaders()
+    });
     await handleResponseError(response, 'Failed to fetch subjects');
     return response.json();
   },
@@ -47,7 +65,7 @@ export const api = {
   async createSubject(name: string, description?: string, icon?: string): Promise<Subject> {
     const response = await fetch(`${API_BASE_URL}/subjects`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ name, description, icon })
     });
     await handleResponseError(response, 'Failed to create subject');
@@ -57,7 +75,7 @@ export const api = {
   async updateSubject(id: string, name?: string, description?: string, icon?: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/subjects/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ name, description, icon })
     });
     await handleResponseError(response, 'Failed to update subject');
@@ -65,13 +83,16 @@ export const api = {
 
   async deleteSubject(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/subjects/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getHeaders()
     });
     await handleResponseError(response, 'Failed to delete subject');
   },
 
   async fetchSources(): Promise<ContentSource[]> {
-    const response = await fetch(`${API_BASE_URL}/sources`);
+    const response = await fetch(`${API_BASE_URL}/sources`, {
+      headers: getHeaders()
+    });
     await handleResponseError(response, 'Failed to fetch sources');
     const data = await response.json();
     return data.map((s: any) => ({
@@ -93,7 +114,8 @@ export const api = {
 
   async deleteSource(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/sources/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getHeaders()
     });
     await handleResponseError(response, 'Failed to delete source');
   },
@@ -101,14 +123,16 @@ export const api = {
   async updateSource(id: string, title: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/sources/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ title })
     });
     await handleResponseError(response, 'Failed to update source title');
   },
 
   async fetchSourceTypes(): Promise<string[]> {
-    const response = await fetch(`${API_BASE_URL}/sources/types`);
+    const response = await fetch(`${API_BASE_URL}/sources/types`, {
+      headers: getHeaders()
+    });
     await handleResponseError(response, 'Failed to fetch source types');
     return response.json();
   },
@@ -120,7 +144,9 @@ export const api = {
     if (params?.status && params.status !== 'all') url.searchParams.append('status', params.status);
     if (params?.search) url.searchParams.append('search', params.search);
 
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), {
+      headers: getHeaders()
+    });
     await handleResponseError(response, 'Failed to fetch jobs');
     const data = await response.json();
     return {
@@ -151,7 +177,7 @@ export const api = {
   async search(query: string, topK: number, subjectId?: string, searchMode?: string, reRank: boolean = true): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/search`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({
         query,
         top_k: topK,
@@ -178,7 +204,7 @@ export const api = {
   }): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/ingest/youtube`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify(data)
     });
     if (response.status === 409) {
@@ -191,6 +217,7 @@ export const api = {
   async ingestFile(formData: FormData): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/ingest/file`, {
       method: 'POST',
+      headers: getHeaders(null), // FormData uses null for Content-Type
       body: formData
     });
     await handleResponseError(response, 'File ingestion failed');
@@ -205,7 +232,9 @@ export const api = {
     url.searchParams.append('limit', limit.toString());
     url.searchParams.append('offset', offset.toString());
 
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), {
+      headers: getHeaders()
+    });
     await handleResponseError(response, 'Failed to fetch chunks');
     return response.json();
   },
@@ -213,7 +242,7 @@ export const api = {
   async updateChunk(id: string, content: string): Promise<boolean> {
     const response = await fetch(`${API_BASE_URL}/chunks/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify({ content })
     });
     await handleResponseError(response, 'Failed to update chunk');
@@ -222,25 +251,32 @@ export const api = {
 
   async deleteChunk(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/chunks/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getHeaders()
     });
     await handleResponseError(response, 'Failed to delete chunk');
   },
 
   async fetchModelInfo(): Promise<{ name: string; dimensions: number; max_seq_length: number }> {
-    const response = await fetch(`${API_BASE_URL}/sources/model`);
+    const response = await fetch(`${API_BASE_URL}/sources/model`, {
+      headers: getHeaders()
+    });
     await handleResponseError(response, 'Failed to fetch model info');
     return response.json();
   },
   
   async fetchSettings(): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/settings`);
+    const response = await fetch(`${API_BASE_URL}/settings`, {
+      headers: getHeaders()
+    });
     await handleResponseError(response, 'Failed to fetch settings');
     return response.json();
   },
   
   async checkHealth(component: string): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/settings/check/${component}`);
+    const response = await fetch(`${API_BASE_URL}/settings/check/${component}`, {
+      headers: getHeaders()
+    });
     await handleResponseError(response, `Health check failed for ${component}`);
     return response.json();
   },
@@ -261,13 +297,46 @@ export const api = {
   }): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/ingest/web`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify(data)
     });
     if (response.status === 409) {
       throw new Error('DUPLICATE_SOURCE');
     }
     await handleResponseError(response, 'Web ingestion request failed');
+    return response.json();
+  },
+
+  // Auth Methods
+  async fetchAuthConfig(): Promise<{ enable_google: boolean; redirect_uri: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/config`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to fetch auth config');
+    return response.json();
+  },
+
+  async getGoogleLoginUrl(): Promise<{ url: string }> {
+    const response = await fetch(`${API_BASE_URL}/auth/google/login`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to get login URL');
+    return response.json();
+  },
+
+  async googleCallback(code: string): Promise<{ access_token: string; user: any }> {
+    const response = await fetch(`${API_BASE_URL}/auth/google/callback?code=${code}`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Auth callback failed');
+    return response.json();
+  },
+
+  async fetchMe(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to fetch user profile');
     return response.json();
   }
 };

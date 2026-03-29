@@ -343,7 +343,7 @@ class ChunkQdrantRepository(IVectorRepository):
                 "Delete called without filters in Qdrant, skipping for safety."
             )
             return 0
-        
+
         self._ensure_collection_exists()
 
         try:

@@ -22,7 +22,7 @@ def mock_settings():
     settings.vector.weaviate_port = 8080
     settings.vector.weaviate_grpc_port = 50051
     settings.vector.collection_name_chunks = "Chunks"
-    
+
     settings.vector.qdrant_host = "localhost"
     settings.vector.qdrant_port = 6333
     settings.vector.qdrant_grpc_port = 6334

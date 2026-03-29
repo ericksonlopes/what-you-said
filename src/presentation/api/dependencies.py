@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from fastapi import Depends, Request
 
+from src.application.use_cases.auth_use_case import AuthUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
 from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
@@ -28,6 +29,8 @@ from src.infrastructure.repositories.sql.ingestion_job_repository import (
 from src.infrastructure.repositories.sql.knowledge_subject_repository import (
     KnowledgeSubjectSQLRepository,
 )
+from src.infrastructure.repositories.sql.user_repository import UserSQLRepository
+from src.infrastructure.services.auth_service import AuthService
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.content_source_service import ContentSourceService
@@ -66,6 +69,10 @@ def get_subject_repo() -> KnowledgeSubjectSQLRepository:
     return KnowledgeSubjectSQLRepository()
 
 
+def get_user_repo() -> UserSQLRepository:
+    return UserSQLRepository()
+
+
 # Services
 def get_model_loader(request: Request) -> ModelLoaderService:
     return request.app.state.model_loader
@@ -75,6 +82,10 @@ def get_embedding_service(
     model_loader: ModelLoaderService = Depends(get_model_loader),
 ) -> EmbeddingService:
     return EmbeddingService(model_loader_service=model_loader)
+
+
+def get_auth_service() -> AuthService:
+    return AuthService()
 
 
 def get_weaviate_client(settings: Settings = Depends(get_settings)) -> Any:
@@ -231,6 +242,43 @@ def get_search_chunks_use_case(
     ks_svc: KnowledgeSubjectService = Depends(get_ks_service),
 ) -> SearchUseCase:
     return SearchUseCase(vector_service=vector_svc, ks_service=ks_svc)
+
+
+def get_auth_use_case(
+    user_repo: UserSQLRepository = Depends(get_user_repo),
+    auth_svc: AuthService = Depends(get_auth_service),
+) -> AuthUseCase:
+    return AuthUseCase(user_repo=user_repo, auth_service=auth_svc)
+
+
+async def get_current_user(
+    request: Request,
+    auth_use_case: AuthUseCase = Depends(get_auth_use_case),
+    settings: Settings = Depends(get_settings),
+):
+    """Dependency that returns the current authenticated user.
+    If Google SSO is disabled, it returns a mock admin user."""
+    if not settings.auth.enable_google:
+        # Return a mock user for open access
+        from src.domain.entities.user import User
+
+        return User(id="admin", email="admin@whatyousaid.local", full_name="Admin")
+
+    # If enabled, logic to check header
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    token = auth_header.split(" ")[1]
+    user = auth_use_case.verify_session(token)
+    if not user:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=401, detail="Invalid session")
+
+    return user
 
 
 def get_ingest_youtube_use_case(

@@ -247,6 +247,31 @@ class YoutubeConfig(BaseSettings):
     )
 
 
+class AuthConfig(BaseSettings):
+    enable_google: bool = Field(
+        default=False, description="Enable Google SSO authentication"
+    )
+    google_client_id: Optional[str] = Field(
+        default=None, description="Google OAuth2 Client ID"
+    )
+    google_client_secret: Optional[str] = Field(
+        default=None, description="Google OAuth2 Client Secret"
+    )
+    redirect_uri: str = Field(
+        default="http://localhost:5000/rest/auth/google/callback",
+        description="Google OAuth2 Redirect URI",
+    )
+    jwt_secret: str = Field(
+        default="change-me-in-production",
+        description="Secret key for JWT generation",
+    )
+    jwt_algorithm: str = Field(default="HS256", description="JWT signing algorithm")
+    jwt_expire_minutes: int = Field(
+        default=60 * 24 * 7,
+        description="JWT expiration time in minutes (default 1 week)",
+    )
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -276,6 +301,9 @@ class Settings(BaseSettings):
     )
     youtube: YoutubeConfig = Field(
         default_factory=YoutubeConfig, description="YouTube ingestion settings"
+    )
+    auth: AuthConfig = Field(
+        default_factory=AuthConfig, description="Authentication settings"
     )
 
 

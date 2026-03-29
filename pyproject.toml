@@ -35,6 +35,8 @@ dependencies = [
     "scipy>=1.15.1",
     "crawl4ai[all]>=0.4.311",
     "pyngrok>=7.1.2",
+    "python-jose[cryptography]>=3.5.0",
+    "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]
@@ -71,6 +73,7 @@ postgres = [
 dev = [
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
+    "pytest-asyncio>=0.23.0",
     "mypy>=1.19.1",
     "ruff>=0.15.7",
     "bandit>=1.8.3",

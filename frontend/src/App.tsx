@@ -15,7 +15,9 @@ import {
 } from 'lucide-react';
 import {motion} from 'motion/react';
 import {AppProvider, useAppContext} from './store/AppContext';
+import {AuthProvider, useAuth} from './store/AuthContext';
 import {Sidebar} from './components/Sidebar';
+import {LoginModal} from './components/LoginModal';
 import {TaskCard} from './components/TaskCard';
 import {SourcesTable} from './components/SourcesTable';
 import {AddContentModal} from './components/AddContentModal';
@@ -472,10 +474,43 @@ function ContentSourcesView() {
 // --- Main Layout ---
 function MainContent() {
   const { currentView, selectedSubjects, isAddModalOpen, setIsAddModalOpen, isAddSubjectModalOpen, setIsAddSubjectModalOpen, addToast } = useAppContext();
+  const { isAuthEnabled, isAuthenticated, isLoading, login } = useAuth();
   const { t } = useTranslation();
+
+  const loginAttempted = React.useRef(false);
+
+  // Handle OAuth Callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code && !isAuthenticated && !loginAttempted.current) {
+      loginAttempted.current = true;
+      login(code).then(() => {
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        addToast(t('auth.login_success', 'Login successful!'), 'success');
+      }).catch((err) => {
+        console.error('Login error:', err);
+        loginAttempted.current = false; // Allow retry if failed
+        addToast(t('auth.login_error', 'Login failed. Please try again.'), 'error');
+      });
+    }
+  }, [isAuthenticated, login, addToast, t]);
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-bg-dark">
+        <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
+  const showLogin = isAuthEnabled && !isAuthenticated;
 
   return (
     <div className="flex-1 flex flex-col h-screen overflow-hidden bg-bg-dark relative">
+      <LoginModal isOpen={showLogin} />
       {/* Topbar Context Indicator & Global Actions */}
       <header className="h-14 border-b border-border-subtle flex items-center justify-between px-6 bg-black/20 backdrop-blur-sm">
         <div className="flex items-center gap-2 text-sm">
@@ -545,7 +580,20 @@ function MainContent() {
   );
 }
 
-export default function App() {
+function AppShell() {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-bg-dark">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+          <p className="text-zinc-500 font-medium text-sm animate-pulse tracking-widest uppercase">Initializing Secure Session...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AppProvider>
       <div className="flex h-screen w-full bg-bg-dark text-zinc-200 font-sans selection:bg-emerald-500/30">
@@ -553,5 +601,13 @@ export default function App() {
         <MainContent />
       </div>
     </AppProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppShell />
+    </AuthProvider>
   );
 }

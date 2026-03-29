@@ -134,7 +134,7 @@
       },
       "headers": {
         "icon": "Ícone",
-        "type_date": "Tipo / Data",
+        "type_date": "Tipo / Date",
         "model_dims": "Modelo / Dims",
         "volume": "Volume",
         "tok": "TOK"
@@ -454,5 +454,14 @@
     "save_changes": "Salvar Alterações",
     "delete_tooltip": "Excluir",
     "edit_tooltip": "Editar"
+  },
+  "auth": {
+    "login_title": "Entrar",
+    "login_description": "Por favor, entre com sua conta Google para acessar seu hub de conhecimento vetorizado.",
+    "login_with_google": "Continuar com Google",
+    "logout": "Sair",
+    "login_success": "Bem-vindo de volta! Login realizado com sucesso.",
+    "login_error": "Falha na autenticação. Por favor, verifique suas credenciais e tente novamente.",
+    "login_description_short": "Por favor, faça login para acessar seu hub de conhecimento vetorizado."
   }
 }

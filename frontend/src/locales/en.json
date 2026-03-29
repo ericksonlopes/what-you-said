@@ -455,5 +455,14 @@
     "save_changes": "Save Changes",
     "delete_tooltip": "Delete",
     "edit_tooltip": "Edit"
+  },
+  "auth": {
+    "login_title": "Sign In",
+    "login_description": "Please sign in with Google to access your vectorized knowledge hub.",
+    "login_with_google": "Continue with Google",
+    "logout": "Logout",
+    "login_success": "Welcome back! Login successful.",
+    "login_error": "Authentication failed. Please check your credentials and try again.",
+    "login_description_short": "Please sign in to access your vectorized knowledge hub."
   }
 }

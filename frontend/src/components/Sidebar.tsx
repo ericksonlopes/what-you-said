@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../store/AppContext';
+import { useAuth } from '../store/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { AddSubjectModal } from './AddSubjectModal';
 import { SettingsModal } from './SettingsModal';
@@ -9,7 +10,7 @@ import {
   Hash, Plus, Brain, Briefcase, ChefHat, Cpu, Landmark, Lightbulb,
   CheckSquare, Square, Settings, Layout, Layers, HardDrive,
   Cloud, Lock, User, Users, Target, Award, GraduationCap,
-  Music, Video, Image, FileText, Mail, Terminal, Bug
+  Music, Video, Image, FileText, Mail, Terminal, Bug, LogOut
 } from 'lucide-react';
 
 const ICONS = [
@@ -51,6 +52,7 @@ const getSubjectIcon = (iconName?: string) => {
 
 export function Sidebar() {
   const { subjects, selectedSubjects, toggleSubjectSelection, selectOnlySubject, currentView, setCurrentView, setIsAddSubjectModalOpen } = useAppContext();
+  const { user, logout, isAuthEnabled } = useAuth();
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -225,25 +227,46 @@ export function Sidebar() {
         ))}
       </div>
 
-      {/* User Profile / Settings placeholder */}
-      <div className="p-4 border-t border-border-subtle">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-              <span className="text-xs font-medium text-zinc-400">US</span>
+      {/* User Profile / Settings */}
+      <div className="p-4 border-t border-border-subtle bg-black/20">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-3 min-w-0">
+              {user?.picture_url ? (
+                <img src={user.picture_url} alt={user.full_name} className="w-8 h-8 rounded-full border border-white/10 flex-shrink-0" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-zinc-500" />
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold text-zinc-200 truncate pr-1">
+                  {user?.full_name || t('sidebar.profile.name')}
+                </span>
+                <span className="text-[10px] text-zinc-500 truncate font-medium">
+                  {user?.email || t('sidebar.profile.plan')}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-zinc-200">{t('sidebar.profile.name')}</span>
-              <span className="text-[10px] text-emerald-500 uppercase tracking-wider font-mono">{t('sidebar.profile.plan')}</span>
-            </div>
+            
+            <button
+              onClick={() => setIsSettingsModalOpen(true)}
+              className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all flex-shrink-0"
+              title={t('sidebar.profile.settings')}
+            >
+              <Settings className="w-4.5 h-4.5" />
+            </button>
           </div>
-          <button
-            onClick={() => setIsSettingsModalOpen(true)}
-            className="p-2 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
-            title={t('sidebar.profile.settings')}
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+
+          {isAuthEnabled && user && (
+            <button
+              onClick={logout}
+              className="mx-2 flex items-center justify-center gap-2 group px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest text-zinc-500 border border-zinc-800/50 bg-zinc-900/30 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 transition-all duration-300"
+            >
+              <LogOut className="w-3.5 h-3.5 transition-transform duration-300 group-hover:-translate-x-0.5" />
+              {t('auth.logout', 'Logout')}
+            </button>
+          )}
         </div>
       </div>
 

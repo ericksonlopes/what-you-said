@@ -6,5 +6,12 @@ from . import chunk_index  # noqa: F401
 from . import content_source  # noqa: F401
 from . import ingestion_job  # noqa: F401
 from . import knowledge_subject  # noqa: F401
+from . import user  # noqa: F401
 
-__all__ = ["knowledge_subject", "content_source", "ingestion_job", "chunk_index"]
+__all__ = [
+    "knowledge_subject",
+    "content_source",
+    "ingestion_job",
+    "chunk_index",
+    "user",
+]
