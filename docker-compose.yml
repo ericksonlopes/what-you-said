@@ -45,6 +45,10 @@ services:
       - REDIS__PASSWORD=${REDIS__PASSWORD:-}
       - INSTALL_GPU=${INSTALL_GPU:-false}
       - YOUTUBE__PROXY_URL=${YOUTUBE__PROXY_URL:-}
+      - AUTH__ENABLE_GOOGLE=${AUTH__ENABLE_GOOGLE:-false}
+      - AUTH__GOOGLE_CLIENT_ID=${AUTH__GOOGLE_CLIENT_ID:-}
+      - AUTH__GOOGLE_CLIENT_SECRET=${AUTH__GOOGLE_CLIENT_SECRET:-}
+      - AUTH__JWT_SECRET=${AUTH__JWT_SECRET:-}
     restart: always
     shm_size: '2gb'
 

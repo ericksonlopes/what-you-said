@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Install Playwright browsers (deps will be installed in runtime)
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/data/.ms-playwright
 RUN mkdir -p /app/data/.ms-playwright && \
-    uv run playwright install chromium
+    uv run --no-dev playwright install chromium
 
 # Copy the rest of the application code
 COPY . .
@@ -77,11 +77,9 @@ RUN mkdir -p /app/data/huggingface_home /app/data/.ms-playwright
 COPY --from=builder /app /app
 
 # Install Playwright dependencies and Crawl4AI setup in the runtime environment
-RUN uv run playwright install-deps chromium && \
-    uv run crawl4ai-setup
-
-# Make entrypoint executable and fix line endings
-RUN sed -i 's/\r$//' scripts/entrypoint.sh && \
+RUN uv run --no-dev playwright install-deps chromium && \
+    uv run --no-dev crawl4ai-setup && \
+    sed -i 's/\r$//' scripts/entrypoint.sh && \
     chmod +x scripts/entrypoint.sh
 
 # Expose FastAPI port
