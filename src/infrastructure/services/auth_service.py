@@ -17,7 +17,7 @@ class AuthService:
         self.jwt_algorithm = settings.auth.jwt_algorithm
         self.jwt_expire_minutes = settings.auth.jwt_expire_minutes
 
-    async def get_google_auth_url(self) -> str:
+    async def get_google_auth_url(self, state: Optional[str] = None) -> str:
         """Returns the URL to redirect the user to for Google Authentication."""
         base_url = "https://accounts.google.com/o/oauth2/v2/auth"
         params = {
@@ -28,6 +28,9 @@ class AuthService:
             "access_type": "offline",
             "prompt": "select_account",
         }
+        if state:
+            params["state"] = state
+
         from urllib.parse import urlencode
 
         query_string = urlencode(params)

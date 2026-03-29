@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Any
+import secrets
+from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timezone
 
 from src.domain.entities.user import User as UserEntity
@@ -15,10 +16,18 @@ class AuthUseCase:
         self._user_repo = user_repo
         self._auth_service = auth_service
 
-    async def get_login_url(self) -> str:
-        return await self._auth_service.get_google_auth_url()
+    async def get_login_url(self) -> Tuple[str, str]:
+        state = secrets.token_urlsafe(32)
+        url = await self._auth_service.get_google_auth_url(state=state)
+        return url, state
 
-    async def handle_google_callback(self, code: str) -> Dict[str, Any]:
+    async def handle_google_callback(
+        self, code: str, received_state: str, expected_state: str
+    ) -> Dict[str, Any]:
+        # 0. Validate state
+        if not received_state or received_state != expected_state:
+            raise ValueError("Invalid authentication state (CSRF Protection)")
+
         # 1. Exchange code for token
         tokens = await self._auth_service.exchange_code_for_token(code)
         access_token = tokens.get("access_token")
@@ -73,5 +82,5 @@ class AuthUseCase:
         user_id = payload.get("sub")
         if not user_id or not isinstance(user_id, str):
             return None
-            
+
         return self._user_repo.get_by_id(user_id)

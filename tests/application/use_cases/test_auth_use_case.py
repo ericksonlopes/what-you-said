@@ -24,9 +24,10 @@ class TestAuthUseCase:
     async def test_get_login_url(self, use_case, mock_service):
         mock_service.get_google_auth_url = AsyncMock(return_value="http://google.login")
 
-        url = await use_case.get_login_url()
+        url, state = await use_case.get_login_url()
 
         assert url == "http://google.login"
+        assert len(state) > 0
 
     @pytest.mark.asyncio
     async def test_handle_google_callback_new_user(
@@ -54,11 +55,18 @@ class TestAuthUseCase:
         # 4. Mock JWT creation
         mock_service.create_access_token.return_value = "local_jwt"
 
-        result = await use_case.handle_google_callback("test_code")
+        result = await use_case.handle_google_callback("test_code", "state1", "state1")
 
         assert result["access_token"] == "local_jwt"
         assert result["user"]["email"] == "new@example.com"
         mock_repo.create.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_handle_google_callback_invalid_state(
+        self, use_case, mock_repo, mock_service
+    ):
+        with pytest.raises(ValueError, match="Invalid authentication state"):
+            await use_case.handle_google_callback("test_code", "received", "expected")
 
     @pytest.mark.asyncio
     async def test_handle_google_callback_existing_user(
@@ -84,7 +92,7 @@ class TestAuthUseCase:
         # 4. Mock JWT creation
         mock_service.create_access_token.return_value = "local_jwt"
 
-        result = await use_case.handle_google_callback("test_code")
+        result = await use_case.handle_google_callback("test_code", "s", "s")
 
         assert result["access_token"] == "local_jwt"
         mock_repo.update_last_login.assert_called_once_with("u2")
