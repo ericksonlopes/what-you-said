@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from src.domain.entities.user import User
 
+
 class IUserRepository(ABC):
     """Repository port for storing and retrieving User entities."""
 

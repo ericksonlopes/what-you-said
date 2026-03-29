@@ -56,7 +56,9 @@ class TestAuthRouter:
 
     @pytest.mark.asyncio
     async def test_google_login(self, mock_auth_use_case):
-        mock_auth_use_case.get_login_url = AsyncMock(return_value="http://google.login")
+        mock_auth_use_case.get_login_url = AsyncMock(
+            return_value=("http://google.login", "state123")
+        )
 
         response = client.get("/rest/auth/google/login")
 
@@ -73,11 +75,15 @@ class TestAuthRouter:
             }
         )
 
-        response = client.get("/rest/auth/google/callback?code=testcode")
+        # Set the expected state cookie
+        client.cookies.set("oauth_state", "state123")
+        response = client.get("/rest/auth/google/callback?code=testcode&state=state123")
 
         assert response.status_code == 200
         assert response.json()["access_token"] == "jwt"
-        mock_auth_use_case.handle_google_callback.assert_called_with("testcode")
+        mock_auth_use_case.handle_google_callback.assert_called_with(
+            code="testcode", received_state="state123", expected_state="state123"
+        )
 
     def test_google_callback_missing_code(self):
         response = client.get("/rest/auth/google/callback")
