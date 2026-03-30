@@ -431,17 +431,55 @@ class YoutubeIngestionUseCase:
             }
 
         source = existing
+
+        # 1. Reuse or create Ingestion Job EARLY
         ingestion = None
+        if getattr(cmd, "ingestion_job_id", None):
+            try:
+                from uuid import UUID
+                # Retrieve the ingestion job by ID if provided in the command
+                jid = (
+                    UUID(cmd.ingestion_job_id)
+                    if isinstance(cmd.ingestion_job_id, str)
+                    else cmd.ingestion_job_id
+                )
+                if jid:
+                    ingestion = self.ingestion_service.get_by_id(jid)
+                
+                if ingestion is None:
+                    ingestion = self._create_ingestion_job(
+                        source=source, external_source=video_id, subject_id=subject.id
+                    )
+            except Exception as ej:
+                logger.warning(
+                    "Failed to retrieve pre-created job", context={"error": str(ej)}
+                )
+                ingestion = self._create_ingestion_job(
+                    source=source, external_source=video_id, subject_id=subject.id
+                )
+        else:
+            ingestion = self._create_ingestion_job(
+                source=source, external_source=video_id, subject_id=subject.id
+            )
+
         try:
             # --- REPROCESSING CLEANUP ---
-            if source and getattr(cmd, "reprocess", False):
+            if source and source.id and getattr(cmd, "reprocess", False):
+                sid = source.id
                 logger.info(
                     "REPROCESSING: Performing pre-ingestion cleanup",
-                    context={"source_id": str(source.id), "video_id": video_id},
+                    context={"source_id": str(sid), "video_id": video_id},
                 )
                 try:
-                    sql_del = self.chunk_service.delete_by_content_source(source.id)
+                    sql_del = self.chunk_service.delete_by_content_source(sid)
                     vec_del = self.vector_service.delete_by_video_id(video_id)
+
+                    # Mark previous jobs as REPROCESSED
+                    if ingestion and ingestion.id:
+                        self.ingestion_service.mark_previous_jobs_as_reprocessed(
+                            content_source_id=source.id, current_job_id=ingestion.id
+                        )
+
                     logger.info(
                         "Reprocessing cleanup finished",
                         context={"sql_deleted": sql_del, "vector_deleted": vec_del},
@@ -452,43 +490,9 @@ class YoutubeIngestionUseCase:
                         context={"source_id": str(source.id), "error": str(ce)},
                     )
 
-            # 1. Reuse or create Ingestion Job EARLY (even before source exists)
-            if cmd.ingestion_job_id:
-                try:
-                    from uuid import UUID
-
-                    jid = (
-                        UUID(cmd.ingestion_job_id)
-                        if isinstance(cmd.ingestion_job_id, str)
-                        else cmd.ingestion_job_id
-                    )
-                    ingestion = self.ingestion_service.get_by_id(jid)
-                    if ingestion is None:
-                        logger.warning(
-                            "Job not found, creating new one",
-                            context={"job_id": str(cmd.ingestion_job_id)},
-                        )
-                        ingestion = self._create_ingestion_job(
-                            source=source,
-                            external_source=video_id,
-                            subject_id=subject.id,
-                        )
-                    else:
-                        logger.debug(
-                            "Reusing pre-created ingestion job",
-                            context={"job_id": str(jid)},
-                        )
-                except Exception as ej:
-                    logger.warning(
-                        "Failed to retrieve pre-created job, creating new one",
-                        context={"job_id": str(cmd.ingestion_job_id), "error": str(ej)},
-                    )
-                    ingestion = self._create_ingestion_job(
-                        source=source, external_source=video_id, subject_id=subject.id
-                    )
-            else:
-                ingestion = self._create_ingestion_job(
-                    source=source, external_source=video_id, subject_id=subject.id
+                # Update status to processing if it exists
+                self.cs_service.update_processing_status(
+                    source.id, ContentSourceStatus.PROCESSING
                 )
 
             if ingestion is None:

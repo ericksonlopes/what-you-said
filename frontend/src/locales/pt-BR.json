@@ -31,7 +31,8 @@
       "completed": "CONCLUÍDO",
       "failed": "FALHOU",
       "duplicate": "DUPLICADO",
-      "cancelled": "CANCELADO"
+      "cancelled": "CANCELADO",
+      "reprocessed": "REPROCESSADO"
     },
     "time": {
       "now": "agora mesmo",
@@ -198,6 +199,7 @@
       "live": "Monitoramento em Tempo Real"
     },
     "pipeline_optimized": "Pipeline otimizada",
+    "reprocessed_message": "Substituído por uma nova versão",
     "phase": "Fase",
     "duration": "duração"
   },
@@ -426,7 +428,19 @@
     "no_message": "Nenhuma mensagem de erro detalhada disponível.",
     "copy": "Copiar Erro",
     "copied": "Copiado!",
-    "support_hint": "Este erro pode ser causado por links quebrados, falta de permissão ou formatos não suportados pelo motor de extração."
+    "support_hint": "Este erro pode ser causado por links quebrados, falta de permissão ou formatos não suportados pelo motor de extração.",
+    "categories": {
+      "network": "Erro de Rede / Bloqueio",
+      "content": "Problema no Conteúdo",
+      "auth": "Erro de Autenticação",
+      "server": "Erro Interno do Servidor",
+      "unknown": "Erro Desconhecido"
+    },
+    "friendly_messages": {
+      "ssl_eof": "A conexão foi interrompida pelo servidor (YouTube). Provável bloqueio de IP ou excesso de requisições.",
+      "timeout": "O servidor demorou muito para responder. Tente novamente em alguns instantes.",
+      "connection_refused": "Não foi possível estabelecer conexão com o serviço de extração."
+    }
   },
   "chat": {
     "locked": {

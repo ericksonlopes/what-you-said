@@ -401,3 +401,49 @@ class IngestionJobSQLRepository:
                     context={**extra, "error": str(e)},
                 )
                 raise
+
+    def mark_previous_jobs_as_reprocessed(
+        self, content_source_id: UUID, current_job_id: UUID
+    ) -> int:
+        """Mark all previous jobs for a content source as REPROCESSED."""
+        from src.infrastructure.repositories.sql.models.ingestion_job import (
+            IngestionJobModel,
+        )
+
+        with Connector() as session:
+            try:
+                logger.debug(
+                    "Marking previous jobs as reprocessed",
+                    context={
+                        "content_source_id": content_source_id,
+                        "current_job_id": current_job_id,
+                    },
+                )
+                # Final states that should be marked as reprocessed
+                terminal_statuses = ["finished", "failed", "error", "cancelled", "done"]
+
+                # Update jobs
+                updated_count = (
+                    session.query(IngestionJobModel)
+                    .filter(IngestionJobModel.content_source_id == content_source_id)
+                    .filter(IngestionJobModel.id != current_job_id)
+                    .filter(IngestionJobModel.status.in_(terminal_statuses))
+                    .update({"status": "reprocessed"}, synchronize_session=False)
+                )
+
+                session.commit()
+                logger.info(
+                    "Marked jobs as reprocessed",
+                    context={
+                        "content_source_id": str(content_source_id),
+                        "updated_count": updated_count,
+                    },
+                )
+                return updated_count
+            except Exception as e:
+                logger.error(
+                    "Error marking previous jobs as reprocessed",
+                    context={"content_source_id": content_source_id, "error": str(e)},
+                )
+                session.rollback()
+                raise

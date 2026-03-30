@@ -31,7 +31,8 @@
       "completed": "COMPLETED",
       "failed": "FAILED",
       "duplicate": "DUPLICATE",
-      "cancelled": "CANCELLED"
+      "cancelled": "CANCELLED",
+      "reprocessed": "REPROCESSED"
     },
     "time": {
       "now": "just now",
@@ -198,6 +199,7 @@
       "live": "Live Monitor Active"
     },
     "pipeline_optimized": "Pipeline optimized",
+    "reprocessed_message": "Superseded by a new version",
     "phase": "Phase",
     "duration": "duration"
   },
@@ -427,7 +429,19 @@
     "no_message": "No detailed error message available.",
     "copy": "Copy Error",
     "copied": "Copied!",
-    "support_hint": "This error may be caused by broken links, lack of permission, or formats not supported by the extraction engine."
+    "support_hint": "This error may be caused by broken links, lack of permission, or unsupported formats by the extraction engine.",
+    "categories": {
+      "network": "Network Error / Blocking",
+      "content": "Content Issue",
+      "auth": "Authentication Error",
+      "server": "Internal Server Error",
+      "unknown": "Unknown Error"
+    },
+    "friendly_messages": {
+      "ssl_eof": "The connection was interrupted by the server (YouTube). Likely IP blocking or rate limiting.",
+      "timeout": "The server took too long to respond. Please try again in a few moments.",
+      "connection_refused": "Could not establish connection with the extraction service."
+    }
   },
   "chat": {
     "locked": {

@@ -6,7 +6,7 @@ export type Subject = {
   sourceCount?: number;
 };
 
-export type TaskStatus = 'pending' | 'processing' | 'done' | 'error' | 'started' | 'finished' | 'failed' | 'cancelled';
+export type TaskStatus = 'pending' | 'processing' | 'done' | 'error' | 'started' | 'finished' | 'failed' | 'cancelled' | 'reprocessed';
 
 export type IngestionTask = {
   id: string;

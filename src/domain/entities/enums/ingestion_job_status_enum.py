@@ -7,3 +7,4 @@ class IngestionJobStatus(Enum):
     FINISHED = "finished"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    REPROCESSED = "reprocessed"

@@ -139,3 +139,11 @@ class IngestionJobService:
             subject_id, limit=limit, offset=offset
         )
         return IngestionJobMapper.model_list_to_entities(models)
+
+    def mark_previous_jobs_as_reprocessed(
+        self, content_source_id: UUID, current_job_id: UUID
+    ) -> int:
+        """Mark previous jobs as reprocessed."""
+        return self._repo.mark_previous_jobs_as_reprocessed(
+            content_source_id, current_job_id
+        )

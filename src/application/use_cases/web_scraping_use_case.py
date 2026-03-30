@@ -166,16 +166,23 @@ class WebScrapingUseCase:
                 )
 
                 # --- REPROCESSING CLEANUP ---
-                if cmd.reprocess:
+                if source and source.id and getattr(cmd, "reprocess", False):
+                    sid = source.id
                     logger.info(
                         "REPROCESSING: Performing pre-ingestion cleanup for web source",
-                        context={"source_id": str(source.id), "url": cmd.url},
+                        context={"source_id": str(sid), "url": cmd.url},
                     )
                     try:
-                        sql_del = self.chunk_service.delete_by_content_source(source.id)
+                        sql_del = self.chunk_service.delete_by_content_source(sid)
                         # We use a filter to target only this source's chunks
-                        filters = {"content_source_id": str(source.id)}
+                        filters = {"content_source_id": str(sid)}
                         vec_del = self.vector_service.delete(filters=filters)
+
+                        # Mark previous jobs as REPROCESSED
+                        if ingestion and ingestion.id:
+                            self.ingestion_service.mark_previous_jobs_as_reprocessed(
+                                content_source_id=sid, current_job_id=ingestion.id
+                            )
 
                         logger.info(
                             "Web reprocessing cleanup finished",

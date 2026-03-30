@@ -186,6 +186,40 @@ class FileIngestionUseCase:
                     language=cmd.language,
                     source_metadata=docs[0].metadata,
                 )
+            else:
+                # --- REPROCESSING CLEANUP ---
+                if source and source.id and getattr(cmd, "reprocess", False):
+                    sid = source.id
+                    logger.info(
+                        "REPROCESSING: Performing pre-ingestion cleanup",
+                        context={"source_id": str(sid), "filename": getattr(cmd, "filename", "unknown")},
+                    )
+                    try:
+                        sql_del = self.chunk_service.delete_by_content_source(sid)
+                        # We use a filter to target only this source's chunks
+                        filters = {"content_source_id": str(sid)}
+                        vec_del = self.vector_service.delete(filters=filters)
+
+                        # Mark previous jobs as REPROCESSED
+                        if ingestion and ingestion.id:
+                            self.ingestion_service.mark_previous_jobs_as_reprocessed(
+                                content_source_id=sid, current_job_id=ingestion.id
+                            )
+
+                        logger.info(
+                            "File reprocessing cleanup finished",
+                            context={"sql_deleted": sql_del, "vector_deleted": vec_del},
+                        )
+                    except Exception as ce:
+                        logger.warning(
+                            "Error during reprocessing cleanup",
+                            context={"source_id": str(source.id), "error": str(ce)},
+                        )
+
+                # Update status to processing if it exists
+                self.cs_service.update_processing_status(
+                    source.id, ContentSourceStatus.PROCESSING
+                )
 
             # 4. Generate chunks and Embeddings
             self.ingestion_service.update_job(

@@ -67,7 +67,8 @@ export function TaskCard({ task }: TaskCardProps) {
     done: { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: CheckCircle2, label: t('common.status.completed') },
     failed: { color: 'text-rose-400', bg: 'bg-rose-400/10', border: 'border-rose-400/20', icon: AlertCircle, label: t('common.status.failed') },
     error: { color: 'text-rose-400', bg: 'bg-rose-400/10', border: 'border-rose-400/20', icon: AlertCircle, label: t('common.status.failed') },
-    cancelled: { color: 'text-zinc-500', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20', icon: XCircle, label: t('common.status.cancelled') }
+    cancelled: { color: 'text-zinc-500', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20', icon: XCircle, label: t('common.status.cancelled') },
+    reprocessed: { color: 'text-zinc-400', bg: 'bg-zinc-800/20', border: 'border-zinc-700/30', icon: RotateCcw, label: t('common.status.reprocessed') }
   };
 
   const config = React.useMemo(() => {
@@ -91,6 +92,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const isProcessing = ['processing', 'started'].includes(task.status);
   const isCompleted = ['done', 'finished'].includes(task.status);
   const isCancelled = task.status === 'cancelled';
+  const isReprocessed = task.status === 'reprocessed';
   const SourceIcon = getSourceIcon(task.ingestionType);
 
   const handleReprocess = async (e?: React.MouseEvent) => {
@@ -117,6 +119,7 @@ export function TaskCard({ task }: TaskCardProps) {
         return;
       }
       addToast(t('ingestion.url.reprocess_started'), 'success');
+      setIsErrorModalOpen(false);
       refreshJobs();
     } catch (err) {
       addToast(t('ingestion.url.reprocess_error'), 'error');
@@ -139,10 +142,21 @@ export function TaskCard({ task }: TaskCardProps) {
 
   const getLocalizedError = (error?: string) => {
     if (!error) return 'Unknown system failure during ingestion.';
+    
+    // Check for network/blocking errors
+    if (error.includes('SSLEOFError') || error.includes('UNEXPECTED_EOF_WHILE_READING')) 
+      return t('error_modal.friendly_messages.ssl_eof');
+    if (error.includes('Timeout') || error.includes('Max retries exceeded'))
+      return t('error_modal.friendly_messages.timeout');
+    if (error.includes('ConnectionRefused'))
+      return t('error_modal.friendly_messages.connection_refused');
+      
+    // Content errors
     if (error.includes('Transcripts are disabled')) return t('ingestion.youtube.errors.disabled_transcripts');
     if (error.includes('No transcript found')) return t('ingestion.youtube.errors.no_transcript');
     if (error.includes('unavailable')) return t('ingestion.youtube.errors.unavailable');
     if (error.includes('Duplicate')) return t('ingestion.messages.duplicate');
+    
     return error;
   };
 
@@ -155,6 +169,8 @@ export function TaskCard({ task }: TaskCardProps) {
         whileHover={{ y: -2 }}
         onClick={handleClick}
         className={`group relative flex flex-col bg-zinc-900/40 backdrop-blur-md border ${config.border} rounded-2xl p-4 transition-all duration-300 ${
+          isReprocessed ? 'opacity-60 saturate-[0.2]' : ''
+        } ${
           isFailed || isCancelled || (isCompleted && task.contentSourceId) || (isDuplicate && task.contentSourceId) ? 'cursor-pointer hover:bg-zinc-800/60' : ''
         }`}
       >
@@ -173,7 +189,11 @@ export function TaskCard({ task }: TaskCardProps) {
                   {task.ingestionType || 'Unknown'}
                 </span>
                 {task.subjectName && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter">
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-tighter ${
+                    isReprocessed 
+                      ? 'bg-zinc-800/50 text-zinc-500 border-zinc-700/30' 
+                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  }`}>
                     {task.subjectName}
                   </span>
                 )}
@@ -266,19 +286,39 @@ export function TaskCard({ task }: TaskCardProps) {
               </div>
             </div>
           ) : (
-            <div className="p-3 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] group-hover:border-emerald-500/30 transition-colors">
+            <div className={`p-3 rounded-xl border transition-colors ${
+              isReprocessed 
+                ? 'bg-zinc-500/5 border-zinc-500/10 group-hover:border-zinc-500/20' 
+                : 'bg-emerald-500/[0.02] border-emerald-500/10 group-hover:border-emerald-500/30'
+            }`}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                  <span className="text-[11px] text-emerald-400/80 font-medium">{t('activity.pipeline_optimized')}</span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    isReprocessed ? 'bg-zinc-600' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'
+                  }`} />
+                  <span className={`text-[11px] font-medium ${
+                    isReprocessed ? 'text-zinc-500' : 'text-emerald-400/80'
+                  }`}>{isReprocessed ? t('activity.reprocessed_message') : t('activity.pipeline_optimized')}</span>
                 </div>
                 {task.chunksCount && (
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-900 border border-white/5 text-[10px] font-bold text-emerald-400">
+                  <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border border-white/5 text-[10px] font-bold ${
+                    isReprocessed ? 'bg-zinc-950/50 text-zinc-600' : 'bg-zinc-900 text-emerald-400'
+                  }`}>
                     <Database className="w-3 h-3" />
                     <span>{task.chunksCount}</span>
                   </div>
                 )}
               </div>
+              
+              {/* Added: Show error message if it exists even in reprocessed state */}
+              {task.errorMessage && (
+                <p className={`mb-3 text-[11px] leading-relaxed line-clamp-2 italic font-serif ${
+                  isReprocessed ? 'text-zinc-500/80' : 'text-rose-400/80'
+                }`}>
+                  "{getLocalizedError(task.errorMessage)}"
+                </p>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-1.5 text-[9px] text-zinc-500/60 font-bold uppercase tracking-tighter">
@@ -292,10 +332,21 @@ export function TaskCard({ task }: TaskCardProps) {
                     </div>
                   )}
                 </div>
-                {isCompleted && task.contentSourceId && (
-                  <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-emerald-500/60">
-                    <Database className="w-3 h-3" />
-                    {t('common.actions.go_to_source')}
+                {(isCompleted || isReprocessed) && task.contentSourceId && (
+                  <div className={`flex items-center gap-1 text-[9px] font-black uppercase tracking-widest ${
+                    isReprocessed ? 'text-zinc-500/60' : 'text-emerald-500/60'
+                  }`}>
+                    {isReprocessed && task.errorMessage ? (
+                      <>
+                        <AlertCircle className="w-3 h-3" />
+                        {t('common.actions.view_details')}
+                      </>
+                    ) : (
+                      <>
+                        <Database className="w-3 h-3" />
+                        {t('common.actions.go_to_source')}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -304,7 +355,7 @@ export function TaskCard({ task }: TaskCardProps) {
         </div>
 
         {/* Hover Action Indicator */}
-        {(isFailed || (isCompleted && task.contentSourceId) || (isDuplicate && task.contentSourceId)) && (
+        {(isFailed || isReprocessed || (isCompleted && task.contentSourceId) || (isDuplicate && task.contentSourceId)) && (
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="p-1 rounded-full bg-white/10 text-white backdrop-blur-md">
               <ChevronRight className="w-3 h-3" />
