@@ -98,7 +98,7 @@ class ChunkChromaRepository(IVectorRepository):
                 "Error creating documents in Chroma",
                 context={"num_documents": len(documents), "error": str(e)},
             )
-            raise e
+            raise
 
     def _build_chroma_filter(self, filters: Optional[Any]) -> Optional[Dict]:
         """Convert basic dictionary filters into ChromaDB filter format."""
@@ -379,7 +379,7 @@ class ChunkChromaRepository(IVectorRepository):
                 "Error listing chunks from Chroma",
                 context={"filters": filters, "error": str(e)},
             )
-            raise e
+            raise
 
     def is_ready(self) -> bool:
         if not self._chroma_client:

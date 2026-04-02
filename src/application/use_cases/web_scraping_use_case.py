@@ -135,7 +135,7 @@ class WebScrapingUseCase:
                 )
             except Exception as e:
                 logger.error(e, context={"url": cmd.url})
-                raise e
+                raise
 
             if not docs:
                 raise ValueError(f"No content extracted from URL: {cmd.url}")
@@ -313,7 +313,7 @@ class WebScrapingUseCase:
                 self.cs_service.update_processing_status(
                     content_source_id=source.id, status=ContentSourceStatus.FAILED
                 )
-            raise e
+            raise
 
     def _resolve_subject(self, cmd: IngestWebCommand):
         if cmd.subject_id:

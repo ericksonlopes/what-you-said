@@ -1,11 +1,11 @@
 import os
-import shutil
 import tempfile
 from typing import Annotated, Dict, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi import UploadFile, File, Form
+import anyio
 
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
@@ -155,8 +155,9 @@ async def ingest_file(
     temp_dir = tempfile.mkdtemp()
     temp_path = os.path.join(temp_dir, filename)
 
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    async with await anyio.open_file(temp_path, "wb") as buffer:
+        content = await file.read()
+        await buffer.write(content)
 
     cmd = IngestFileCommand(
         file_path=temp_path,

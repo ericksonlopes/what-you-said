@@ -2,6 +2,17 @@ import React from 'react';
 import { useAppContext } from '../store/AppContext';
 import { CheckCircle2, Info, XCircle, X } from 'lucide-react';
 
+const getToastConfig = (type: string) => {
+  switch (type) {
+    case 'success':
+      return { Icon: CheckCircle2, iconColor: 'text-emerald-400', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/20' };
+    case 'error':
+      return { Icon: XCircle, iconColor: 'text-rose-400', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/20' };
+    default:
+      return { Icon: Info, iconColor: 'text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/20' };
+  }
+};
+
 export function ToastContainer() {
   const { toasts, removeToast } = useAppContext();
 
@@ -10,13 +21,7 @@ export function ToastContainer() {
   return (
     <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3 pointer-events-none">
       {toasts.map((toast) => {
-        const isSuccess = toast.type === 'success';
-        const isError = toast.type === 'error';
-        
-        const Icon = isSuccess ? CheckCircle2 : isError ? XCircle : Info;
-        const iconColor = isSuccess ? 'text-emerald-400' : isError ? 'text-rose-400' : 'text-blue-400';
-        const bgColor = isSuccess ? 'bg-emerald-500/10' : isError ? 'bg-rose-500/10' : 'bg-blue-500/10';
-        const borderColor = isSuccess ? 'border-emerald-500/20' : isError ? 'border-rose-500/20' : 'border-blue-500/20';
+        const { Icon, iconColor, bgColor, borderColor } = getToastConfig(toast.type);
 
         return (
           <div

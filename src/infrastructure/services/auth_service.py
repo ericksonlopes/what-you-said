@@ -17,7 +17,7 @@ class AuthService:
         self.jwt_algorithm = settings.auth.jwt_algorithm
         self.jwt_expire_minutes = settings.auth.jwt_expire_minutes
 
-    async def get_google_auth_url(self, state: Optional[str] = None) -> str:
+    def get_google_auth_url(self, state: Optional[str] = None) -> str:
         """Returns the URL to redirect the user to for Google Authentication."""
         base_url = "https://accounts.google.com/o/oauth2/v2/auth"
         params = {

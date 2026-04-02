@@ -22,6 +22,7 @@ class DummyClientContext:
         self.exited_args = (exc_type, exc, tb)
 
     def create_collection_if_not_exists(self, collection_name, dimensions=None):
+        # Empty mock for testing purposes as we don't need real collection creation
         pass
 
 

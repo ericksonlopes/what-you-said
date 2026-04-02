@@ -104,7 +104,7 @@ class TestChunkQdrantRepository:
 
         assert ids == [str(doc.id)]
         mock_client.upsert.assert_called_once()
-        args, kwargs = mock_client.upsert.call_args
+        _, kwargs = mock_client.upsert.call_args
         assert len(kwargs["points"]) == 0
 
     def test_create_documents_exception(self, repo, mock_connector):
@@ -306,7 +306,7 @@ class TestChunkQdrantRepository:
 
         repo._bm25_search("query", 5, existing_filters)
 
-        args, kwargs = mock_client.query_points.call_args
+        _, kwargs = mock_client.query_points.call_args
         sent_filter = kwargs["query_filter"]
         assert len(sent_filter.must) == 2
         assert len(sent_filter.should) == 1

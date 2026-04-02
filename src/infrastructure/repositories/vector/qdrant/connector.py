@@ -47,7 +47,7 @@ class QdrantConnector:
                     "Failed to connect to Qdrant",
                     context={"host": self._host, "error": str(e)},
                 )
-                raise e
+                raise
         return self._client
 
     def __exit__(self, exc_type, exc_val, exc_tb):

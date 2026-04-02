@@ -119,7 +119,7 @@ class ChunkFAISSRepository(IVectorRepository):
                 "Error creating documents in FAISS",
                 context={"num_documents": len(documents), "error": str(e)},
             )
-            raise e
+            raise
 
     def retriever(
         self,
@@ -166,7 +166,7 @@ class ChunkFAISSRepository(IVectorRepository):
             logger.error(
                 "Error retrieving from FAISS", context={"query": query, "error": str(e)}
             )
-            raise e
+            raise
 
     def _semantic_search(
         self, query: str, top_kn: int, filter_callable: Optional[Any]
@@ -352,7 +352,7 @@ class ChunkFAISSRepository(IVectorRepository):
                 "Error deleting from FAISS",
                 context={"filters": filters, "error": str(e)},
             )
-            raise e
+            raise
 
     def list_chunks(
         self, filters: Optional[Any], limit: int = 1000
@@ -394,7 +394,7 @@ class ChunkFAISSRepository(IVectorRepository):
                 "Error listing chunks from FAISS",
                 context={"filters": filters, "error": str(e)},
             )
-            raise e
+            raise
 
     def is_ready(self) -> bool:
         return self._vector_store is not None

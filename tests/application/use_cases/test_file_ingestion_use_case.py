@@ -379,9 +379,9 @@ class TestFileIngestionUseCase:
         use_case.execute(cmd)
 
         # Verify create_source was called with PDF (refined) instead of DOCX
-        args, kwargs = use_case_deps["cs_service"].create_source.call_args
+        _, kwargs = use_case_deps["cs_service"].create_source.call_args
         assert kwargs["source_type"] == SourceType.PDF
 
         # Verify create_job was called with 'other' (initial type)
-        args, kwargs = use_case_deps["ingestion_service"].create_job.call_args
+        _, kwargs = use_case_deps["ingestion_service"].create_job.call_args
         assert kwargs["ingestion_type"] == "other"

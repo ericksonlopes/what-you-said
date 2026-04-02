@@ -56,7 +56,7 @@ interface AppState {
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
-export function AppProvider({ children }: { children: ReactNode }) {
+export function AppProvider({ children }: { readonly children: ReactNode }) {
   const { t } = useTranslation();
   const { isAuthEnabled, isAuthenticated } = useAuth();
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -163,6 +163,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const normalizeYoutubeId = useCallback((s: string | undefined): string => {
+    if (!s) return '';
+    if (s.includes('youtube.com') || s.includes('youtu.be')) {
+      const regex = /(?:v=|v\/|embed\/|watch\?v=|&v=|youtu\.be\/|\/v\/|watch\?feature=player_embedded&v=)([a-zA-Z0-9_-]{11})/;
+      const match = regex.exec(s);
+      return match ? match[1] : s;
+    }
+    return s;
+  }, []);
+
+  const isOptimisticJobInResults = useCallback((oj: IngestionTask, items: IngestionTask[]): boolean => {
+    const ojNorm = normalizeYoutubeId(oj.externalSource || oj.title);
+    return items.some(rj => {
+      if (rj.title === oj.title) return true;
+      return !!rj.externalSource && normalizeYoutubeId(rj.externalSource) === ojNorm;
+    });
+  }, [normalizeYoutubeId]);
+
   const refreshJobs = useCallback(async (params?: { page?: number; pageSize?: number; status?: string; search?: string }) => {
     if (isAuthEnabled && !isAuthenticated) return;
     try {
@@ -174,42 +192,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
       const data = await api.fetchJobs(fetchParams);
       
-      // Preserve optimistic jobs that aren't yet in the server results
       setJobs((prev) => {
         const optimisticJobs = prev.filter(job => job.id.startsWith('optimistic-'));
-        
-        // Keep only optimistic jobs that were created in the last 2 minutes
         const now = Date.now();
+        
         const recentOptimisticJobs = optimisticJobs.filter(job => {
           const createdAt = new Date(job.createdAt).getTime();
-          return now - createdAt < 120000; // 2 minutes
+          return now - createdAt < 120000;
         });
         
-        // Final list is server jobs + recent optimistic jobs that don't look like they are already in the list
-        // IMPROVED DEDUPLICATION: Check both title AND externalSource (normalized)
-        return [...data.items, ...recentOptimisticJobs.filter(oj => {
-          const normalize = (s: string | undefined) => {
-            if (!s) return '';
-            // Handle YouTube URLs/IDs
-            if (s.includes('youtube.com') || s.includes('youtu.be')) {
-              const match = s.match(/(?:v=|v\/|embed\/|watch\?v=|&v=|youtu\.be\/|\/v\/|watch\?feature=player_embedded&v=)([a-zA-Z0-9_-]{11})/);
-              return match ? match[1] : s;
-            }
-            return s;
-          };
-
-          const ojNorm = normalize(oj.externalSource || oj.title);
-          
-          const isAlreadyInRealJobs = data.items.some(rj => {
-            if (rj.title === oj.title) return true;
-            if (rj.externalSource && oj.externalSource) {
-              const rjNorm = normalize(rj.externalSource);
-              if (rjNorm === ojNorm) return true;
-            }
-            return false;
-          });
-          return !isAlreadyInRealJobs;
-        })];
+        const deduplicated = recentOptimisticJobs.filter(oj => !isOptimisticJobInResults(oj, data.items));
+        
+        return [...data.items, ...deduplicated];
       });
       
       setTotalJobs(data.total);
@@ -219,7 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsJobsLoaded(true);
     }
-  }, [jobPage, jobPageSize, jobStatusFilter, jobSearchQuery]);
+  }, [jobPage, jobPageSize, jobStatusFilter, jobSearchQuery, isAuthEnabled, isAuthenticated, isOptimisticJobInResults]);
 
   const addOptimisticJob = useCallback((title: string, externalSource?: string) => {
     const id = `optimistic-${Date.now()}`;
@@ -385,55 +379,93 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [addToast, t, subjects]);
 
+  const contextValue = React.useMemo(() => ({
+    selectedSubjects,
+    toggleSubjectSelection,
+    selectOnlySubject,
+    currentView,
+    previousView,
+    setCurrentView: handleSetCurrentView,
+    goBack,
+    selectedSourceIdForDb,
+    setSelectedSourceIdForDb,
+    subjects,
+    refreshSubjects,
+    addSubject,
+    updateSubject,
+    deleteSubject,
+    sources,
+    isSourcesLoaded,
+    refreshSources,
+    sourceTypes,
+    jobs,
+    totalJobs,
+    jobStats,
+    isJobsLoaded,
+    refreshJobs,
+    jobPage,
+    setJobPage,
+    jobPageSize,
+    setJobPageSize,
+    jobStatusFilter,
+    setJobStatusFilter,
+    jobSearchQuery,
+    setJobSearchQuery,
+    addOptimisticJob,
+    removeOptimisticJob,
+    toasts,
+    addToast,
+    removeToast,
+    deleteSource,
+    updateSourceTitle,
+    modelInfo,
+    refreshModelInfo,
+    isAddModalOpen,
+    setIsAddModalOpen,
+    isAddSubjectModalOpen,
+    setIsAddSubjectModalOpen,
+  }), [
+    selectedSubjects,
+    toggleSubjectSelection,
+    selectOnlySubject,
+    currentView,
+    previousView,
+    handleSetCurrentView,
+    goBack,
+    selectedSourceIdForDb,
+    subjects,
+    refreshSubjects,
+    addSubject,
+    updateSubject,
+    deleteSubject,
+    sources,
+    isSourcesLoaded,
+    refreshSources,
+    sourceTypes,
+    jobs,
+    totalJobs,
+    jobStats,
+    isJobsLoaded,
+    refreshJobs,
+    jobPage,
+    jobPageSize,
+    jobStatusFilter,
+    jobSearchQuery,
+    addOptimisticJob,
+    removeOptimisticJob,
+    toasts,
+    addToast,
+    removeToast,
+    deleteSource,
+    updateSourceTitle,
+    modelInfo,
+    refreshModelInfo,
+    isAddModalOpen,
+    isAddSubjectModalOpen,
+  ]);
+
   return (
-    <AppContext.Provider
-      value={{
-        selectedSubjects,
-        toggleSubjectSelection,
-        selectOnlySubject,
-        currentView,
-        previousView,
-        setCurrentView: handleSetCurrentView,
-        goBack,
-        selectedSourceIdForDb,
-        setSelectedSourceIdForDb,
-        subjects,
-        refreshSubjects,
-        addSubject,
-        updateSubject,
-        deleteSubject,
-        sources,
-        isSourcesLoaded,
-        refreshSources,
-        sourceTypes,
-        jobs,
-        totalJobs,
-        jobStats,
-        isJobsLoaded,
-        refreshJobs,
-        jobPage,
-        setJobPage,
-        jobPageSize,
-        setJobPageSize,
-        jobStatusFilter,
-        setJobStatusFilter,
-        jobSearchQuery,
-        setJobSearchQuery,
-        addOptimisticJob,
-        removeOptimisticJob,
-        toasts,
-        addToast,
-        removeToast,
-        deleteSource,
-        updateSourceTitle,
-        modelInfo,
-        refreshModelInfo,
-        isAddModalOpen,
-        setIsAddModalOpen,
-        isAddSubjectModalOpen,
-        setIsAddSubjectModalOpen,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

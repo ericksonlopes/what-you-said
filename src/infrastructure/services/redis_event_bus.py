@@ -1,23 +1,18 @@
 import json
+import logging
 from typing import Any, Dict
 
-import redis
-
-from src.config.settings import settings
 from src.domain.interfaces.services.i_event_bus import IEventBus
+from src.infrastructure.redis_connector import RedisConnector
+
+logger = logging.getLogger(__name__)
 
 
 class RedisEventBus(IEventBus):
     """Redis-backed event bus using Pub/Sub."""
 
     def __init__(self):
-        self._redis = redis.Redis(
-            host=settings.redis.host,
-            port=settings.redis.port,
-            db=settings.redis.db,
-            password=settings.redis.password,
-            decode_responses=True,
-        )
+        self._redis = RedisConnector.get_client(decode_responses=True)
 
     def publish(self, channel: str, message: Dict[str, Any]):
         """Publishes a JSON message to a Redis channel with UUID support."""
@@ -31,12 +26,14 @@ class RedisEventBus(IEventBus):
         try:
             payload = json.dumps(message, default=_json_serial, ensure_ascii=False)
             self._redis.publish(channel, payload)
-        except Exception:
-            # Fallback to string representation if even custom serial fails
+        except Exception as e:
+            logger.error("Failed to publish event: %s", e, exc_info=True)
             try:
                 self._redis.publish(channel, str(message))
-            except Exception:
-                pass
+            except Exception as e2:
+                logger.error(
+                    "Fallback publish also failed: %s", e2, exc_info=True
+                )
 
     def subscribe(self, channel: str):
         """Subscribes to a Redis channel and yields messages as they arrive."""

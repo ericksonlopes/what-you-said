@@ -1,30 +1,51 @@
-import pickle
+import json
 import threading
 import time
+from dataclasses import asdict, is_dataclass
 from typing import Callable, Dict, Optional
+from uuid import UUID
 
-import redis
 from src.config.logger import Logger
 from src.config.settings import settings
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
+from src.infrastructure.redis_connector import RedisConnector
 
 logger = Logger()
+
+
+def _json_serial(obj):
+    """JSON serializer for objects not serializable by default."""
+    if isinstance(obj, UUID):
+        return str(obj)
+    if is_dataclass(obj) and not isinstance(obj, type):
+        return asdict(obj)
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
+# Task function registry — maps string names to callable functions.
+# Workers look up functions by name instead of deserializing pickled code.
+_TASK_REGISTRY: Dict[str, Callable] = {}
+
+
+def register_task(name: str, func: Callable) -> None:
+    """Register a task function by name."""
+    _TASK_REGISTRY[name] = func
+
+
+def get_task_registry() -> Dict[str, Callable]:
+    """Return the current task registry (useful for testing)."""
+    return _TASK_REGISTRY
 
 
 class RedisTaskQueueService(ITaskQueue):
     """Redis-backed task queue with a background worker thread.
 
-    This replaces the in-memory threading queue with a persistent Redis queue.
+    Uses JSON serialization with a task registry instead of pickle
+    to avoid remote code execution vulnerabilities.
     """
 
     def __init__(self, queue_name: str = "wys_task_queue", num_workers: int = 1):
-        self._redis = redis.Redis(
-            host=settings.redis.host,
-            port=settings.redis.port,
-            db=settings.redis.db,
-            password=settings.redis.password,
-            decode_responses=False,  # Use False to handle pickled functions
-        )
+        self._redis = RedisConnector.get_client(decode_responses=False)
         self._queue_name = queue_name
         self._workers: list[threading.Thread] = []
         self._num_workers = num_workers
@@ -64,37 +85,95 @@ class RedisTaskQueueService(ITaskQueue):
         metadata: Optional[Dict] = None,
         **kwargs,
     ):
-        """Serializes the task and pushes it to Redis."""
+        """Serializes the task as JSON and pushes it to Redis."""
+        # Resolve function name from registry or use __name__
+        func_name = None
+        for name, registered_func in _TASK_REGISTRY.items():
+            if registered_func is func:
+                func_name = name
+                break
+
+        if func_name is None:
+            # Auto-register if not found (backward compatibility)
+            func_name = func.__qualname__
+            register_task(func_name, func)
+
         task_data = {
-            "func": pickle.dumps(func),
-            "args": pickle.dumps(args),
-            "kwargs": pickle.dumps(kwargs),
+            "func_name": func_name,
+            "args": list(args),
+            "kwargs": kwargs,
             "task_title": task_title,
             "metadata": metadata,
             "enqueued_at": time.time(),
         }
-        self._redis.lpush(self._queue_name, pickle.dumps(task_data))
+        payload = json.dumps(task_data, default=_json_serial).encode("utf-8")
+        self._redis.lpush(self._queue_name, payload)
         logger.debug(
             "Task enqueued in Redis",
             context={
-                "task_title": task_title or func.__name__,
+                "task_title": task_title or func_name,
                 "queue": self._queue_name,
             },
         )
 
+    def _deserialize_args(self, raw_args: list) -> list:
+        """Reconstruct dataclass command objects from serialized dicts."""
+        from src.application.dtos.commands.ingest_file_command import IngestFileCommand
+        from src.application.dtos.commands.ingest_youtube_command import (
+            IngestYoutubeCommand,
+        )
+        from src.application.dtos.commands.ingest_web_command import IngestWebCommand
+
+        command_classes = {
+            "IngestFileCommand": IngestFileCommand,
+            "IngestYoutubeCommand": IngestYoutubeCommand,
+            "IngestWebCommand": IngestWebCommand,
+        }
+
+        result = []
+        for arg in raw_args:
+            if isinstance(arg, dict) and "__dataclass__" not in arg:
+                # Try to detect which command class this dict represents
+                reconstructed = False
+                for cls_name, cls in command_classes.items():
+                    try:
+                        obj = cls(**arg)
+                        result.append(obj)
+                        reconstructed = True
+                        break
+                    except (TypeError, ValueError):
+                        continue
+                if not reconstructed:
+                    result.append(arg)
+            else:
+                result.append(arg)
+        return result
+
     def _worker_loop(self):
         while not self._should_stop:
             try:
-                # Use blpop (blocking left pop) with timeout
                 result = self._redis.brpop(self._queue_name, timeout=1)
                 if result:
                     _, data_blob = result
-                    task_data = pickle.loads(data_blob)
+                    task_data = json.loads(data_blob.decode("utf-8"))
 
-                    func = pickle.loads(task_data["func"])
-                    args = pickle.loads(task_data["args"])
-                    kwargs = pickle.loads(task_data["kwargs"])
-                    task_title = task_data.get("task_title") or func.__name__
+                    func_name = task_data["func_name"]
+                    raw_args = task_data.get("args", [])
+                    kwargs = task_data.get("kwargs", {})
+                    task_title = task_data.get("task_title") or func_name
+
+                    func = _TASK_REGISTRY.get(func_name)
+                    if func is None:
+                        logger.error(
+                            "Unknown task function",
+                            context={
+                                "func_name": func_name,
+                                "registered": list(_TASK_REGISTRY.keys()),
+                            },
+                        )
+                        continue
+
+                    args = self._deserialize_args(raw_args)
 
                     logger.info(
                         "Redis worker processing task",

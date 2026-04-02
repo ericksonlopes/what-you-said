@@ -18,21 +18,22 @@ class ContentSourceSQLRepository:
         subject_id: Optional[UUID],
         source_type: str,
         external_source: str,
-        title: Optional[str] = None,
-        language: Optional[str] = None,
-        embedding_model: Optional[str] = None,
-        dimensions: Optional[int] = None,
-        status: Optional[str] = None,
-        processing_status: Optional[str] = None,
-        chunks: Optional[int] = None,
-        chars: Optional[int] = None,
-        total_tokens: Optional[int] = None,
-        max_tokens_per_chunk: Optional[int] = None,
-        source_metadata: Optional[dict] = None,
+        **kwargs,
     ) -> UUID:
         with Connector() as session:
             extra = {}
             try:
+                title = kwargs.get("title")
+                language = kwargs.get("language")
+                embedding_model = kwargs.get("embedding_model")
+                dimensions = kwargs.get("dimensions")
+                status = kwargs.get("status")
+                processing_status = kwargs.get("processing_status")
+                chunks = kwargs.get("chunks")
+                chars = kwargs.get("chars")
+                total_tokens = kwargs.get("total_tokens")
+                max_tokens_per_chunk = kwargs.get("max_tokens_per_chunk")
+                source_metadata = kwargs.get("source_metadata")
                 extra = {
                     "subject_id": subject_id,
                     "source_type": source_type,

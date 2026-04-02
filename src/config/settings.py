@@ -5,6 +5,7 @@ from typing import List, Annotated, Optional
 from pydantic import field_validator, Field, BaseModel
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from src.config.validators import docker_host_fallback, docker_host_fallback_optional
 from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
 
 warnings.filterwarnings(
@@ -30,18 +31,9 @@ class SQLConfig(BaseModel):
     @field_validator("host", mode="after")
     @classmethod
     def _fallback_host(cls, v: Optional[str]) -> Optional[str]:
-        """Fallback to localhost if docker service names are used on Windows/non-docker."""
-        import os
-        import sys
-
-        docker_hosts = {"postgres", "mysql", "mariadb", "mssql", "db"}
-        if (
-            v in docker_hosts
-            and sys.platform == "win32"
-            and not os.path.exists("/.dockerenv")
-        ):
-            return "localhost"
-        return v
+        return docker_host_fallback_optional(
+            v, {"postgres", "mysql", "mariadb", "mssql", "db"}
+        )
 
     @property
     def url(self) -> str:
@@ -98,18 +90,7 @@ class VectorConfig(BaseSettings):
     @field_validator("weaviate_host", "chroma_host", mode="after")
     @classmethod
     def _fallback_host(cls, v: str) -> str:
-        """Fallback to localhost if docker service names are used on Windows/non-docker."""
-        import os
-        import sys
-
-        docker_hosts = {"weaviate", "chroma", "vector-db", "qdrant"}
-        if (
-            v in docker_hosts
-            and sys.platform == "win32"
-            and not os.path.exists("/.dockerenv")
-        ):
-            return "localhost"
-        return v
+        return docker_host_fallback(v, {"weaviate", "chroma", "vector-db", "qdrant"})
 
     collection_name_chunks: str = Field(
         default="chunks",
@@ -207,18 +188,7 @@ class RedisConfig(BaseSettings):
     @field_validator("host", mode="after")
     @classmethod
     def _fallback_host(cls, v: str) -> str:
-        """Fallback to localhost if 'redis' host is not reachable (e.g., local development)."""
-        import os
-        import sys
-
-        # If explicitly 'redis' and on windows without being in docker
-        if (
-            v == "redis"
-            and sys.platform == "win32"
-            and not os.path.exists("/.dockerenv")
-        ):
-            return "localhost"
-        return v
+        return docker_host_fallback(v, {"redis"})
 
 
 class YoutubeConfig(BaseSettings):
@@ -269,6 +239,23 @@ class AuthConfig(BaseSettings):
         default=60 * 24 * 7,
         description="JWT expiration time in minutes (default 1 week)",
     )
+
+    @field_validator("jwt_secret", mode="after")
+    @classmethod
+    def _warn_default_secret(cls, v: str) -> str:
+        if v == "change-me-in-production":
+            import os
+
+            env = os.getenv("APP__ENV", "development")
+            if env == "production":
+                raise ValueError(
+                    "JWT secret must be changed from default in production. "
+                    "Set AUTH__JWT_SECRET environment variable."
+                )
+            logging.getLogger(__name__).warning(
+                "Using default JWT secret — change AUTH__JWT_SECRET for production."
+            )
+        return v
 
 
 class Settings(BaseSettings):

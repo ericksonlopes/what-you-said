@@ -1,31 +1,31 @@
 import React, { useState } from 'react';
 import { ContentSource } from '../types';
 import { useTranslation } from 'react-i18next';
-import { FileText, ChevronLeft, ChevronRight, Search, Filter, ChevronDown, Check, Database, Youtube, BookOpen, Globe, Newspaper, RotateCcw, Plus, Trash2, Edit3, FileCode, FileSpreadsheet, FileImage, Presentation, FileAudio, FileVideo, Terminal, Share2, Layers } from 'lucide-react';
+import { FileText, ChevronLeft, ChevronRight, Search, Filter, ChevronDown, Check, Database, SquarePlay, BookOpen, Globe, Newspaper, RotateCcw, Plus, Trash2, Edit3, FileCode, FileSpreadsheet, FileImage, Presentation, FileAudio, FileVideo, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../store/AppContext';
 import { api } from '../services/api';
 import { EditSourceModal } from './EditSourceModal';
 
 interface SourcesTableProps {
-  sources: ContentSource[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
-  onPageChange: (newPage: number) => void;
-  onPageSizeChange?: (newSize: number) => void;
-  onRowClick: (source: ContentSource) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onSearchSubmit: () => void;
-  typeFilter: string;
-  onTypeFilterChange: (type: string) => void;
-  emptyMessage?: string;
+  readonly sources: ContentSource[];
+  readonly totalCount: number;
+  readonly page: number;
+  readonly pageSize: number;
+  readonly onPageChange: (newPage: number) => void;
+  readonly onPageSizeChange?: (newSize: number) => void;
+  readonly onRowClick: (source: ContentSource) => void;
+  readonly searchQuery: string;
+  readonly onSearchChange: (query: string) => void;
+  readonly onSearchSubmit: () => void;
+  readonly typeFilter: string;
+  readonly onTypeFilterChange: (type: string) => void;
+  readonly emptyMessage?: string;
 }
 
 const getIcon = (type: string) => {
   switch (type.toLowerCase()) {
-    case 'youtube': return Youtube;
+    case 'youtube': return SquarePlay;
     case 'article': return Newspaper;
     case 'pdf': return FileText;
     case 'docx':
@@ -53,6 +53,21 @@ const getIcon = (type: string) => {
   }
 };
 
+const getStatusIconBgClass = (isDone: boolean, isFailed: boolean, isCancelled: boolean) => {
+  if (isDone) return 'bg-emerald-500/10 text-emerald-400/80 group-hover:text-emerald-400';
+  if (isFailed) return 'bg-rose-500/10 text-rose-400/80 group-hover:text-rose-400';
+  if (isCancelled) return 'bg-zinc-500/10 text-zinc-500 group-hover:text-zinc-400';
+  return 'bg-amber-500/10 text-amber-400/80 group-hover:text-amber-400';
+};
+
+const getStatusBadgeClass = (isDone: boolean, isFailed: boolean, isCancelled: boolean) => {
+  if (isDone) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10 shadow-[0_4px_12px_rgba(16,185,129,0.1)]';
+  if (isFailed) return 'bg-rose-500/10 text-rose-400 border-rose-500/10';
+  if (isCancelled) return 'bg-zinc-500/10 text-zinc-500 border-zinc-500/10';
+  return 'bg-amber-500/10 text-amber-400 border-amber-500/10 animate-pulse animate-glow';
+};
+
+
 export function SourcesTable({
   sources, totalCount, page, pageSize, onPageChange, onPageSizeChange, onRowClick,
   searchQuery, onSearchChange, onSearchSubmit, typeFilter, onTypeFilterChange,
@@ -79,13 +94,13 @@ export function SourcesTable({
     try {
       if (source.type.toLowerCase() === 'youtube') {
         await api.ingestYoutube({
-          video_url: source.origin!,
+          video_url: source.origin,
           reprocess: true,
           subject_id: source.subjectId
         });
       } else if (source.type.toLowerCase() === 'web') {
         await api.ingestWeb({
-          url: source.origin!,
+          url: source.origin,
           reprocess: true,
           subject_id: source.subjectId
         });
@@ -117,12 +132,12 @@ export function SourcesTable({
 
   const handleDelete = async (e: React.MouseEvent, source: ContentSource) => {
     e.stopPropagation();
-    if (!window.confirm(t('sources.delete_confirm'))) return;
+    if (!globalThis.confirm(t('sources.delete_confirm'))) return;
 
     try {
       await deleteSource(source.id);
     } catch (err) {
-      // Error handled in AppContext
+      console.error('Failed to delete source:', err);
     }
   };
 
@@ -298,8 +313,6 @@ export function SourcesTable({
               ) : (
                 sources.map((source, index) => {
                   const Icon = getIcon(source.type);
-                  const isProcessing = !['done', 'finished', 'active', 'ingested', 'cancelled'].includes(source.processingStatus.toLowerCase()) && 
-                                     !['failed', 'error'].includes(source.processingStatus.toLowerCase());
                   const isFailed = ['failed', 'error'].includes(source.processingStatus.toLowerCase());
                   const isDone = ['done', 'finished', 'active', 'ingested'].includes(source.processingStatus.toLowerCase());
                   const isCancelled = source.processingStatus.toLowerCase() === 'cancelled';
@@ -314,12 +327,7 @@ export function SourcesTable({
                       className="hover:bg-white/[0.02] cursor-pointer transition-all duration-300 group relative"
                     >
                       <td className="pl-5 pr-2 py-5">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                          isDone ? 'bg-emerald-500/10 text-emerald-400/80 group-hover:text-emerald-400' :
-                          isFailed ? 'bg-rose-500/10 text-rose-400/80 group-hover:text-rose-400' :
-                          isCancelled ? 'bg-zinc-500/10 text-zinc-500 group-hover:text-zinc-400' :
-                          'bg-amber-500/10 text-amber-400/80 group-hover:text-amber-400'
-                        }`}>
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 ${getStatusIconBgClass(isDone, isFailed, isCancelled)}`}>
                            <Icon className="w-4.5 h-4.5 transition-transform duration-300 group-hover:scale-110" />
                         </div>
                       </td>
@@ -346,12 +354,7 @@ export function SourcesTable({
                       </td>
                       <td className="px-4 py-5">
                         <div className="flex justify-center">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${
-                            isDone ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10 shadow-[0_4px_12px_rgba(16,185,129,0.1)]' :
-                            isFailed ? 'bg-rose-500/10 text-rose-400 border-rose-500/10' :
-                            isCancelled ? 'bg-zinc-500/10 text-zinc-500 border-zinc-500/10' :
-                            'bg-amber-500/10 text-amber-400 border-amber-500/10 animate-pulse animate-glow'
-                          }`}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${getStatusBadgeClass(isDone, isFailed, isCancelled)}`}>
                             {source.processingStatus.toUpperCase()}
                           </span>
                         </div>

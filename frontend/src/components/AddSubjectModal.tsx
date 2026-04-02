@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   X, Brain, Briefcase, ChefHat, Cpu, Landmark, Lightbulb, Activity, Hash,
@@ -10,8 +10,8 @@ import { useAppContext } from '../store/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface AddSubjectModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
 }
 
 const ICONS = [
@@ -57,7 +57,7 @@ export function AddSubjectModal({ isOpen, onClose }: AddSubjectModalProps) {
   const [description, setDescription] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('Hash');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name.trim()) return;
 

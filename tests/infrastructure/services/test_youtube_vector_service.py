@@ -35,10 +35,10 @@ class DummyRepo:
                 job_id=uuid4(),
                 content_source_id=uuid4(),
                 source_type="youtube",
-                external_source="v1",
+                external_source="v2",
                 subject_id=uuid4(),
                 embedding_model="m",
-                content="abc",
+                content="def",
             )
         ]
 

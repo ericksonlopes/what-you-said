@@ -70,9 +70,9 @@ class TestChunkVectorService:
 
         assert len(result) == 2
         assert result[0].content == "text 2"
-        assert result[0].score == 0.9
+        assert result[0].score == pytest.approx(0.9)
         assert result[1].content == "text 1"
-        assert result[1].score == 0.8
+        assert result[1].score == pytest.approx(0.8)
 
         mock_repo.retriever.assert_called_once_with(
             query="query",
@@ -99,7 +99,7 @@ class TestChunkVectorService:
         result = service.retrieve("query", top_k=1, re_rank=True)
 
         assert len(result) == 1
-        assert result[0].score == 0.7
+        assert result[0].score == pytest.approx(0.7)
 
     def test_list_by_source(self, service, mock_repo):
         common_args = {

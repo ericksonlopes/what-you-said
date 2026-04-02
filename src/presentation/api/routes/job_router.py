@@ -18,10 +18,10 @@ router = APIRouter()
 )
 def get_jobs(
     job_service: Annotated[IngestionJobService, Depends(get_job_service)],
-    page: int = Query(1, ge=1),
-    page_size: int = Query(12, ge=1, le=100),
-    status: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 12,
+    status: Annotated[Optional[str], Query()] = None,
+    search: Annotated[Optional[str], Query()] = None,
 ):
     """Retrieve ingestion jobs with pagination and filtering"""
     try:

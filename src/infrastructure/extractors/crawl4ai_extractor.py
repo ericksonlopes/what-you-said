@@ -112,13 +112,11 @@ class Crawl4AIExtractor(IBaseExtractor):
                     # Get internal links
                     internal_links = result.links.get("internal", [])
                     sub_urls = list(
-                        set(
-                            [
-                                link["href"]
-                                for link in internal_links
-                                if link.get("href") and link["href"].startswith("http")
-                            ]
-                        )
+                        {
+                            link["href"]
+                            for link in internal_links
+                            if link.get("href") and link["href"].startswith("http")
+                        }
                     )
 
                     # Filter and limit
@@ -182,4 +180,4 @@ class Crawl4AIExtractor(IBaseExtractor):
 
         except Exception as e:
             logger.error(e, context={"url": source, "action": "web_scrape"})
-            raise e
+            raise

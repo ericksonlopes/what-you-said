@@ -20,7 +20,7 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { readonly children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthEnabled, setIsAuthEnabled] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('auth_token');
     setUser(null);
     // Optional: redirect or reload
-    window.location.href = '/';
+    globalThis.location.href = '/';
   }, []);
 
   const getLoginUrl = useCallback(async () => {
@@ -85,18 +85,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return url;
   }, []);
 
+  const contextValue = React.useMemo(() => ({
+    user,
+    isAuthenticated: !!user,
+    isAuthEnabled,
+    isLoading,
+    login,
+    logout,
+    getLoginUrl
+  }), [user, isAuthEnabled, isLoading, login, logout, getLoginUrl]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isAuthEnabled,
-        isLoading,
-        login,
-        logout,
-        getLoginUrl
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

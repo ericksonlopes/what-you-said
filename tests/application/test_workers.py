@@ -24,29 +24,26 @@ class TestWorkers:
         registry._services = {}
 
     def test_run_file_ingestion_worker_success(self):
-        # Patch the dependencies module that is imported inside run_file_ingestion_worker
         with (
-            patch("src.presentation.api.dependencies.get_settings"),
-            patch("src.presentation.api.dependencies.get_ks_service"),
-            patch("src.presentation.api.dependencies.get_subject_repo"),
-            patch("src.presentation.api.dependencies.get_source_repo"),
-            patch("src.presentation.api.dependencies.get_job_repo"),
-            patch("src.presentation.api.dependencies.get_chunk_repo"),
-            patch("src.presentation.api.dependencies.get_cs_service"),
-            patch("src.presentation.api.dependencies.get_job_service"),
-            patch("src.presentation.api.dependencies.get_model_loader"),
-            patch("src.presentation.api.dependencies.get_embedding_service"),
-            patch("src.presentation.api.dependencies.get_chunk_index_service"),
-            patch("src.presentation.api.dependencies.get_vector_repository"),
-            patch("src.presentation.api.dependencies.get_rerank_service"),
-            patch("src.presentation.api.dependencies.get_chunk_vector_service"),
-            patch("src.presentation.api.dependencies.get_event_bus"),
+            patch(
+                "src.presentation.api.dependencies.resolve_ingestion_context"
+            ) as mock_ctx,
+            patch(
+                "src.presentation.api.dependencies.resolve_vector_repository"
+            ),
+            patch(
+                "src.presentation.api.dependencies.resolve_rerank_service"
+            ),
+            patch(
+                "src.infrastructure.services.chunk_vector_service.ChunkVectorService"
+            ),
             patch(
                 "src.application.use_cases.file_ingestion_use_case.FileIngestionUseCase"
             ) as mock_use_case_cls,
         ):
             mock_use_case = MagicMock()
             mock_use_case_cls.return_value = mock_use_case
+            mock_ctx.return_value = MagicMock()
 
             cmd = IngestFileCommand(
                 file_path="test.pdf", file_name="test.pdf", subject_name="test"
@@ -65,9 +62,9 @@ class TestWorkers:
 
     def test_run_file_ingestion_worker_exception(self):
         with patch(
-            "src.presentation.api.dependencies.get_settings"
-        ) as mock_get_settings:
-            mock_get_settings.side_effect = Exception("Test error")
+            "src.presentation.api.dependencies.resolve_ingestion_context"
+        ) as mock_ctx:
+            mock_ctx.side_effect = Exception("Test error")
             cmd = IngestFileCommand(
                 file_path="test.pdf", file_name="test.pdf", subject_name="test"
             )
@@ -77,26 +74,22 @@ class TestWorkers:
 
     def test_run_youtube_ingestion_worker_success(self):
         with (
-            patch("src.presentation.api.dependencies.get_settings"),
-            patch("src.presentation.api.dependencies.get_ks_service"),
-            patch("src.presentation.api.dependencies.get_subject_repo"),
-            patch("src.presentation.api.dependencies.get_source_repo"),
-            patch("src.presentation.api.dependencies.get_job_repo"),
-            patch("src.presentation.api.dependencies.get_chunk_repo"),
-            patch("src.presentation.api.dependencies.get_cs_service"),
-            patch("src.presentation.api.dependencies.get_job_service"),
-            patch("src.presentation.api.dependencies.get_model_loader"),
-            patch("src.presentation.api.dependencies.get_embedding_service"),
-            patch("src.presentation.api.dependencies.get_chunk_index_service"),
-            patch("src.presentation.api.dependencies.get_vector_repository"),
-            patch("src.presentation.api.dependencies.get_youtube_vector_service"),
-            patch("src.presentation.api.dependencies.get_event_bus"),
+            patch(
+                "src.presentation.api.dependencies.resolve_ingestion_context"
+            ) as mock_ctx,
+            patch(
+                "src.presentation.api.dependencies.resolve_vector_repository"
+            ),
+            patch(
+                "src.infrastructure.services.youtube_vector_service.YouTubeVectorService"
+            ),
             patch(
                 "src.application.use_cases.youtube_ingestion_use_case.YoutubeIngestionUseCase"
             ) as mock_use_case_cls,
         ):
             mock_use_case = MagicMock()
             mock_use_case_cls.return_value = mock_use_case
+            mock_ctx.return_value = MagicMock()
 
             cmd = IngestYoutubeCommand(
                 video_url="https://youtube.com/watch?v=123",
@@ -118,9 +111,9 @@ class TestWorkers:
 
     def test_run_youtube_ingestion_worker_exception(self):
         with patch(
-            "src.presentation.api.dependencies.get_settings"
-        ) as mock_get_settings:
-            mock_get_settings.side_effect = Exception("Test error")
+            "src.presentation.api.dependencies.resolve_ingestion_context"
+        ) as mock_ctx:
+            mock_ctx.side_effect = Exception("Test error")
             cmd = IngestYoutubeCommand(
                 video_url="https://youtube.com/watch?v=123",
                 subject_name="test",
@@ -132,22 +125,21 @@ class TestWorkers:
 
     def test_run_web_ingestion_worker_success(self):
         with (
-            patch("src.presentation.api.dependencies.get_settings"),
-            patch("src.presentation.api.dependencies.get_ks_service"),
-            patch("src.presentation.api.dependencies.get_subject_repo"),
-            patch("src.presentation.api.dependencies.get_source_repo"),
-            patch("src.presentation.api.dependencies.get_job_repo"),
-            patch("src.presentation.api.dependencies.get_chunk_repo"),
-            patch("src.presentation.api.dependencies.get_cs_service"),
-            patch("src.presentation.api.dependencies.get_job_service"),
-            patch("src.presentation.api.dependencies.get_model_loader"),
-            patch("src.presentation.api.dependencies.get_embedding_service"),
-            patch("src.presentation.api.dependencies.get_chunk_index_service"),
-            patch("src.presentation.api.dependencies.get_vector_repository"),
-            patch("src.presentation.api.dependencies.get_rerank_service"),
-            patch("src.presentation.api.dependencies.get_chunk_vector_service"),
-            patch("src.presentation.api.dependencies.get_event_bus"),
-            patch("src.presentation.api.dependencies.get_web_extractor"),
+            patch(
+                "src.presentation.api.dependencies.resolve_ingestion_context"
+            ) as mock_ctx,
+            patch(
+                "src.presentation.api.dependencies.resolve_vector_repository"
+            ),
+            patch(
+                "src.presentation.api.dependencies.resolve_rerank_service"
+            ),
+            patch(
+                "src.infrastructure.services.chunk_vector_service.ChunkVectorService"
+            ),
+            patch(
+                "src.presentation.api.dependencies.get_web_extractor"
+            ),
             patch(
                 "src.application.use_cases.web_scraping_use_case.WebScrapingUseCase"
             ) as mock_use_case_cls,
@@ -156,6 +148,7 @@ class TestWorkers:
             mock_use_case = MagicMock()
             mock_use_case.execute = AsyncMock()
             mock_use_case_cls.return_value = mock_use_case
+            mock_ctx.return_value = MagicMock()
 
             # Capture the coroutine and run it in a new loop to avoid RuntimeError
             def side_effect(coro):
@@ -182,11 +175,11 @@ class TestWorkers:
     def test_run_web_ingestion_worker_exception(self):
         with (
             patch(
-                "src.presentation.api.dependencies.get_settings"
-            ) as mock_get_settings,
+                "src.presentation.api.dependencies.resolve_ingestion_context"
+            ) as mock_ctx,
             patch("asyncio.run") as mock_asyncio_run,
         ):
-            mock_get_settings.side_effect = Exception("Test error")
+            mock_ctx.side_effect = Exception("Test error")
 
             def side_effect(coro):
                 loop = asyncio.new_event_loop()

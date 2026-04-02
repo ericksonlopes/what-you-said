@@ -1,4 +1,4 @@
-import { Subject, IngestionTask, ContentSource, ChatMessage, Chunk, PaginatedResponse } from '../types';
+import { Subject, IngestionTask, ContentSource, Chunk, PaginatedResponse } from '../types';
 
 const API_BASE_URL = '/rest';
 
@@ -6,7 +6,7 @@ async function handleResponseError(response: Response, defaultMessage: string) {
   if (response.status === 401) {
     // Standard handling for unauthorized: clear token and reload
     localStorage.removeItem('auth_token');
-    if (!window.location.pathname.includes('/auth/google/callback')) {
+    if (!globalThis.location.pathname.includes('/auth/google/callback')) {
       // Avoid redirect loops during callback
     }
   }
@@ -16,10 +16,11 @@ async function handleResponseError(response: Response, defaultMessage: string) {
   let errorMessage = defaultMessage;
   try {
     const data = await response.json();
-    if (data && data.detail) {
+    if (data?.detail) {
       errorMessage = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
     }
   } catch (e) {
+    console.error('Failed to parse error response:', e);
     // Ignore JSON parse errors and use default message
   }
   
@@ -138,7 +139,7 @@ export const api = {
   },
 
   async fetchJobs(params?: { page?: number; pageSize?: number; status?: string; search?: string }): Promise<PaginatedResponse<IngestionTask>> {
-    const url = new URL(`${API_BASE_URL}/jobs`, window.location.origin);
+    const url = new URL(`${API_BASE_URL}/jobs`, globalThis.location.origin);
     if (params?.page) url.searchParams.append('page', params.page.toString());
     if (params?.pageSize) url.searchParams.append('page_size', params.pageSize.toString());
     if (params?.status && params.status !== 'all') url.searchParams.append('status', params.status);
@@ -153,7 +154,7 @@ export const api = {
       items: data.items.map((j: any) => ({
         id: j.id,
         title: j.source_title || j.status_message || `Job ${j.id.substring(0, 8)}`,
-        status: j.status.toLowerCase() as any, // backend uses uppercase
+        status: j.status.toLowerCase(), // backend uses uppercase
         progress: j.total_steps ? Math.round((j.current_step / j.total_steps) * 100) : 0,
         currentStep: j.current_step,
         totalSteps: j.total_steps,
@@ -226,7 +227,7 @@ export const api = {
 
 
   async fetchChunks(sourceId?: string, limit: number = 100, offset: number = 0, query?: string): Promise<Chunk[]> {
-    const url = new URL(`${API_BASE_URL}/chunks`, window.location.origin);
+    const url = new URL(`${API_BASE_URL}/chunks`, globalThis.location.origin);
     if (sourceId) url.searchParams.append('source_id', sourceId);
     if (query) url.searchParams.append('q', query);
     url.searchParams.append('limit', limit.toString());

@@ -1,17 +1,17 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogIn, Github, Mail, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 
-export function LoginModal({ isOpen }: { isOpen: boolean }) {
+export function LoginModal({ isOpen }: { readonly isOpen: boolean }) {
   const { t } = useTranslation();
   const { getLoginUrl } = useAuth();
 
   const handleGoogleLogin = async () => {
     try {
       const url = await getLoginUrl();
-      window.location.href = url;
+      globalThis.location.href = url;
     } catch (err) {
       console.error('Failed to get login URL:', err);
     }

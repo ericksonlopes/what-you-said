@@ -112,7 +112,7 @@ class ChunkWeaviateRepository(IVectorRepository):
                 "Error creating documents in Weaviate",
                 context={"num_documents": len(documents), "error": str(e)},
             )
-            raise e
+            raise
 
     def retriever(
         self,
@@ -162,7 +162,7 @@ class ChunkWeaviateRepository(IVectorRepository):
             logger.error(
                 "Error retrieving documents", context={"query": query, "error": str(e)}
             )
-            raise e
+            raise
 
     def _semantic_search(
         self, query: str, top_kn: int, weaviate_filters: Optional[Any]
@@ -318,7 +318,7 @@ class ChunkWeaviateRepository(IVectorRepository):
                 "Error deleting documents",
                 context={"filters": filters, "error": str(e)},
             )
-            raise e
+            raise
 
     def list_chunks(
         self, filters: Optional[Any], limit: int = 1000
@@ -389,7 +389,7 @@ class ChunkWeaviateRepository(IVectorRepository):
             logger.error(
                 "Error listing chunks", context={"filters": filters, "error": str(e)}
             )
-            raise e
+            raise
 
     def is_ready(self) -> bool:
         with self._weaviate_client as client:

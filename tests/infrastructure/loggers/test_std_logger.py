@@ -59,7 +59,7 @@ class TestStdLogger:
 
     def test_error_method(self):
         logger = StdLogger("{message}")
-        logger.error(Exception("fail"))
+        logger.error(ValueError("fail"))
 
     def test_critical_method(self):
         logger = StdLogger("{message}")

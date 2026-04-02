@@ -36,7 +36,7 @@ class TestCrawl4AIExtractor:
             assert docs[0].metadata["source"] == url
 
             mock_crawler.arun.assert_called_once()
-            args, kwargs = mock_crawler.arun.call_args
+            _, kwargs = mock_crawler.arun.call_args
             assert kwargs["url"] == url
 
     async def test_extract_not_exclude_links(self):
@@ -98,7 +98,7 @@ class TestCrawl4AIExtractor:
             await extractor.extract(url, css_selector=selector)
 
             # Verify selector was passed
-            args, kwargs = mock_crawler.arun.call_args
+            _, kwargs = mock_crawler.arun.call_args
             run_config = kwargs["config"]
             assert run_config.css_selector == selector
 

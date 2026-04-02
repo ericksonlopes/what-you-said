@@ -5,11 +5,11 @@ import { IngestionTask } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ErrorDetailModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  task: IngestionTask;
-  onReprocess?: () => void;
-  isReprocessing?: boolean;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly task: IngestionTask;
+  readonly onReprocess?: () => void;
+  readonly isReprocessing?: boolean;
 }
 
 export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReprocessing }: ErrorDetailModalProps) {
@@ -27,12 +27,15 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0"
+            onClick={onClose}
+            role="presentation"
+            onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') onClose(); }}
           />
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -40,7 +43,9 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
             className="w-full max-w-2xl bg-zinc-900 border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col relative z-10"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
           >
             {/* Header */}
             <div className={`flex items-center justify-between p-5 border-b border-border-subtle ${task.status === 'cancelled' ? 'bg-zinc-500/5' : 'bg-rose-500/5'}`}>
@@ -49,7 +54,7 @@ export function ErrorDetailModal({ isOpen, onClose, task, onReprocess, isReproce
                   <AlertCircle className="w-5 h-5" />
                 </div>
                 <div>
-                   <h2 className="text-lg font-semibold text-zinc-100 italic">{task.status === 'cancelled' ? t('common.status.cancelled') : t('error_modal.title')}</h2>
+                   <h2 id="modal-title" className="text-lg font-semibold text-zinc-100 italic">{task.status === 'cancelled' ? t('common.status.cancelled') : t('error_modal.title')}</h2>
                   <div className="flex items-center gap-3 mt-0.5 text-xs text-zinc-500 font-medium">
                     <span className="flex items-center gap-1"><Hash className="w-3 h-3" /> {task.id.substring(0, 8)}</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(task.createdAt).toLocaleString()}</span>

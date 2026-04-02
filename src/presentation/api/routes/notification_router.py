@@ -1,5 +1,5 @@
 import json
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Annotated
 
 from fastapi import APIRouter, Depends, Request
 from sse_starlette.sse import EventSourceResponse
@@ -13,7 +13,7 @@ router = APIRouter()
 @router.get("/events")
 async def events(
     request: Request,
-    event_bus: IEventBus = Depends(get_event_bus),
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
 ) -> EventSourceResponse:
     """
     Server-Sent Events (SSE) endpoint that streams ingestion status updates.

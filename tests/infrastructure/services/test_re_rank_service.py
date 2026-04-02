@@ -102,9 +102,9 @@ class TestReRankService:
 
         assert len(result) == 2
         assert result[0] == doc2
-        assert result[0].score == 0.9
+        assert result[0].score == pytest.approx(0.9)
         assert result[1] == doc1
-        assert result[1].score == 0.1
+        assert result[1].score == pytest.approx(0.1)
 
     def test_rerank_exception(self, monkeypatch):
         mock_ranker = MagicMock()

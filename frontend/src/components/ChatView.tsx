@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState, type SyntheticEvent} from 'react';
 import {Bot, PlayCircle, Send, User} from 'lucide-react';
 import {useAppContext} from '../store/AppContext';
 import {ChatMessage, Citation} from '../types';
@@ -38,7 +38,7 @@ export function ChatView() {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: SyntheticEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
     if (!inputValue.trim() || selectedSubjects.length === 0) return;
 

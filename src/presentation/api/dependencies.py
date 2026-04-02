@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 from fastapi import Depends, Request
 
+from src.application.ingestion_context import IngestionContext
 from src.application.use_cases.auth_use_case import AuthUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
@@ -49,7 +50,9 @@ from src.infrastructure.services.youtube_vector_service import YouTubeVectorServ
 
 
 def get_settings() -> Settings:
-    return Settings()
+    from src.config.settings import settings
+
+    return settings
 
 
 # Repositories
@@ -96,29 +99,31 @@ def get_weaviate_client(settings: Settings = Depends(get_settings)) -> Any:
     return WeaviateClient(settings.vector)
 
 
+class _NotReadyVectorStore(IVectorRepository):
+    """Dummy vector store returned when model loader is not yet initialized."""
+
+    def retriever(self, *args, **kwargs):
+        return []
+
+    def create_documents(self, *args, **kwargs):
+        return []
+
+    def delete(self, *args, **kwargs):
+        return 0
+
+    def list_chunks(self, *args, **kwargs):
+        return []
+
+    def is_ready(self):
+        return False
+
+
 def get_vector_repository(
     settings: Settings = Depends(get_settings),
     model_loader: Optional[ModelLoaderService] = Depends(get_model_loader),
 ) -> IVectorRepository:
     if model_loader is None:
-        # Provide a dummy repo that indicates it's not ready
-        class ErrorVectorStore(IVectorRepository):
-            def retriever(self, *args, **kwargs):
-                return []
-
-            def create_documents(self, *args, **kwargs):
-                return []
-
-            def delete(self, *args, **kwargs):
-                return 0
-
-            def list_chunks(self, *args, **kwargs):
-                return []
-
-            def is_ready(self):
-                return False
-
-        return ErrorVectorStore()
+        return _NotReadyVectorStore()
 
     emb_service = EmbeddingService(model_loader_service=model_loader)
     # Automatically append dimensionality to collection/index name to avoid mismatches
@@ -251,7 +256,7 @@ def get_auth_use_case(
     return AuthUseCase(user_repo=user_repo, auth_service=auth_svc)
 
 
-async def get_current_user(
+def get_current_user(
     request: Request,
     auth_use_case: AuthUseCase = Depends(get_auth_use_case),
     settings: Settings = Depends(get_settings),
@@ -381,3 +386,38 @@ def get_web_scraping_use_case(
         event_bus=event_bus,
         extractor=extractor,
     )
+
+
+# --- Worker context resolution (no HTTP Request required) ---
+
+
+def resolve_ingestion_context(app) -> IngestionContext:
+    """Resolve common ingestion dependencies from app state without an HTTP Request.
+
+    Used by background workers to avoid unittest.mock in production code.
+    """
+    s = get_settings()
+    model_loader = app.state.model_loader
+    return IngestionContext(
+        settings=s,
+        ks_service=get_ks_service(repo=get_subject_repo()),
+        cs_service=get_cs_service(repo=get_source_repo()),
+        job_service=get_job_service(repo=get_job_repo()),
+        model_loader=model_loader,
+        embed_service=get_embedding_service(model_loader=model_loader),
+        chunk_service=get_chunk_index_service(repo=get_chunk_repo()),
+        event_bus=app.state.event_bus,
+        vector_store_type=s.vector.store_type.value,
+    )
+
+
+def resolve_vector_repository(app) -> IVectorRepository:
+    """Resolve vector repository from app state without an HTTP Request."""
+    s = get_settings()
+    model_loader = app.state.model_loader
+    return get_vector_repository(settings=s, model_loader=model_loader)
+
+
+def resolve_rerank_service(app) -> "ReRankService":
+    """Resolve rerank service from app state without an HTTP Request."""
+    return app.state.rerank_service

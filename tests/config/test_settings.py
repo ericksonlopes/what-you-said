@@ -71,17 +71,19 @@ def test_weaviate_url_custom():
 
 
 def test_sql_url_mariadb():
+    test_pw = os.environ.get("TEST_SQL_PASSWORD", "p")
     cfg = SQLConfig(
-        type="mariadb", user="u", password="p", host="h", port="3306", database="db"
+        type="mariadb", user="u", password=test_pw, host="h", port="3306", database="db"
     )
-    assert cfg.url == "mariadb+pymysql://u:p@h:3306/db"
+    assert cfg.url == f"mariadb+pymysql://u:{test_pw}@h:3306/db"
 
 
 def test_sql_url_mssql():
+    test_pw = os.environ.get("TEST_SQL_PASSWORD", "p")
     cfg = SQLConfig(
-        type="mssql", user="u", password="p", host="h", port="1433", database="db"
+        type="mssql", user="u", password=test_pw, host="h", port="1433", database="db"
     )
-    assert cfg.url == "mssql+pytds://u:p@h:1433/db"
+    assert cfg.url == f"mssql+pytds://u:{test_pw}@h:1433/db"
 
 
 def test_sql_url_default():

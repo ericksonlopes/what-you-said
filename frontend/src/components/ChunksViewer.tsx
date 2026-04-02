@@ -2,7 +2,6 @@ import React, {useEffect, useState} from 'react';
 import {
   ChevronLeft,
   ChevronRight,
-  Database,
   Edit2,
   FileText,
   Hash,
@@ -11,9 +10,8 @@ import {
   Save,
   Search,
   Trash2,
-  Video,
   X,
-  Youtube,
+  SquarePlay,
   BookOpen,
   Filter,
   Globe,
@@ -28,7 +26,7 @@ import { Chunk } from '../types';
 
 const getIcon = (type: string) => {
   switch (type.toLowerCase()) {
-    case 'youtube': return Youtube;
+    case 'youtube': return SquarePlay;
     case 'article': return Newspaper;
     case 'pdf': return FileText;
     case 'wikipedia': return BookOpen;
@@ -204,7 +202,7 @@ export function ChunksViewer() {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <span className="text-xs font-bold text-zinc-100">
-                          {t('sources.chunks.segment_prefix')} {chunk.index !== undefined ? chunk.index + 1 : (page - 1) * pageSize + index + 1}
+                          {t('sources.chunks.segment_prefix')} {typeof chunk.index === 'number' ? chunk.index + 1 : (page - 1) * pageSize + index + 1}
                         </span>
                         <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] text-zinc-500 font-mono">
                           {chunk.content.length} {t('sources.chunks.chars').toLowerCase()}
@@ -364,7 +362,7 @@ export function ChunksViewer() {
               <div className="grid grid-cols-1 gap-2">
                 {Object.entries(currentSource.sourceMetadata).map(([key, value]) => (
                   <div key={key} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] group hover:bg-white/[0.04] transition-all duration-300">
-                    <span className="text-[10px] text-zinc-500 font-mono block uppercase mb-1.5 tracking-wider">{key.replace(/_/g, ' ')}</span>
+                    <span className="text-[10px] text-zinc-500 font-mono block uppercase mb-1.5 tracking-wider">{key.replaceAll('_', ' ')}</span>
                     <span className="text-[11px] text-zinc-300 font-medium break-all block leading-relaxed selection:bg-emerald-500/30">
                       {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
                     </span>

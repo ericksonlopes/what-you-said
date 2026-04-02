@@ -67,7 +67,18 @@ async def lifespan(app: FastAPI):
         app.state.rerank_service = ReRankService(model_name=_settings.model_rerank.name)
         logger.info("Re-rank model pre-loaded successfully.")
 
-        # Initialize Redis Task Queue
+        # Register worker tasks and initialize Redis Task Queue
+        from src.infrastructure.services.redis_task_queue_service import register_task
+        from src.application.workers import (
+            run_file_ingestion_worker,
+            run_youtube_ingestion_worker,
+            run_web_ingestion_worker,
+        )
+
+        register_task("run_file_ingestion_worker", run_file_ingestion_worker)
+        register_task("run_youtube_ingestion_worker", run_youtube_ingestion_worker)
+        register_task("run_web_ingestion_worker", run_web_ingestion_worker)
+
         logger.info("Initializing RedisTaskQueueService...")
         app.state.task_queue = RedisTaskQueueService(num_workers=4)
         app.state.task_queue.start()
@@ -172,5 +183,5 @@ if __name__ == "__main__":
     from src.config.settings import settings
 
     uvicorn.run(
-        "main:app", host="0.0.0.0", port=settings.app.port, reload=True, log_config=None
+        "main:app", host="127.0.0.1", port=settings.app.port, reload=True, log_config=None
     )

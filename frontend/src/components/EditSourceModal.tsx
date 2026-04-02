@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type SyntheticEvent } from 'react';
 import { X, Save, Edit3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -6,9 +6,9 @@ import { ContentSource } from '../types';
 import { useAppContext } from '../store/AppContext';
 
 interface EditSourceModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  source: ContentSource | null;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly source: ContentSource | null;
 }
 
 export function EditSourceModal({ isOpen, onClose, source }: EditSourceModalProps) {
@@ -23,7 +23,7 @@ export function EditSourceModal({ isOpen, onClose, source }: EditSourceModalProp
     }
   }, [source]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: SyntheticEvent) => {
     e.preventDefault();
     if (!source || !title.trim() || title === source.title) {
        if (title === source?.title) onClose();

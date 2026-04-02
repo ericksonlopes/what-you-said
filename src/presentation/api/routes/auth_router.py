@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, Request
 
 from src.application.use_cases.auth_use_case import AuthUseCase
@@ -15,7 +15,7 @@ router = APIRouter()
 
 
 @router.get("/config")
-async def get_auth_config(settings: Settings = Depends(get_settings)):
+async def get_auth_config(settings: Annotated[Settings, Depends(get_settings)]):
     return {
         "enable_google": settings.auth.enable_google,
         "redirect_uri": settings.auth.redirect_uri,
@@ -23,15 +23,15 @@ async def get_auth_config(settings: Settings = Depends(get_settings)):
 
 
 @router.get("/me")
-async def get_me(current_user: User = Depends(get_current_user)):
+async def get_me(current_user: Annotated[User, Depends(get_current_user)]):
     return current_user
 
 
 @router.get("/google/login")
 async def google_login(
     response: Response,
-    auth_use_case: AuthUseCase = Depends(get_auth_use_case),
-    settings: Settings = Depends(get_settings),
+    auth_use_case: Annotated[AuthUseCase, Depends(get_auth_use_case)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ):
     url, state = await auth_use_case.get_login_url()
 
@@ -48,13 +48,19 @@ async def google_login(
     return {"url": url}
 
 
-@router.get("/google/callback")
+@router.get(
+    "/google/callback",
+    responses={
+        400: {"description": "Missing authorization code or OAuth state mismatch"},
+        500: {"description": "Internal server error during authentication"},
+    },
+)
 async def google_callback(
     request: Request,
     response: Response,
-    code: str = Query(...),
-    state: str = Query(None),
-    auth_use_case: AuthUseCase = Depends(get_auth_use_case),
+    code: Annotated[str, Query(...)],
+    auth_use_case: Annotated[AuthUseCase, Depends(get_auth_use_case)],
+    state: Annotated[Optional[str], Query()] = None,
 ):
     if not code:
         raise HTTPException(status_code=400, detail="Missing authorization code")

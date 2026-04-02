@@ -225,7 +225,7 @@ class InterceptHandler(logging.Handler):
         elif level == "WARNING":
             self.custom_logger.warning(message)
         elif level == "ERROR":
-            self.custom_logger.error(Exception(message))
+            self.custom_logger.error(RuntimeError(message))
         elif level == "CRITICAL":
             self.custom_logger.critical(message)
         else:

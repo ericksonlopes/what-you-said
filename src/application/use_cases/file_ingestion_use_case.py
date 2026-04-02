@@ -132,7 +132,7 @@ class FileIngestionUseCase:
                     docs = self.plain_text_extractor.extract(source_path)
                 else:
                     # For other errors, re-raise
-                    raise e
+                    raise
 
             if not docs:
                 raise ValueError(f"No content extracted from file {cmd.file_name}")
@@ -383,7 +383,7 @@ class FileIngestionUseCase:
                 self.cs_service.update_processing_status(
                     content_source_id=source.id, status=ContentSourceStatus.FAILED
                 )
-            raise e
+            raise
         finally:
             if (
                 cmd.delete_after_ingestion

@@ -40,7 +40,7 @@ export function useIngestion() {
       let response;
       if (inputType === 'youtube') {
         response = await api.ingestYoutube({
-          video_url: url!,
+          video_url: url,
           subject_id: subject.id,
           tokens_per_chunk: tokensPerChunk,
           tokens_overlap: tokensOverlap,
@@ -48,7 +48,7 @@ export function useIngestion() {
         });
       } else if (inputType === 'web') {
         response = await api.ingestWeb({
-          url: url!,
+          url: url || '',
           subject_id: subject.id,
           tokens_per_chunk: tokensPerChunk,
           tokens_overlap: tokensOverlap,
@@ -58,7 +58,7 @@ export function useIngestion() {
         });
       } else if (inputType === 'file_url') {
         response = await (api as any).ingestFileByUrl({
-          file_url: url!,
+          file_url: url || '',
           subject_id: subject.id,
           tokens_per_chunk: tokensPerChunk,
           tokens_overlap: tokensOverlap,

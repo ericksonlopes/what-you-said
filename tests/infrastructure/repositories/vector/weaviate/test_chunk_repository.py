@@ -69,7 +69,7 @@ class TestChunkWeaviateRepository:
         repo.vector_store.__enter__.return_value.add_texts.return_value = [str(doc.id)]
         repo.create_documents([doc])
 
-        args, kwargs = repo.vector_store.__enter__.return_value.add_texts.call_args
+        _, kwargs = repo.vector_store.__enter__.return_value.add_texts.call_args
         assert kwargs["metadatas"][0]["created_at"].endswith("Z")
 
     def test_create_documents_error(self, repo):
@@ -114,7 +114,7 @@ class TestChunkWeaviateRepository:
         results = repo.retriever("query", search_mode=SearchMode.BM25)
         assert len(results) == 1
         assert results[0].content == "found"
-        assert results[0].score == 0.9
+        assert results[0].score == pytest.approx(0.9)
 
     def test_retriever_hybrid(self, repo, mock_weaviate_client, mock_embedding_service):
         mock_collection = MagicMock()

@@ -20,7 +20,14 @@ logger = Logger()
 router = APIRouter()
 
 
-@router.patch("/{id}", responses={404: {"description": "Source not found"}})
+@router.patch(
+    "/{id}",
+    responses={
+        400: {"description": "Invalid UUID format"},
+        404: {"description": "Source not found"},
+        500: {"description": "Internal server error"},
+    },
+)
 def update_source_title(
     id: str,
     update: SourceUpdate,
@@ -87,7 +94,14 @@ def get_model_info(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.delete("/{id}", responses={404: {"description": "Source not found"}})
+@router.delete(
+    "/{id}",
+    responses={
+        400: {"description": "Invalid UUID format"},
+        404: {"description": "Source not found"},
+        500: {"description": "Internal server error"},
+    },
+)
 def delete_source(
     id: str,
     use_case: Annotated[ContentSourceUseCase, Depends(get_content_source_use_case)],

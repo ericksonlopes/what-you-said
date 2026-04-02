@@ -81,4 +81,4 @@ class ContentSourceUseCase:
                 "Failed to delete content source",
                 context={"content_source_id": str(content_source_id), "error": str(e)},
             )
-            raise e
+            raise

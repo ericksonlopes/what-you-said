@@ -58,6 +58,7 @@ function ActivityMonitorView() {
       await refreshJobs?.({page, pageSize, status: statusFilter, search: searchQuery});
       addToast(t('notifications.sync.success'), 'success');
     } catch (err) {
+      console.error('[ActivityMonitor] Sync failed:', err);
       addToast(t('notifications.sync.error'), 'error');
     } finally {
       setIsSyncing(false);
@@ -193,7 +194,7 @@ function ActivityMonitorView() {
                 transition={{ delay: i * 0.1 }}
                 className={`relative text-left overflow-hidden flex flex-col p-5 rounded-2xl border transition-all duration-300 backdrop-blur-sm ${
                   isActive 
-                    ? `bg-zinc-800 border-white/20 shadow-[0_0_30px_rgba(255,255,255,0.05)] scale-[1.02] z-10` 
+                    ? 'bg-zinc-800 border-white/20 shadow-[0_0_30px_rgba(255,255,255,0.05)] scale-[1.02] z-10' 
                     : `bg-zinc-900/40 border-white/5 border hover:border-white/10 hover:bg-zinc-900/60 ${stat.bg}`
                 }`}
               >
@@ -212,29 +213,37 @@ function ActivityMonitorView() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
-        {!isJobsLoaded && jobs.length === 0 ? (
-          <div className="flex items-center justify-center py-20">
-            <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin opacity-20" />
-          </div>
-        ) : enrichedJobs.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-32 text-center bg-zinc-900/20 border border-dashed border-white/5 rounded-3xl"
-          >
-            <div className="w-20 h-20 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center mb-6 shadow-2xl">
-              <Search className="w-10 h-10 text-zinc-800" />
+        {(() => {
+          if (!isJobsLoaded && jobs.length === 0) {
+            return (
+              <div className="flex items-center justify-center py-20">
+                <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin opacity-20" />
+              </div>
+            );
+          }
+          if (enrichedJobs.length === 0) {
+            return (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center justify-center py-32 text-center bg-zinc-900/20 border border-dashed border-white/5 rounded-3xl"
+              >
+                <div className="w-20 h-20 rounded-full bg-zinc-900 border border-white/5 flex items-center justify-center mb-6 shadow-2xl">
+                  <Search className="w-10 h-10 text-zinc-800" />
+                </div>
+                <h3 className="text-zinc-200 font-bold text-xl mb-2">{t('activity.no_results')}</h3>
+                <p className="text-zinc-500 text-sm max-w-sm mx-auto leading-relaxed">{t('activity.no_results_desc')}</p>
+              </motion.div>
+            );
+          }
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-10 mt-6">
+              {enrichedJobs.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
             </div>
-            <h3 className="text-zinc-200 font-bold text-xl mb-2">{t('activity.no_results')}</h3>
-            <p className="text-zinc-500 text-sm max-w-sm mx-auto leading-relaxed">{t('activity.no_results_desc')}</p>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-10 mt-6">
-            {enrichedJobs.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Pagination Footer */}
@@ -326,7 +335,7 @@ function ActivityMonitorView() {
 }
 
 function ContentSourcesView() {
-  const { setCurrentView, setSelectedSourceIdForDb, sources = [], isSourcesLoaded, refreshSources, refreshSubjects, selectedSubjects, addToast } = useAppContext();
+  const { setCurrentView, setSelectedSourceIdForDb, sources = [], isSourcesLoaded, refreshSources, selectedSubjects, addToast } = useAppContext();
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [appliedSearchQuery, setAppliedSearchQuery] = useState('');
@@ -384,6 +393,7 @@ function ContentSourcesView() {
       await refreshSources?.();
       addToast(t('notifications.sync.success'), 'success');
     } catch (err) {
+      console.error('[ContentSources] Sync failed:', err);
       addToast(t('notifications.sync.error'), 'error');
     } finally {
       setIsSyncing(false);
@@ -481,14 +491,14 @@ function MainContent() {
 
   // Handle OAuth Callback
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(globalThis.location.search);
     const code = urlParams.get('code');
     
     if (code && !isAuthenticated && !loginAttempted.current) {
       loginAttempted.current = true;
       login(code).then(() => {
         // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
         addToast(t('auth.login_success', 'Login successful!'), 'success');
       }).catch((err) => {
         console.error('Login error:', err);
@@ -516,11 +526,11 @@ function MainContent() {
         <div className="flex items-center gap-2 text-sm">
           <span className="text-zinc-500">{t('sidebar.contexts.title')}:</span>
           <span className="text-emerald-400 font-medium px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">
-            {selectedSubjects.length === 1 
-              ? selectedSubjects[0].name 
-              : selectedSubjects.length > 1 
-                ? `${selectedSubjects.length} ${t('sidebar.contexts.title')}`
-                : t('sidebar.contexts.none')}
+            {(() => {
+              if (selectedSubjects.length === 1) return selectedSubjects[0].name;
+              if (selectedSubjects.length > 1) return `${selectedSubjects.length} ${t('sidebar.contexts.title')}`;
+              return t('sidebar.contexts.none');
+            })()}
           </span>
         </div>
         

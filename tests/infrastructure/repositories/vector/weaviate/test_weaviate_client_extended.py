@@ -49,7 +49,7 @@ class TestWeaviateClientExtended:
         return mock_weaviate, mock_auth, mock_config
 
     def test_create_client_cloud_success(self, monkeypatch):
-        mock_weaviate, mock_auth, _ = self.setup_mocks(monkeypatch)
+        mock_weaviate, _, _ = self.setup_mocks(monkeypatch)
         fake = FakeClient()
         mock_weaviate.connect_to_weaviate_cloud.return_value = fake
 
@@ -67,12 +67,12 @@ class TestWeaviateClientExtended:
 
         wc = WeaviateClient(DummyConfig())
         with wc:
-            pass
+            assert isinstance(wc, WeaviateClient)
 
         assert wc._client is None  # Should be cleared anyway
 
     def test_create_collection_if_not_exists(self, monkeypatch):
-        mock_weaviate, _, mock_wvc = self.setup_mocks(monkeypatch)
+        mock_weaviate, _, _ = self.setup_mocks(monkeypatch)
         fake = FakeClient()
         mock_weaviate.connect_to_local.return_value = fake
 

@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from starlette.responses import Response
 from src.presentation.api.middleware.trace_middleware import TraceMiddleware
@@ -24,9 +25,11 @@ async def test_trace_middleware_adds_headers():
     }
 
     async def receive():
+        await asyncio.sleep(0)  # Use async feature to satisfy linter
         return {"type": "http.request"}
 
     async def send(message):
+        await asyncio.sleep(0)  # Use async feature to satisfy linter
         if message["type"] == "http.response.start":
             # In Starlette, headers are list of tuples (bytes, bytes)
             header_keys = [k.decode("utf-8").lower() for k, v in message["headers"]]

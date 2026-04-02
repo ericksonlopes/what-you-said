@@ -369,6 +369,7 @@ class IngestionJobSQLRepository:
                     .filter(ContentSourceModel.subject_id == subject_id)
                     .order_by(IngestionJobModel.created_at.desc())
                     .limit(limit)
+                    .offset(offset)
                     .all()
                 )
                 return result

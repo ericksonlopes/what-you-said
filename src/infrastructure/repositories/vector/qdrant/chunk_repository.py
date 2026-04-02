@@ -121,7 +121,7 @@ class ChunkQdrantRepository(IVectorRepository):
                 "Error creating documents in Qdrant",
                 context={"num_documents": len(documents), "error": str(e)},
             )
-            raise e
+            raise
 
     def retriever(
         self,
@@ -156,7 +156,7 @@ class ChunkQdrantRepository(IVectorRepository):
                 "Error retrieving from Qdrant",
                 context={"query": query, "error": str(e)},
             )
-            raise e
+            raise
 
     def _semantic_search(
         self, query: str, top_kn: int, filters: Optional[rest.Filter]
@@ -358,7 +358,7 @@ class ChunkQdrantRepository(IVectorRepository):
                 return 1
         except Exception as e:
             logger.error("Error deleting from Qdrant", context={"error": str(e)})
-            raise e
+            raise
 
     def list_chunks(
         self, filters: Optional[Any], limit: int = 1000
@@ -382,7 +382,7 @@ class ChunkQdrantRepository(IVectorRepository):
             return chunks
         except Exception as e:
             logger.error("Error listing chunks from Qdrant", context={"error": str(e)})
-            raise e
+            raise
 
     def is_ready(self) -> bool:
         return self._connector.is_ready()

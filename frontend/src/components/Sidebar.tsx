@@ -2,53 +2,12 @@ import React, { useState } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { useAuth } from '../store/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { AddSubjectModal } from './AddSubjectModal';
-import { SettingsModal } from './SettingsModal';
-import * as LucideIcons from 'lucide-react';
 import {
   MessageSquare, Search, Database, Activity as ActivityIcon,
-  Hash, Plus, Brain, Briefcase, ChefHat, Cpu, Landmark, Lightbulb,
-  CheckSquare, Square, Settings, Layout, Layers, HardDrive,
-  Cloud, Lock, User, Users, Target, Award, GraduationCap,
-  Music, Video, Image, FileText, Mail, Terminal, Bug, LogOut
+  Plus, CheckSquare, Square, Settings, Layers, User, LogOut
 } from 'lucide-react';
 
-const ICONS = [
-  { name: 'Brain', icon: Brain },
-  { name: 'Briefcase', icon: Briefcase },
-  { name: 'ChefHat', icon: ChefHat },
-  { name: 'Cpu', icon: Cpu },
-  { name: 'Landmark', icon: Landmark },
-  { name: 'Lightbulb', icon: Lightbulb },
-  { name: 'Activity', icon: ActivityIcon },
-  { name: 'Hash', icon: Hash },
-  { name: 'Database', icon: Database },
-  { name: 'Search', icon: Search },
-  { name: 'Code', icon: LucideIcons.Code },
-  { name: 'MessageSquare', icon: MessageSquare },
-  { name: 'Layout', icon: Layout },
-  { name: 'Layers', icon: Layers },
-  { name: 'HardDrive', icon: HardDrive },
-  { name: 'Cloud', icon: Cloud },
-  { name: 'Lock', icon: Lock },
-  { name: 'User', icon: User },
-  { name: 'Users', icon: Users },
-  { name: 'Target', icon: Target },
-  { name: 'Award', icon: Award },
-  { name: 'GraduationCap', icon: GraduationCap },
-  { name: 'Music', icon: Music },
-  { name: 'Video', icon: Video },
-  { name: 'Image', icon: Image },
-  { name: 'FileText', icon: FileText },
-  { name: 'Mail', icon: Mail },
-  { name: 'Terminal', icon: Terminal },
-  { name: 'Bug', icon: Bug },
-];
-
-const getSubjectIcon = (iconName?: string) => {
-  const item = ICONS.find(i => i.name === iconName);
-  return item ? item.icon : Hash;
-};
+import { SettingsModal } from './SettingsModal';
 
 export function Sidebar() {
   const { subjects, selectedSubjects, toggleSubjectSelection, selectOnlySubject, currentView, setCurrentView, setIsAddSubjectModalOpen } = useAppContext();
@@ -86,6 +45,12 @@ export function Sidebar() {
   const filteredSubjects = subjects.filter(s =>
     s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getItemClass = (isActive: boolean, isDisabled: boolean) => {
+    if (isActive) return 'bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20';
+    if (isDisabled) return 'opacity-30 cursor-not-allowed grayscale';
+    return 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200';
+  };
 
   return (
     <div className="w-64 border-r border-border-subtle bg-[#121212] flex flex-col h-screen">
@@ -137,47 +102,48 @@ export function Sidebar() {
             <div className="text-xs text-zinc-500 text-center py-4">{t('sidebar.contexts.none')}</div>
           ) : (
             filteredSubjects.map((subject) => {
-              const Icon = getSubjectIcon(subject.icon);
               const isSelected = selectedSubjects.some(s => s.id === subject.id);
 
               return (
-                <div
-                  key={subject.id}
-                  onClick={() => toggleSubjectSelection(subject)}
-                  className={`relative w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all group select-none cursor-pointer ${isSelected
-                      ? 'bg-zinc-800 text-white font-medium shadow-sm'
-                      : 'text-zinc-400 hover:bg-panel-hover hover:text-zinc-200'
-                    }`}
-                  title={t('sidebar.contexts.toggle')}
-                >
-                  <div className="flex items-center gap-3 truncate pr-8">
-                    {isSelected ? (
-                      <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0 transition-transform duration-200 scale-110" />
-                    ) : (
-                      <Square className="w-4 h-4 opacity-50 flex-shrink-0 group-hover:opacity-100 transition-transform duration-200 group-hover:scale-110" />
-                    )}
-                    <span className="truncate">{subject.name}</span>
-                  </div>
+                <div key={subject.id} className="relative w-full group">
+                  <button
+                    type="button"
+                    onClick={() => toggleSubjectSelection(subject)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all select-none cursor-pointer outline-none ${isSelected
+                        ? 'bg-zinc-800 text-white font-medium shadow-sm'
+                        : 'text-zinc-400 hover:bg-panel-hover hover:text-zinc-200'
+                      }`}
+                    title={t('sidebar.contexts.toggle')}
+                  >
+                    <div className="flex items-center gap-3 truncate pr-8">
+                      {isSelected ? (
+                        <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0 transition-transform duration-200 scale-110" />
+                      ) : (
+                        <Square className="w-4 h-4 opacity-50 flex-shrink-0 group-hover:opacity-100 transition-transform duration-200 group-hover:scale-110" />
+                      )}
+                      <span className="truncate">{subject.name}</span>
+                    </div>
 
-                  <div className="flex items-center">
-                    {subject.sourceCount !== undefined && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 transition-opacity duration-200 group-hover:opacity-0 ${isSelected ? 'bg-zinc-700 text-zinc-300' : 'bg-black/40 text-zinc-500'
-                        }`}>
-                        {subject.sourceCount}
-                      </span>
-                    )}
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        selectOnlySubject(subject);
-                      }}
-                      className="absolute right-3 opacity-0 group-hover:opacity-100 px-2 py-0.5 text-[10px] font-medium bg-zinc-600 text-white rounded hover:bg-emerald-500 hover:text-black transition-all shadow-sm"
-                      title={t('sidebar.contexts.only')}
-                    >
-                      {t('sidebar.contexts.only')}
-                    </button>
-                  </div>
+                    <div className="flex items-center">
+                      {subject.sourceCount !== undefined && (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 transition-opacity duration-200 group-hover:opacity-0 ${isSelected ? 'bg-zinc-700 text-zinc-300' : 'bg-black/40 text-zinc-500'
+                          }`}>
+                          {subject.sourceCount}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectOnlySubject(subject);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 px-2 py-0.5 text-[10px] font-medium bg-zinc-600 text-white rounded hover:bg-emerald-500 hover:text-black transition-all shadow-sm z-10"
+                    title={t('sidebar.contexts.only')}
+                  >
+                    {t('sidebar.contexts.only')}
+                  </button>
                 </div>
               );
             })
@@ -197,19 +163,14 @@ export function Sidebar() {
                 const Icon = item.icon;
                 const isSourcesGroup = item.id === 'sources';
                 const isActive = currentView === item.id || (isSourcesGroup && currentView === 'database');
-                const isDisabled = (item as any).disabled;
+                const isDisabled = 'disabled' in item ? item.disabled : false;
 
                 return (
                   <button
                     key={item.id}
                     disabled={isDisabled}
-                    onClick={() => setCurrentView(item.id as any)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all relative group ${isActive
-                        ? 'bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20'
-                        : isDisabled
-                          ? 'opacity-30 cursor-not-allowed grayscale'
-                          : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
-                      }`}
+                    onClick={() => setCurrentView(item.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all relative group ${getItemClass(isActive, isDisabled)}`}
                   >
                     <Icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${isActive ? 'scale-110 text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
                     <span className="truncate">

@@ -84,7 +84,7 @@ class TaskQueueService:
                     self._queue.task_done()
                     break
 
-                func, task_title, metadata, args, kwargs = item
+                func, task_title, _, args, kwargs = item
                 display_title = task_title or func.__name__
 
                 logger.info(

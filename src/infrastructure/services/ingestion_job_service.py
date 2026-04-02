@@ -77,7 +77,6 @@ class IngestionJobService:
         )
 
         # Notification logic removed (WebSocket decommissioned)
-        pass
 
     def link_job_to_source(
         self,

@@ -85,4 +85,4 @@ class KnowledgeSubjectUseCase:
                 "Failed to delete knowledge subject",
                 context={"subject_id": str(subject_id), "error": str(e)},
             )
-            raise e
+            raise

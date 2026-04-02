@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   X, Settings, Activity, Database, 
-  Box, Server, Terminal, Key, Shield, 
-  CheckCircle2, XCircle, Loader2, Eye, EyeOff,
+  Box, Server, Terminal, 
+  CheckCircle2, XCircle, Loader2,
   Languages
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../services/api';
 
 interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -122,7 +122,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   );
 }
 
-function UnifiedSettings({ settings }: { settings: any }) {
+function UnifiedSettings({ settings }: { readonly settings: any }) {
   const { t } = useTranslation();
   return (
     <div className="space-y-10 pb-4">
@@ -135,7 +135,7 @@ function UnifiedSettings({ settings }: { settings: any }) {
             value={settings?.app?.env || "UNKNOWN"} 
             description={t('settings.labels.api_desc')}
             details={[
-              { label: t('settings.labels.endpoint'), value: window.location.origin },
+              { label: t('settings.labels.endpoint'), value: globalThis.location.origin },
               { label: t('settings.labels.environment'), value: settings?.app?.env || 'n/a' }
             ]}
             icon={Terminal} 
@@ -225,15 +225,15 @@ function DetailedEnvCard({
   checkLabel = "Check",
   componentId
 }: { 
-  title: string, 
-  value: string, 
-  description: string,
-  details?: { label: string, value: string }[],
-  icon: any, 
-  color: string, 
-  bg: string, 
-  checkLabel?: string,
-  componentId: string
+  readonly title: string, 
+  readonly value: string, 
+  readonly description: string,
+  readonly details?: { readonly label: string, readonly value: string }[],
+  readonly icon: any, 
+  readonly color: string, 
+  readonly bg: string, 
+  readonly checkLabel?: string,
+  readonly componentId: string
 }) {
   const { t } = useTranslation();
   const [status, setStatus] = useState<'unknown' | 'loading' | 'success' | 'error'>('unknown');
@@ -280,8 +280,8 @@ function DetailedEnvCard({
 
       {/* Details - Horizontal List */}
       <div className="flex-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-400">
-        {details?.map((detail, idx) => (
-          <div key={idx} className="flex gap-1.5 items-center">
+        {details?.map((detail) => (
+          <div key={detail.label} className="flex gap-1.5 items-center">
             <span className="text-zinc-600">{detail.label}:</span>
             <span className="font-mono text-zinc-300">{detail.value}</span>
           </div>
@@ -306,7 +306,7 @@ function DetailedEnvCard({
               {status === 'success' && (
                 <>
                   <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-medium">Online {latency && `(${latency}ms)`}</span>
+                  <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-medium">Online {latency !== null && `(${latency}ms)`}</span>
                 </>
               )}
               {status === 'error' && (

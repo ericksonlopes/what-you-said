@@ -37,7 +37,6 @@ def make_cs_service(existing: bool = False):
     class CS:
         def __init__(self):
             self.created = None
-            self._repo = SimpleNamespace(update_title=lambda **kwargs: None)
 
         def get_by_source_info(self, source_type, external_source, **kwargs):
             return (
@@ -77,6 +76,9 @@ def make_cs_service(existing: bool = False):
             )
             self.created = src
             return src
+
+        def update_title(self, content_source_id, title):
+            return None
 
         def update_processing_status(self, content_source_id, status):
             # noop for tests
@@ -646,10 +648,10 @@ def test_process_single_video_reprocess(monkeypatch):
     monkeypatch.setattr(
         chunk_svc,
         "delete_by_content_source",
-        lambda sid: deleted.update({"sql": True}) or 1,
+        lambda **kwargs: deleted.update({"sql": True}) or 1,
     )
     monkeypatch.setattr(
-        vec_svc, "delete_by_video_id", lambda vid: deleted.update({"vec": True}) or 1
+        vec_svc, "delete_by_video_id", lambda **kwargs: deleted.update({"vec": True}) or 1
     )
 
     use_case = YoutubeIngestionUseCase(
@@ -695,10 +697,10 @@ def test_process_single_video_rollback_on_fail(monkeypatch):
     monkeypatch.setattr(
         chunk_svc,
         "delete_by_job_id",
-        lambda jid: rolled_back.update({"sql": True}) or 1,
+        lambda **kwargs: rolled_back.update({"sql": True}) or 1,
     )
     monkeypatch.setattr(
-        vec_svc, "delete_by_job_id", lambda jid: rolled_back.update({"vec": True}) or 1
+        vec_svc, "delete_by_job_id", lambda **kwargs: rolled_back.update({"vec": True}) or 1
     )
 
     use_case = YoutubeIngestionUseCase(

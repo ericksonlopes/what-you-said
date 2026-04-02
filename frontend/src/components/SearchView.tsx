@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-  Search, Sparkles, Lock, FileText, PlayCircle, ExternalLink, 
+  Search, Sparkles, Lock, FileText,
   SlidersHorizontal, Database, TextSearch, Network, ListOrdered, 
   ChevronDown, X, Copy, Check, Languages, Cpu, Hash, Calendar, 
-  Info, Clock, ArrowUpDown, Youtube, BookOpen, Globe, Filter, Newspaper, Loader2,
+  Clock, ArrowUpDown, SquarePlay, BookOpen, Globe, Filter, Newspaper, Loader2,
   Layers
 } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
@@ -30,13 +30,48 @@ interface SearchResult {
 
 const getIcon = (type: string) => {
   switch (type.toLowerCase()) {
-    case 'youtube': return Youtube;
+    case 'youtube': return SquarePlay;
     case 'article': return Newspaper;
     case 'pdf': return FileText;
     case 'wikipedia': return BookOpen;
     case 'web': return Globe;
     default: return Filter;
   }
+};
+const getModeStyles = (mode: string) => {
+  if (mode === 'bm25') return { bgClass: 'bg-sky-400', textClass: 'text-sky-400' };
+  if (mode === 'hybrid') return { bgClass: 'bg-violet-400', textClass: 'text-violet-400' };
+  return { bgClass: 'bg-emerald-500', textClass: 'text-emerald-400' };
+};
+
+const getModeLabelForScore = (mode: string, score: number, t: any) => {
+  if (mode === 'bm25') return `BM25: ${score.toFixed(2)}`;
+  if (mode === 'hybrid') return `${(score * 100).toFixed(1)}% ${t('search.results.hybrid_label')}`;
+  return `${(score * 100).toFixed(1)}% ${t('search.results.match')}`;
+};
+
+const getModalModeLabelForScore = (mode: string, score: number) => {
+  if (mode === 'bm25') return `BM25: ${score.toFixed(2)}`;
+  if (mode === 'hybrid') return `${(score * 100).toFixed(1)}% HYBRID`;
+  return `${(score * 100).toFixed(1)}% MATCH`;
+};
+
+const renderContextBadge = (selectedSubjects: any[], t: any) => {
+  if (!selectedSubjects || selectedSubjects.length === 0) {
+    return <span className="text-red-400 font-medium whitespace-nowrap">{t('sidebar.contexts.none')}</span>;
+  }
+  if (selectedSubjects.length <= 2) {
+    return selectedSubjects.map(s => (
+      <span key={s.id} className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs truncate max-w-[180px]" title={s.name}>
+        {s.name}
+      </span>
+    ));
+  }
+  return (
+    <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs whitespace-nowrap">
+      {selectedSubjects.length} {t('sidebar.contexts.title')}
+    </span>
+  );
 };
 
 export function SearchView() {
@@ -111,7 +146,7 @@ export function SearchView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchMode, useRerank]);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     runSearch(query, searchMode, useRerank);
   };
@@ -179,19 +214,7 @@ export function SearchView() {
             <Database className="w-4 h-4 text-zinc-500 flex-shrink-0" />
             <span className="text-zinc-400 whitespace-nowrap flex-shrink-0">{t('search.results.source')}:</span>
             <div className="flex gap-1.5 flex-nowrap overflow-hidden min-w-0">
-              {selectedSubjects.length === 0 ? (
-                <span className="text-red-400 font-medium whitespace-nowrap">{t('sidebar.contexts.none')}</span>
-              ) : selectedSubjects.length <= 2 ? (
-                selectedSubjects.map(s => (
-                  <span key={s.id} className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs truncate max-w-[180px]" title={s.name}>
-                    {s.name}
-                  </span>
-                ))
-              ) : (
-                <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs whitespace-nowrap">
-                  {selectedSubjects.length} {t('sidebar.contexts.title')}
-                </span>
-              )}
+              {renderContextBadge(selectedSubjects, t)}
             </div>
           </div>
 
@@ -383,18 +406,9 @@ export function SearchView() {
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-950 border border-white/10 shadow-inner">
-                          <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${
-                            searchMode === 'bm25' ? 'bg-sky-400' : searchMode === 'hybrid' ? 'bg-violet-400' : 'bg-emerald-500'
-                          }`} />
-                          <span className={`text-[11px] font-mono font-medium tracking-tight ${
-                            searchMode === 'bm25' ? 'text-sky-400' : searchMode === 'hybrid' ? 'text-violet-400' : 'text-emerald-400'
-                          }`}>
-                            {searchMode === 'bm25'
-                              ? `BM25: ${result.score.toFixed(2)}`
-                              : searchMode === 'hybrid'
-                              ? `${(result.score * 100).toFixed(1)}% ${t('search.results.hybrid_label')}`
-                              : `${(result.score * 100).toFixed(1)}% ${t('search.results.match')}`
-                            }
+                          <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${getModeStyles(searchMode).bgClass}`} />
+                          <span className={`text-[11px] font-mono font-medium tracking-tight ${getModeStyles(searchMode).textClass}`}>
+                            {getModeLabelForScore(searchMode, result.score, t)}
                           </span>
                         </div>
                         {result.language && (
@@ -407,7 +421,7 @@ export function SearchView() {
                           <Layers className="w-3 h-3 text-emerald-500/70" />
                           <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">{result.context}</span>
                         </div>
-                        {result.tokensCount && (
+                        {result.tokensCount !== undefined && (
                           <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                             <Hash className="w-3 h-3" />
                             {result.tokensCount} tokens
@@ -531,18 +545,9 @@ export function SearchView() {
               {/* Modal Metadata Sub-header */}
               <div className="flex flex-wrap items-center gap-4 px-5 py-3 border-b border-zinc-800/50 bg-black/20">
                 <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-zinc-950 border border-white/10 flex-shrink-0">
-                  <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${
-                    searchMode === 'bm25' ? 'bg-sky-400' : searchMode === 'hybrid' ? 'bg-violet-400' : 'bg-emerald-500'
-                  }`} />
-                  <span className={`text-[11px] font-mono font-medium ${
-                    searchMode === 'bm25' ? 'text-sky-400' : searchMode === 'hybrid' ? 'text-violet-400' : 'text-emerald-400'
-                  }`}>
-                    {searchMode === 'bm25'
-                      ? `BM25: ${selectedResult.score.toFixed(2)}`
-                      : searchMode === 'hybrid'
-                      ? `${(selectedResult.score * 100).toFixed(1)}% HYBRID`
-                      : `${(selectedResult.score * 100).toFixed(1)}% MATCH`
-                    }
+                  <div className={`w-1.5 h-1.5 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${getModeStyles(searchMode).bgClass}`} />
+                  <span className={`text-[11px] font-mono font-medium ${getModeStyles(searchMode).textClass}`}>
+                    {getModalModeLabelForScore(searchMode, selectedResult.score)}
                   </span>
                 </div>
 

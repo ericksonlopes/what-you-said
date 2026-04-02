@@ -52,7 +52,6 @@ class YoutubeIngestionUseCase:
     """
 
     PIPELINE_VERSION = "1.0"
-    _lock = threading.Lock()
 
     def __init__(
         self,
@@ -75,6 +74,7 @@ class YoutubeIngestionUseCase:
         self.vector_service = vector_service
         self.vector_store_type = vector_store_type
         self.event_bus = event_bus
+        self._lock = threading.Lock()
 
     def _report_status(
         self,
@@ -422,7 +422,7 @@ class YoutubeIngestionUseCase:
                         ej, context={"action": "fail_job", "job_id": str(ingestion.id)}
                     )
 
-            raise e
+            raise
 
     def _ensure_ingestion_context(
         self, video_id: str, subject_id: UUID, cmd: IngestYoutubeCommand
@@ -618,7 +618,7 @@ class YoutubeIngestionUseCase:
                     f"No transcript chunks generated for video {video_id}."
                 )
 
-            self.cs_service._repo.update_title(
+            self.cs_service.update_title(
                 content_source_id=source.id, title=extracted_title
             )
             self._mark_source_processing(source)
@@ -720,7 +720,7 @@ class YoutubeIngestionUseCase:
                     ingestion.id, video_id, error_msg, source=source
                 )
 
-            raise e
+            raise
 
     def _fail_ingestion(self, source) -> None:
         self.cs_service.update_processing_status(
@@ -784,7 +784,7 @@ class YoutubeIngestionUseCase:
 
         # 2. Broader search: look for 11-char ID preceded by common prefixes or non-alphanumerics
         m = re.search(
-            r"(?:v=|be/|embed/|shorts/|/|^|[^A-Za-z0-9_-])([A-Za-z0-9_-]{11})(?:$|[^A-Za-z0-9_-])",
+            r"(?:v=|be/|embed/|shorts/|^|[^A-Za-z0-9_-])([A-Za-z0-9_-]{11})(?:$|[^A-Za-z0-9_-])",
             url,
         )
         if m:
