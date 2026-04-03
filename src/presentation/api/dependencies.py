@@ -87,8 +87,15 @@ def get_model_loader(request: Request) -> ModelLoaderService:
 
 
 def get_embedding_service(
-    model_loader: ModelLoaderService = Depends(get_model_loader),
+    model_loader: Optional[ModelLoaderService] = Depends(get_model_loader),
 ) -> EmbeddingService:
+    if model_loader is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=503,
+            detail="Embedding model is not loaded or failed to initialize. Please check server logs.",
+        )
     return EmbeddingService(model_loader_service=model_loader)
 
 
@@ -136,63 +143,72 @@ def get_vector_repository(
     dimensions = model_loader.dimensions
     collection_name = f"{base_name}_{dimensions}"
 
-    if settings.vector.store_type == VectorStoreType.CHROMA:
-        from src.infrastructure.repositories.vector.chroma.chunk_repository import (
-            ChunkChromaRepository,
-        )
+    try:
+        if settings.vector.store_type == VectorStoreType.CHROMA:
+            from src.infrastructure.repositories.vector.chroma.chunk_repository import (
+                ChunkChromaRepository,
+            )
 
-        return ChunkChromaRepository(
-            embedding_service=emb_service,
-            host=settings.vector.chroma_host,
-            port=settings.vector.chroma_port,
-            collection_name=collection_name,
-        )
+            return ChunkChromaRepository(
+                embedding_service=emb_service,
+                host=settings.vector.chroma_host,
+                port=settings.vector.chroma_port,
+                collection_name=collection_name,
+            )
 
-    if settings.vector.store_type == VectorStoreType.WEAVIATE:
-        from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
-            ChunkWeaviateRepository,
-        )
-        from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
-            WeaviateClient,
-        )
+        if settings.vector.store_type == VectorStoreType.WEAVIATE:
+            from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
+                ChunkWeaviateRepository,
+            )
+            from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
+                WeaviateClient,
+            )
 
-        client = WeaviateClient(settings.vector)
-        return ChunkWeaviateRepository(
-            weaviate_client=client,
-            embedding_service=emb_service,
-            collection_name=collection_name,
-        )
+            client = WeaviateClient(settings.vector)
+            return ChunkWeaviateRepository(
+                weaviate_client=client,
+                embedding_service=emb_service,
+                collection_name=collection_name,
+            )
 
-    if settings.vector.store_type == VectorStoreType.FAISS:
-        from src.infrastructure.repositories.vector.faiss.chunk_repository import (
-            ChunkFAISSRepository,
-        )
+        if settings.vector.store_type == VectorStoreType.FAISS:
+            from src.infrastructure.repositories.vector.faiss.chunk_repository import (
+                ChunkFAISSRepository,
+            )
 
-        return ChunkFAISSRepository(
-            embedding_service=emb_service,
-            index_path=settings.vector.vector_index_path,
-            index_name=collection_name,
-        )
+            return ChunkFAISSRepository(
+                embedding_service=emb_service,
+                index_path=settings.vector.vector_index_path,
+                index_name=collection_name,
+            )
 
-    if settings.vector.store_type == VectorStoreType.QDRANT:
-        from src.infrastructure.repositories.vector.qdrant.chunk_repository import (
-            ChunkQdrantRepository,
-        )
-        from src.infrastructure.repositories.vector.qdrant.connector import (
-            QdrantConnector,
-        )
+        if settings.vector.store_type == VectorStoreType.QDRANT:
+            from src.infrastructure.repositories.vector.qdrant.chunk_repository import (
+                ChunkQdrantRepository,
+            )
+            from src.infrastructure.repositories.vector.qdrant.connector import (
+                QdrantConnector,
+            )
 
-        connector = QdrantConnector(
-            host=settings.vector.qdrant_host,
-            port=settings.vector.qdrant_port,
-            grpc_port=settings.vector.qdrant_grpc_port,
-            api_key=settings.vector.qdrant_api_key,
-        )
-        return ChunkQdrantRepository(
-            connector=connector,
-            embedding_service=emb_service,
-            collection_name=collection_name,
-        )
+            connector = QdrantConnector(
+                host=settings.vector.qdrant_host,
+                port=settings.vector.qdrant_port,
+                grpc_port=settings.vector.qdrant_grpc_port,
+                api_key=settings.vector.qdrant_api_key,
+            )
+            return ChunkQdrantRepository(
+                connector=connector,
+                embedding_service=emb_service,
+                collection_name=collection_name,
+            )
+    except ImportError as e:
+        from fastapi import HTTPException
+
+        error_msg = f"Vector driver for {settings.vector.store_type} is not installed: {e}. Please run 'pip install qdrant-client' (or the appropriate driver)."
+        from src.config.logger import Logger
+
+        Logger().error(error_msg, context={"store_type": settings.vector.store_type})
+        raise HTTPException(status_code=500, detail=error_msg)
 
     raise ValueError(f"Unsupported vector store type: {settings.vector.store_type}")
 

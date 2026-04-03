@@ -2,6 +2,8 @@ from typing import List, Optional, Any
 from typing import cast
 from uuid import UUID
 
+from src.infrastructure.repositories.sql.utils import ensure_uuid
+
 from src.config.logger import Logger
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
@@ -74,10 +76,11 @@ class ChunkIndexSQLRepository:
 
     def list_by_content_source(
         self,
-        content_source_id: UUID,
+        content_source_id: Any,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ) -> List[ChunkIndexModel]:
+        content_source_id = ensure_uuid(content_source_id)
         with Connector() as session:
             query = (
                 session.query(ChunkIndexModel)
@@ -95,9 +98,10 @@ class ChunkIndexSQLRepository:
         self,
         limit: int = 100,
         offset: int = 0,
-        source_id: Optional[UUID] = None,
+        source_id: Optional[Any] = None,
         search_query: Optional[str] = None,
     ) -> List[ChunkIndexModel]:
+        source_id = ensure_uuid(source_id)
         with Connector() as session:
             query = session.query(ChunkIndexModel).options(
                 joinedload(ChunkIndexModel.content_source)
@@ -115,7 +119,8 @@ class ChunkIndexSQLRepository:
 
             return query.limit(limit).offset(offset).all()
 
-    def count_by_content_source(self, content_source_id: UUID) -> int:
+    def count_by_content_source(self, content_source_id: Any) -> int:
+        content_source_id = ensure_uuid(content_source_id)
         with Connector() as session:
             return (
                 session.query(ChunkIndexModel)
@@ -123,7 +128,8 @@ class ChunkIndexSQLRepository:
                 .count()
             )
 
-    def delete_by_content_source(self, content_source_id: UUID) -> int:
+    def delete_by_content_source(self, content_source_id: Any) -> int:
+        content_source_id = ensure_uuid(content_source_id)
         with Connector() as session:
             try:
                 deleted = (
@@ -146,7 +152,8 @@ class ChunkIndexSQLRepository:
                 )
                 raise
 
-    def delete_by_job_id(self, job_id: UUID) -> int:
+    def delete_by_job_id(self, job_id: Any) -> int:
+        job_id = ensure_uuid(job_id)
         """Delete all chunks associated with a specific ingestion job."""
         with Connector() as session:
             try:
@@ -219,7 +226,8 @@ class ChunkIndexSQLRepository:
                 )
             return q.limit(top_k).all()
 
-    def delete_chunk(self, chunk_id: UUID) -> bool:
+    def delete_chunk(self, chunk_id: Any) -> bool:
+        chunk_id = ensure_uuid(chunk_id)
         with Connector() as session:
             try:
                 # 1. Get content_source_id before deleting
@@ -247,7 +255,8 @@ class ChunkIndexSQLRepository:
                 )
                 raise
 
-    def update_chunk(self, chunk_id: UUID, content: str) -> bool:
+    def update_chunk(self, chunk_id: Any, content: str) -> bool:
+        chunk_id = ensure_uuid(chunk_id)
         with Connector() as session:
             try:
                 chunk = session.query(ChunkIndexModel).filter_by(id=chunk_id).first()
@@ -265,7 +274,8 @@ class ChunkIndexSQLRepository:
                 )
                 raise
 
-    def get_by_id(self, chunk_id: UUID) -> Optional[ChunkIndexModel]:
+    def get_by_id(self, chunk_id: Any) -> Optional[ChunkIndexModel]:
+        chunk_id = ensure_uuid(chunk_id)
         with Connector() as session:
             try:
                 return (

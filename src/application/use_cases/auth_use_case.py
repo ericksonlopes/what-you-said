@@ -21,7 +21,7 @@ class AuthUseCase:
         self._user_repo = user_repo
         self._auth_service = auth_service
 
-    async def get_login_url(self) -> Tuple[str, str]:
+    def get_login_url(self) -> Tuple[str, str]:
         state = secrets.token_urlsafe(32)
         url = self._auth_service.get_google_auth_url(state=state)
         return url, state
@@ -29,8 +29,8 @@ class AuthUseCase:
     async def handle_google_callback(
         self, code: str, received_state: str, expected_state: str
     ) -> Dict[str, Any]:
-        # 0. Validate state
-        if not received_state or received_state != expected_state:
+        # 0. Validate state (only if expected_state was provided)
+        if expected_state and received_state != expected_state:
             raise InvalidStateError("Invalid authentication state (CSRF Protection)")
 
         # 1. Exchange code for token

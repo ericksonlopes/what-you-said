@@ -1,6 +1,7 @@
-from typing import Optional, List
-from typing import cast
+from typing import Optional, List, Any, cast
 from uuid import UUID
+
+from src.infrastructure.repositories.sql.utils import ensure_uuid
 
 from sqlalchemy.orm import selectinload
 
@@ -61,18 +62,22 @@ class KnowledgeSubjectSQLRepository:
                 session.rollback()
                 raise
 
-    def get_by_id(self, id: UUID) -> Optional[KnowledgeSubjectModel]:
+    def get_by_id(self, ks_id: Any) -> Optional[KnowledgeSubjectModel]:
+        ks_id = ensure_uuid(ks_id)
+        if ks_id is None:
+            return None
         with Connector() as session:
             try:
-                logger.debug("Fetching KnowledgeSubject by ID", context={"id": id})
+                logger.debug("Fetching KnowledgeSubject by ID", context={"id": ks_id})
                 result = (
                     session.query(KnowledgeSubjectModel)
                     .options(selectinload(KnowledgeSubjectModel.content_sources))
-                    .filter_by(id=id)
+                    .filter_by(id=ks_id)
                     .first()
                 )
                 logger.debug(
-                    "Fetch successful get_by_id", context={"id": id, "result": result}
+                    "Fetch successful get_by_id",
+                    context={"id": ks_id, "result": result},
                 )
                 return result
             except Exception as e:

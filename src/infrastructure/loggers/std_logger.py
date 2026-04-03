@@ -27,6 +27,17 @@ def clear_global_context() -> None:
     _global_log_context.set({})
 
 
+# ANSI color codes
+COLORS = {
+    "DEBUG": "\033[36m",  # Cyan
+    "INFO": "\033[32m",  # Green
+    "WARNING": "\033[33m",  # Yellow
+    "ERROR": "\033[31m",  # Red
+    "CRITICAL": "\033[41m",  # Red background
+    "RESET": "\033[0m",
+}
+
+
 class StdLogger(ILogger):
     """
     Standard loggers that uses Python's built-in logging instead of loguru.
@@ -72,6 +83,8 @@ class StdLogger(ILogger):
         self._logger.parent = None
 
         self.allowed_levels = settings.app.allowed_log_levels
+        # Check if we should use colors (default to True if terminal)
+        self.use_colors = sys.stdout.isatty()
 
     @staticmethod
     def get_logger_module_files(base_dir=None):
@@ -147,11 +160,32 @@ class StdLogger(ILogger):
             raise RuntimeError(f"Unexpected error in _is_allowed: {exc}") from exc
 
     def _log(
-        self, level: str, message: str, context: dict[str, Any] | Optional[Any] = None
+        self,
+        level: str,
+        message: str,
+        context: dict[str, Any] | Optional[Any] = None,
+        *args,
+        **kwargs,
     ) -> None:
         if not self._is_allowed(level):
             return
+
+        # Handle standard logging message interpolation if args are provided
+        if args:
+            try:
+                message = message % args
+            except Exception:
+                pass
+
         ctx = StdLogger.get_log_record(level, message)
+
+        # Apply colors if enabled
+        if self.use_colors:
+            color = COLORS.get(ctx["levelname"], "")
+            reset = COLORS["RESET"]
+            ctx["levelname"] = f"{color}{ctx['levelname']:<8}{reset}"
+        else:
+            ctx["levelname"] = f"{ctx['levelname']:<8}"
 
         # Merge local context with global context from contextvars
         global_ctx = _global_log_context.get()
@@ -165,6 +199,10 @@ class StdLogger(ILogger):
                 # If it's not a dict, we put it into a default key to avoid crash
                 safe_context = {"extra": context}
 
+        # Handle extra from kwargs (standard logging)
+        if "extra" in kwargs and isinstance(kwargs["extra"], dict):
+            safe_context.update(kwargs["extra"])
+
         full_context = {**global_ctx, **safe_context}
 
         # Adiciona o contexto como string (JSON ou str) ao campo 'context'
@@ -172,35 +210,54 @@ class StdLogger(ILogger):
             import json
 
             try:
-                ctx["context"] = json.dumps(full_context, ensure_ascii=False)
-            except TypeError:
-                ctx["context"] = str(full_context)
+                # One-liner for standard view, but could be indented if preferred
+                ctx["context"] = (
+                    f"| \033[2m{json.dumps(full_context, ensure_ascii=False)}\033[0m"
+                    if self.use_colors
+                    else f"| {json.dumps(full_context, ensure_ascii=False)}"
+                )
+            except (TypeError, OverflowError):
+                ctx["context"] = f"| {str(full_context)}"
         else:
             ctx["context"] = ""
-        formatted_message = self.log_format.format(**ctx)
+
+        # Adjust format slightly if context exists to avoid trailing pipe
+        current_format = self.log_format.replace(" | {context}", "{context}")
+        formatted_message = current_format.format(**ctx)
+
         log_method = getattr(self._logger, level.lower(), None)
         if log_method:
             log_method(formatted_message)
 
-    def info(self, message: str, context: dict[str, Any] | None = None) -> None:
+    def info(
+        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
+    ) -> None:
         """Log at INFO level."""
-        self._log("INFO", message, context)
+        self._log("INFO", message, context, *args, **kwargs)
 
-    def debug(self, message: str, context: dict[str, Any] | None = None) -> None:
+    def debug(
+        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
+    ) -> None:
         """Log at DEBUG level."""
-        self._log("DEBUG", message, context)
+        self._log("DEBUG", message, context, *args, **kwargs)
 
-    def warning(self, message: str, context: dict[str, Any] | None = None) -> None:
+    def warning(
+        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
+    ) -> None:
         """Log at WARNING level."""
-        self._log("WARNING", message, context)
+        self._log("WARNING", message, context, *args, **kwargs)
 
-    def error(self, error: Exception, context: dict[str, Any] | None = None) -> None:
+    def error(
+        self, error: Any, context: dict[str, Any] | None = None, *args, **kwargs
+    ) -> None:
         """Log at ERROR level with optional exception/context support."""
-        self._log("ERROR", str(error), context)
+        self._log("ERROR", str(error), context, *args, **kwargs)
 
-    def critical(self, message: str, context: dict[str, Any] | None = None) -> None:
+    def critical(
+        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
+    ) -> None:
         """Log at CRITICAL level."""
-        self._log("CRITICAL", message, context)
+        self._log("CRITICAL", message, context, *args, **kwargs)
 
 
 class InterceptHandler(logging.Handler):

@@ -21,11 +21,10 @@ def use_case(mock_repo, mock_service):
 
 
 class TestAuthUseCase:
-    @pytest.mark.asyncio
-    async def test_get_login_url(self, use_case, mock_service):
+    def test_get_login_url(self, use_case, mock_service):
         mock_service.get_google_auth_url.return_value = "http://google.login"
 
-        url, state = await use_case.get_login_url()
+        url, state = use_case.get_login_url()
 
         assert url == "http://google.login"
         assert len(state) > 0

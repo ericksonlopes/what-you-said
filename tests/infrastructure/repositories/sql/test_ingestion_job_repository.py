@@ -37,10 +37,13 @@ class TestIngestionJobSQLRepository:
         assert job.content_source_id == cs_id
 
     def test_create_job_error(self):
-        # Trigger an error by passing invalid content_source_id type if possible,
-        # or just mock the session.
-        with pytest.raises(Exception):
-            self.repo.create_job(content_source_id="invalid-uuid")
+        # Mock session to raise an error during add
+        from unittest.mock import patch
+        with patch("src.infrastructure.repositories.sql.ingestion_job_repository.Connector") as mock_connector:
+            mock_session = mock_connector.return_value.__enter__.return_value
+            mock_session.add.side_effect = Exception("DB Error")
+            with pytest.raises(Exception):
+                self.repo.create_job(content_source_id=None)
 
     def test_update_job_success(self):
         job_id = self.repo.create_job(content_source_id=None)

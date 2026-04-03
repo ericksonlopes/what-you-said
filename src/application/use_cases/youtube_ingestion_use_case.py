@@ -316,7 +316,7 @@ class YoutubeIngestionUseCase:
             video_url=cmd.video_url,
         )
         logger.info(
-            "Starting YouTube ingestion",
+            "STARTING YOUTUBE INGESTION PIPELINE",
             context={
                 "video_url": getattr(cmd, "video_url", None),
                 "video_urls": getattr(cmd, "video_urls", None),

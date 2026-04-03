@@ -1,13 +1,16 @@
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, Any
 from typing import cast
 from uuid import UUID
+
+from src.infrastructure.repositories.sql.utils import ensure_uuid
 
 from src.config.logger import Logger
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
 
 logger = Logger()
+INVALID_UUID_MSG = "Invalid subject_id UUID string provided"
 
 
 class ContentSourceSQLRepository:
@@ -82,12 +85,15 @@ class ContentSourceSQLRepository:
                 session.rollback()
                 raise
 
-    def get_by_id(self, id: UUID) -> Optional[ContentSourceModel]:
+    def get_by_id(self, cs_id: Any) -> Optional[ContentSourceModel]:
+        cs_id = ensure_uuid(cs_id, "Invalid UUID string provided for content source")
+        if cs_id is None:
+            return None
         with Connector() as session:
             try:
-                extra = {"id": id}
+                extra = {"id": cs_id}
                 logger.debug("Fetching ContentSource by ID", context=extra)
-                result = session.get(ContentSourceModel, id)
+                result = session.get(ContentSourceModel, cs_id)
                 logger.debug("Fetch successful", context={**extra, "result": result})
                 return result
             except Exception as e:
@@ -98,8 +104,9 @@ class ContentSourceSQLRepository:
                 raise
 
     def get_by_source_info(
-        self, source_type: str, external_source: str, subject_id: Optional[UUID] = None
+        self, source_type: str, external_source: str, subject_id: Optional[Any] = None
     ) -> List[ContentSourceModel]:
+        subject_id = ensure_uuid(subject_id, INVALID_UUID_MSG)
         with Connector() as session:
             try:
                 extra = {
@@ -131,10 +138,11 @@ class ContentSourceSQLRepository:
 
     def list_by_subject(
         self,
-        subject_id: UUID,
+        subject_id: Any,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ) -> List[ContentSourceModel]:
+        subject_id = ensure_uuid(subject_id, INVALID_UUID_MSG)
         with Connector() as session:
             try:
                 extra = {"subject_id": subject_id, "limit": limit, "offset": offset}
@@ -186,7 +194,8 @@ class ContentSourceSQLRepository:
                 )
                 raise
 
-    def count_by_subject(self, subject_id: UUID) -> int:
+    def count_by_subject(self, subject_id: Any) -> int:
+        subject_id = ensure_uuid(subject_id, INVALID_UUID_MSG)
         with Connector() as session:
             try:
                 extra = {"subject_id": subject_id}

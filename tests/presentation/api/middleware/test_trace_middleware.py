@@ -25,11 +25,11 @@ async def test_trace_middleware_adds_headers():
     }
 
     async def receive():
-        await anyio.sleep(0)  # Use anyio instead of asyncio for trio compatibility
+        await anyio.lowlevel.checkpoint()
         return {"type": "http.request"}
 
     async def send(message):
-        await anyio.sleep(0)  # Use anyio instead of asyncio for trio compatibility
+        await anyio.lowlevel.checkpoint()
         if message["type"] == "http.response.start":
             # In Starlette, headers are list of tuples (bytes, bytes)
             header_keys = [k.decode("utf-8").lower() for k, v in message["headers"]]

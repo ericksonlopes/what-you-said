@@ -145,7 +145,7 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     } catch (err) {
       console.error('Error fetching subjects:', err);
     }
-  }, [selectedSubjects.length]);
+  }, [selectedSubjects.length, isAuthEnabled, isAuthenticated]);
 
   const refreshSources = useCallback(async () => {
     if (isAuthEnabled && !isAuthenticated) return;
@@ -161,7 +161,7 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     } finally {
       setIsSourcesLoaded(true);
     }
-  }, []);
+  }, [isAuthEnabled, isAuthenticated]);
 
   const normalizeYoutubeId = useCallback((s: string | undefined): string => {
     if (!s) return '';
@@ -242,7 +242,7 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     } catch (err) {
       console.error('Error fetching model info:', err);
     }
-  }, []);
+  }, [isAuthEnabled, isAuthenticated]);
 
   // Initial load
   useEffect(() => {

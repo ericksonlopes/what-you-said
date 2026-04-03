@@ -493,16 +493,19 @@ function MainContent() {
   useEffect(() => {
     const urlParams = new URLSearchParams(globalThis.location.search);
     const code = urlParams.get('code');
-    
+    const state = urlParams.get('state');
+
     if (code && !isAuthenticated && !loginAttempted.current) {
       loginAttempted.current = true;
-      login(code).then(() => {
-        // Clean up URL
-        globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
+      
+      // Prevent infinite loops on failure by clearing the URL immediately
+      globalThis.history.replaceState({}, document.title, globalThis.location.pathname);
+      
+      login(code, state || undefined).then(() => {
         addToast(t('auth.login_success', 'Login successful!'), 'success');
       }).catch((err) => {
         console.error('Login error:', err);
-        loginAttempted.current = false; // Allow retry if failed
+        // Do not reset loginAttempted.current. If they want to retry, they must click "Login" again.
         addToast(t('auth.login_error', 'Login failed. Please try again.'), 'error');
       });
     }

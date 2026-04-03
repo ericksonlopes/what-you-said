@@ -48,7 +48,7 @@ export const api = {
   }): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/ingest/file-url`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify(data)
     });
     await handleResponseError(response, 'File URL ingestion failed');
@@ -317,17 +317,20 @@ export const api = {
     return response.json();
   },
 
-  async getGoogleLoginUrl(): Promise<{ url: string }> {
+  async getGoogleLoginUrl(): Promise<{ url: string; state: string }> {
     const response = await fetch(`${API_BASE_URL}/auth/google/login`, {
-      headers: getHeaders()
+      headers: getHeaders(),
     });
     await handleResponseError(response, 'Failed to get login URL');
     return response.json();
   },
 
-  async googleCallback(code: string): Promise<{ access_token: string; user: any }> {
-    const response = await fetch(`${API_BASE_URL}/auth/google/callback?code=${code}`, {
-      headers: getHeaders()
+  async googleCallback(code: string, state?: string, expectedState?: string): Promise<{ access_token: string; user: any }> {
+    const params = new URLSearchParams({ code });
+    if (state) params.append('state', state);
+    if (expectedState) params.append('expected_state', expectedState);
+    const response = await fetch(`${API_BASE_URL}/auth/google/callback?${params.toString()}`, {
+      headers: getHeaders(),
     });
     await handleResponseError(response, 'Auth callback failed');
     return response.json();

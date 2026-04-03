@@ -1,7 +1,9 @@
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime, timezone
 
 from sqlalchemy import select
+
+from src.infrastructure.repositories.sql.utils import ensure_uuid
 from src.domain.interfaces.repository.user_repository import IUserRepository
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.user import User as UserModel
@@ -28,9 +30,12 @@ class UserSQLRepository(IUserRepository):
             result = session.execute(stmt).scalar_one_or_none()
             return self._to_entity(result) if result else None
 
-    def get_by_id(self, user_id: str) -> Optional[UserEntity]:
+    def get_by_id(self, user_id: Any) -> Optional[UserEntity]:
+        user_id = ensure_uuid(user_id)
+        if user_id is None:
+            return None
         with self._session_provider as session:
-            stmt = select(UserModel).where(UserModel.id == user_id)
+            stmt = select(UserModel).where(UserModel.id == str(user_id))
             result = session.execute(stmt).scalar_one_or_none()
             return self._to_entity(result) if result else None
 
@@ -49,9 +54,12 @@ class UserSQLRepository(IUserRepository):
             session.refresh(model)
             return self._to_entity(model)
 
-    def update_last_login(self, user_id: str) -> Optional[UserEntity]:
+    def update_last_login(self, user_id: Any) -> Optional[UserEntity]:
+        user_id = ensure_uuid(user_id)
+        if user_id is None:
+            return None
         with self._session_provider as session:
-            stmt = select(UserModel).where(UserModel.id == user_id)
+            stmt = select(UserModel).where(UserModel.id == str(user_id))
             model = session.execute(stmt).scalar_one_or_none()
             if model:
                 model.last_login = datetime.now(timezone.utc)

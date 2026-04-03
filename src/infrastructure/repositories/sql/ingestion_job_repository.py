@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, Any, Union
 from typing import cast
 from uuid import UUID
+
+from src.infrastructure.repositories.sql.utils import ensure_uuid
 
 from sqlalchemy.orm import joinedload
 
@@ -10,6 +12,8 @@ from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.ingestion_job import IngestionJobModel
 
 logger = Logger()
+DUPLICATE_FILTER = "%Duplicate%"
+TERMINAL_STATUSES = ["finished", "failed", "error", "cancelled", "done"]
 
 
 class IngestionJobSQLRepository:
@@ -25,8 +29,10 @@ class IngestionJobSQLRepository:
         vector_store_type: Optional[str] = None,
         source_title: Optional[str] = None,
         external_source: Optional[str] = None,
-        subject_id: Optional[UUID] = None,
+        subject_id: Optional[Union[UUID, str]] = None,
     ) -> UUID:
+        content_source_id = ensure_uuid(content_source_id)
+        subject_id = ensure_uuid(subject_id)
         with Connector() as session:
             try:
                 extra = {
@@ -69,7 +75,7 @@ class IngestionJobSQLRepository:
 
     def update_job(
         self,
-        job_id: UUID,
+        job_id: Any,
         status: str,
         error_message: Optional[str] = None,
         status_message: Optional[str] = None,
@@ -77,14 +83,21 @@ class IngestionJobSQLRepository:
         total_steps: Optional[int] = None,
         chunks_count: Optional[int] = None,
         source_title: Optional[str] = None,
-        content_source_id: Optional[UUID] = None,
+        content_source_id: Optional[Union[UUID, str]] = None,
         ingestion_type: Optional[str] = None,
     ) -> None:
         """Update an ingestion job's status, error_message and progress info."""
+        job_id_uuid = ensure_uuid(job_id)
+        cs_id_uuid = ensure_uuid(content_source_id)
+
+        if job_id_uuid is None:
+            logger.warning("No job_id provided for update")
+            return
+
         with Connector() as session:
             try:
                 extra = {
-                    "job_id": job_id,
+                    "job_id": job_id_uuid,
                     "status": status,
                     "error_message": error_message,
                     "status_message": status_message,
@@ -92,11 +105,11 @@ class IngestionJobSQLRepository:
                     "total_steps": total_steps,
                     "chunks_count": chunks_count,
                     "source_title": source_title,
-                    "content_source_id": content_source_id,
+                    "content_source_id": cs_id_uuid,
                     "ingestion_type": ingestion_type,
                 }
                 logger.debug("Updating ingestion job", context=extra)
-                job = session.get(IngestionJobModel, job_id)
+                job = session.get(IngestionJobModel, job_id_uuid)
                 if job is None:
                     logger.warning("Ingestion job not found", context=extra)
                     return
@@ -117,8 +130,8 @@ class IngestionJobSQLRepository:
                     job.chunks_count = chunks_count
                 if source_title is not None:
                     job.source_title = source_title
-                if content_source_id is not None:
-                    job.content_source_id = content_source_id
+                if cs_id_uuid is not None:
+                    job.content_source_id = cs_id_uuid
                 if ingestion_type is not None:
                     job.ingestion_type = ingestion_type
 
@@ -133,20 +146,33 @@ class IngestionJobSQLRepository:
 
     def link_job_to_source(
         self,
-        job_id: UUID,
-        content_source_id: UUID,
+        job_id: Any,
+        content_source_id: Any,
         ingestion_type: Optional[str] = None,
     ) -> None:
         """Link an existing job to a content source."""
+        job_id_uuid = ensure_uuid(job_id)
+        cs_id_uuid = ensure_uuid(content_source_id)
+
+        if job_id_uuid is None or cs_id_uuid is None:
+            logger.warning(
+                "Cannot link job to source: missing IDs",
+                context={"job_id": job_id, "content_source_id": content_source_id},
+            )
+            return
+
         with Connector() as session:
             try:
                 logger.debug(
                     "Linking job to content source",
-                    context={"job_id": job_id, "content_source_id": content_source_id},
+                    context={
+                        "job_id": job_id_uuid,
+                        "content_source_id": cs_id_uuid,
+                    },
                 )
-                job = session.get(IngestionJobModel, job_id)
+                job = session.get(IngestionJobModel, job_id_uuid)
                 if job:
-                    job.content_source_id = content_source_id
+                    job.content_source_id = cs_id_uuid
                     if ingestion_type:
                         job.ingestion_type = ingestion_type
                     session.commit()
@@ -162,7 +188,8 @@ class IngestionJobSQLRepository:
                 session.rollback()
                 raise
 
-    def get_by_id(self, job_id: UUID) -> Optional[IngestionJobModel]:
+    def get_by_id(self, job_id: Any) -> Optional[IngestionJobModel]:
+        job_id = ensure_uuid(job_id)
         with Connector() as session:
             try:
                 extra = {"job_id": job_id}
@@ -224,13 +251,15 @@ class IngestionJobSQLRepository:
                         query = query.filter(
                             IngestionJobModel.status.in_(["failed", "error"]),
                             (IngestionJobModel.error_message.is_(None))
-                            | (~IngestionJobModel.error_message.ilike("%Duplicate%")),
+                            | (
+                                ~IngestionJobModel.error_message.ilike(DUPLICATE_FILTER)
+                            ),
                         )
                     elif status == "cancelled":
                         # Include Duplicates in Cancelled
                         query = query.filter(
                             (IngestionJobModel.status == "cancelled")
-                            | (IngestionJobModel.error_message.ilike("%Duplicate%"))
+                            | (IngestionJobModel.error_message.ilike(DUPLICATE_FILTER))
                         )
                     else:
                         query = query.filter(IngestionJobModel.status == status)
@@ -321,7 +350,9 @@ class IngestionJobSQLRepository:
                 ).count()
 
                 # Treat "Duplicate" errors as CANCELLED
-                duplicate_filter = IngestionJobModel.error_message.ilike("%Duplicate%")
+                duplicate_filter = IngestionJobModel.error_message.ilike(
+                    DUPLICATE_FILTER
+                )
                 not_duplicate_filter = (IngestionJobModel.error_message.is_(None)) | (
                     ~duplicate_filter
                 )
@@ -347,8 +378,9 @@ class IngestionJobSQLRepository:
                 raise
 
     def list_recent_jobs_by_subject(
-        self, subject_id: UUID, limit: int = 50, offset: int = 0
+        self, subject_id: Any, limit: int = 50, offset: int = 0
     ) -> List[IngestionJobModel]:
+        subject_id = ensure_uuid(subject_id)
         from src.infrastructure.repositories.sql.models.content_source import (
             ContentSourceModel,
         )
@@ -380,9 +412,8 @@ class IngestionJobSQLRepository:
                 )
                 raise
 
-    def list_by_content_source(
-        self, content_source_id: UUID
-    ) -> List[IngestionJobModel]:
+    def list_by_content_source(self, content_source_id: Any) -> List[IngestionJobModel]:
+        content_source_id = ensure_uuid(content_source_id)
         with Connector() as session:
             try:
                 extra = {"content_source_id": content_source_id}
@@ -404,8 +435,10 @@ class IngestionJobSQLRepository:
                 raise
 
     def mark_previous_jobs_as_reprocessed(
-        self, content_source_id: UUID, current_job_id: UUID
+        self, content_source_id: Any, current_job_id: Any
     ) -> int:
+        content_source_id = ensure_uuid(content_source_id)
+        current_job_id = ensure_uuid(current_job_id)
         """Mark all previous jobs for a content source as REPROCESSED."""
         from src.infrastructure.repositories.sql.models.ingestion_job import (
             IngestionJobModel,
@@ -421,14 +454,14 @@ class IngestionJobSQLRepository:
                     },
                 )
                 # Final states that should be marked as reprocessed
-                terminal_statuses = ["finished", "failed", "error", "cancelled", "done"]
+                # terminal_statuses removed in favor of TERMINAL_STATUSES
 
                 # Update jobs
                 updated_count = (
                     session.query(IngestionJobModel)
                     .filter(IngestionJobModel.content_source_id == content_source_id)
                     .filter(IngestionJobModel.id != current_job_id)
-                    .filter(IngestionJobModel.status.in_(terminal_statuses))
+                    .filter(IngestionJobModel.status.in_(TERMINAL_STATUSES))
                     .update({"status": "reprocessed"}, synchronize_session=False)
                 )
 
