@@ -317,21 +317,20 @@ export const api = {
     return response.json();
   },
 
-  async getGoogleLoginUrl(): Promise<{ url: string }> {
+  async getGoogleLoginUrl(): Promise<{ url: string; state: string }> {
     const response = await fetch(`${API_BASE_URL}/auth/google/login`, {
       headers: getHeaders(),
-      credentials: 'include',
     });
     await handleResponseError(response, 'Failed to get login URL');
     return response.json();
   },
 
-  async googleCallback(code: string, state?: string): Promise<{ access_token: string; user: any }> {
+  async googleCallback(code: string, state?: string, expectedState?: string): Promise<{ access_token: string; user: any }> {
     const params = new URLSearchParams({ code });
     if (state) params.append('state', state);
+    if (expectedState) params.append('expected_state', expectedState);
     const response = await fetch(`${API_BASE_URL}/auth/google/callback?${params.toString()}`, {
       headers: getHeaders(),
-      credentials: 'include',
     });
     await handleResponseError(response, 'Auth callback failed');
     return response.json();
