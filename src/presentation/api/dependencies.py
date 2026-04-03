@@ -1,7 +1,7 @@
-from typing import Any, Optional
+from typing import Any, Generator, Optional
 
 from fastapi import Depends, Request
-
+from sqlalchemy.orm import Session
 from src.application.ingestion_context import IngestionContext
 from src.application.use_cases.auth_use_case import AuthUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
@@ -21,6 +21,7 @@ from src.infrastructure.extractors.crawl4ai_extractor import Crawl4AIExtractor
 from src.infrastructure.repositories.sql.chunk_index_repository import (
     ChunkIndexSQLRepository,
 )
+from src.infrastructure.repositories.sql.connector import Session as DBSessionFactory
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
 )
@@ -45,8 +46,12 @@ from src.infrastructure.services.re_rank_service import ReRankService
 from src.infrastructure.services.youtube_vector_service import YouTubeVectorService
 
 
-# This module acts as the DI container for the FastAPI app.
-# Each function provides an instance of a domain service or use case.
+def get_db() -> Generator[Session, None, None]:
+    db = DBSessionFactory()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def get_settings() -> Settings:

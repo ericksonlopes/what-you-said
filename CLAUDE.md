@@ -1,4 +1,8 @@
-# 🗺️ WhatYouSaid Agent Guide (Architecture & Workflows)
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What This Project Is
 
 WhatYouSaid is a vectorized data hub that extracts, processes, and indexes content from YouTube videos, local files, remote URLs, and websites for semantic search and RAG workflows. It has a Python/FastAPI backend and a React/TypeScript frontend.
 

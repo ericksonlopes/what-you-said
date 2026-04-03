@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict
 
 from src.domain.interfaces.services.i_event_bus import IEventBus
-from src.infrastructure.redis_connector import RedisConnector
+from src.infrastructure.connectors.redis_connector import RedisConnector
 
 logger = logging.getLogger(__name__)
 

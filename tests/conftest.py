@@ -39,8 +39,10 @@ def sqlite_memory():
 
     # Create all tables declared on Base
     connector.Base.metadata.create_all(bind=engine)
+    db = connector.Session()
     try:
-        yield
+        yield db
     finally:
+        db.close()
         # Drop all tables to cleanup
         connector.Base.metadata.drop_all(bind=engine)

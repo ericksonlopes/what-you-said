@@ -7,7 +7,7 @@ from uuid import UUID
 
 from src.config.logger import Logger
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
-from src.infrastructure.redis_connector import RedisConnector
+from src.infrastructure.connectors.redis_connector import RedisConnector
 
 logger = Logger()
 
@@ -122,11 +122,15 @@ class RedisTaskQueueService(ITaskQueue):
             IngestYoutubeCommand,
         )
         from src.application.dtos.commands.ingest_web_command import IngestWebCommand
+        from src.application.dtos.commands.process_audio_command import (
+            ProcessAudioCommand,
+        )
 
         command_classes = {
             "IngestFileCommand": IngestFileCommand,
             "IngestYoutubeCommand": IngestYoutubeCommand,
             "IngestWebCommand": IngestWebCommand,
+            "ProcessAudioCommand": ProcessAudioCommand,
         }
 
         result = []

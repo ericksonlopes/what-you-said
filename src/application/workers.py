@@ -3,6 +3,7 @@ from typing import Any
 
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
+from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
 from src.application.service_registry import registry
 from src.infrastructure.loggers.std_logger import (
     set_global_context,
@@ -172,3 +173,63 @@ def run_web_ingestion_worker(cmd: Any):
             clear_global_context()
 
     asyncio.run(_run())
+
+
+def _audio_diarization_subprocess(cmd_dict: dict):
+    """Run audio diarization in a separate process to avoid torch/CUDA thread deadlocks."""
+    from src.infrastructure.repositories.sql.connector import (
+        Session as DBSessionFactory,
+    )
+    from src.application.use_cases.process_audio_diarization_pipeline import (
+        ProcessAudioDiarizationPipelineUseCase,
+    )
+
+    db = DBSessionFactory()
+    try:
+        use_case = ProcessAudioDiarizationPipelineUseCase(db)
+        use_case.execute(
+            source_type=cmd_dict["source_type"],
+            source=cmd_dict["source"],
+            language=cmd_dict["language"],
+            num_speakers=cmd_dict["num_speakers"],
+            min_speakers=cmd_dict["min_speakers"],
+            max_speakers=cmd_dict["max_speakers"],
+            model_size=cmd_dict["model_size"],
+            recognize_voices=cmd_dict["recognize_voices"],
+        )
+    finally:
+        db.close()
+
+
+def run_audio_diarization_worker(cmd: ProcessAudioCommand):
+    """Background worker function for audio diarization and recognition.
+
+    Spawns a separate process because whisperx/torch models can deadlock
+    when run inside daemon threads (Redis worker threads).
+    """
+    import multiprocessing
+    from dataclasses import asdict
+
+    set_global_context({"correlation_id": f"worker-audio-{cmd.source_type}"})
+
+    try:
+        cmd_dict = asdict(cmd)
+        logger.info("Spawning audio diarization subprocess for source=%s", cmd.source)
+
+        ctx = multiprocessing.get_context("spawn")
+        process = ctx.Process(target=_audio_diarization_subprocess, args=(cmd_dict,))
+        process.start()
+        process.join()
+
+        if process.exitcode != 0:
+            logger.error(
+                "Audio diarization subprocess exited with code %d", process.exitcode
+            )
+        else:
+            logger.info("Audio diarization subprocess completed successfully")
+    except Exception as e:
+        logger.error(
+            f"Worker Error: Failed to execute audio diarization: {e}", exc_info=True
+        )
+    finally:
+        clear_global_context()

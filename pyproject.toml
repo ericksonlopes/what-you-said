@@ -36,10 +36,14 @@ dependencies = [
     "crawl4ai[all]>=0.4.311",
     "python-jose[cryptography]>=3.5.0",
     "httpx>=0.28.1",
+    "whisperx>=3.8.5",
+    "soundfile>=0.13.1",
+    "imageio-ffmpeg>=0.6.0",
+    "boto3>=1.42.82",
+    "pydub>=0.25.1",
 ]
 
 [project.optional-dependencies]
-gpu = []
 chroma = [
     "chromadb>=0.4.24",
     "langchain-chroma>=0.1.0",
@@ -67,6 +71,7 @@ mssql = [
 postgres = [
     "psycopg2-binary>=2.9.10",
 ]
+gpu = []
 
 [dependency-groups]
 dev = [
@@ -79,28 +84,13 @@ dev = [
 ]
 
 [[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-explicit = true
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
 
 [tool.uv.sources]
-torch = [
-    { index = "pytorch-cu124", marker = "extra == 'gpu'" },
-    { index = "pytorch-cpu", marker = "extra != 'gpu'" }
-]
-torchvision = [
-    { index = "pytorch-cu124", marker = "extra == 'gpu'" },
-    { index = "pytorch-cpu", marker = "extra != 'gpu'" }
-]
-torchaudio = [
-    { index = "pytorch-cu124", marker = "extra == 'gpu'" },
-    { index = "pytorch-cpu", marker = "extra != 'gpu'" }
-]
+torch = { index = "pytorch-cu126" }
+torchvision = { index = "pytorch-cu126" }
+torchaudio = { index = "pytorch-cu126" }
 
 [tool.setuptools.packages.find]
 where = ["."]

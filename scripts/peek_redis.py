@@ -1,6 +1,6 @@
 import json
 
-from src.infrastructure.redis_connector import RedisConnector
+from src.infrastructure.connectors.redis_connector import RedisConnector
 
 
 def peek_queue(queue_name="wys_task_queue"):

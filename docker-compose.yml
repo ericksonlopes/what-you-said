@@ -51,9 +51,12 @@ services:
       - AUTH__GOOGLE_CLIENT_SECRET=${AUTH__GOOGLE_CLIENT_SECRET:-}
       - AUTH__REDIRECT_URI=${AUTH__REDIRECT_URI:-}
       - AUTH__JWT_SECRET=${AUTH__JWT_SECRET:-}
-    restart: always
+      - STORAGE__MINIO_URL=${STORAGE__MINIO_URL:-http://minio:9000}
+      - STORAGE__MINIO_ROOT_USER=${STORAGE__MINIO_ROOT_USER:-root}
+      - STORAGE__MINIO_ROOT_PASSWORD=${STORAGE__MINIO_ROOT_PASSWORD:-password}
+      - STORAGE__MINIO_BUCKET=${STORAGE__MINIO_BUCKET:-whatyousaid}
+      - AUTH__HF_TOKEN=${AUTH__HF_TOKEN:-}
     shm_size: '2gb'
-
 
   frontend:
     build:
@@ -68,7 +71,29 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    restart: always
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio_server
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${STORAGE__MINIO_ACCESS_KEY:-root}
+      - MINIO_ROOT_PASSWORD=${STORAGE__MINIO_SECRET_KEY:-password}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - wys_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - 6379:6379
+    networks:
+      - wys_network
+    command: redis-server --requirepass ${REDIS__PASSWORD:-password}
 
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.35.9
@@ -159,15 +184,6 @@ services:
       MSSQL_LOG_DIR: /var/opt/mssql/log
       MSSQL_BACKUP_DIR: /var/opt/mssql/backup
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - 6379:6379
-    networks:
-      - wys_network
-    restart: always
-    command: redis-server --requirepass ${REDIS__PASSWORD:-password}
-
   qdrant:
     image: qdrant/qdrant:v1.13.2
     profiles:
@@ -179,13 +195,11 @@ services:
       - wys_network
     environment:
       - QDRANT__SERVICE__API_KEY=${VECTOR__QDRANT_API_KEY:-}
-    volumes:
-      - qdrant_data:/qdrant/storage
-    restart: always
 
 networks:
   wys_network:
     driver: bridge
 
 volumes:
-  qdrant_data:
+  minio_data:
+
