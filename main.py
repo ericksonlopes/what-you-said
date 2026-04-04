@@ -177,7 +177,6 @@ app.include_router(
     notification_router.router,
     prefix="/rest/notifications",
     tags=["Notifications"],
-    dependencies=secured_deps,
 )
 app.include_router(
     audio_router.router,

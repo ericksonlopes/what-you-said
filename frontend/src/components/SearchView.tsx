@@ -85,7 +85,7 @@ export function SearchView() {
   const [isTopKOpen, setIsTopKOpen] = useState(false);
   const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
   const [copied, setCopied] = useState(false);
-  const [searchMode, setSearchMode] = useState<'semantic' | 'bm25' | 'hybrid'>('hybrid');
+  const [searchMode, setSearchMode] = useState<'semantic' | 'bm25' | 'hybrid'>('semantic');
   const [useRerank, setUseRerank] = useState(true);
 
   const sourceMap = React.useMemo(() => {

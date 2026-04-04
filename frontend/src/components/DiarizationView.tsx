@@ -29,7 +29,7 @@ import {
 import {useAppContext} from '../store/AppContext';
 import {api} from '../services/api';
 
-type Step = 'idle' | 'processing' | 'identification' | 'result';
+type Step = 'idle' | 'processing' | 'identification' | 'result' | 'error';
 
 interface Speaker {
     id: string;
@@ -227,8 +227,8 @@ export function DiarizationView() {
                                 ...updated,
                                 statusMessage: data.message
                             });
-                            // If it just finished, transition to the next step automatically
-                            if (updated.status === 'ready' || updated.status === 'completed') {
+                            // If it just finished or failed, transition to the next step automatically
+                            if (updated.status === 'ready' || updated.status === 'completed' || updated.status === 'failed') {
                                 handleOpenJob(updated);
                             }
                         }
@@ -334,6 +334,9 @@ export function DiarizationView() {
             setRawTranscript(rawText);
             setSpeakers(extractSpeakersFromSegments(job.segments, job.recognitionResults));
             setStep('identification');
+        } else if (job.status === 'failed') {
+            console.log('Job failed, setting up error step');
+            setStep('error');
         } else {
             console.log('Job is processing/pending, setting up processing step');
             setStep('processing');
@@ -783,8 +786,10 @@ export function DiarizationView() {
                                                     {job.status !== 'completed' && job.status !== 'ready' && job.status !== 'failed' && (
                                                         <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 text-xs font-medium border border-amber-500/20 whitespace-nowrap overflow-hidden" title={job.statusMessage}>
                                                             <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0"/>
-                                                            <span className="truncate max-w-[100px]">
-                                                                {job.statusMessage?.split('...')[0] || (job.status === 'pending' ? t('diarization.status.in_queue') : job.status)}...
+                                                            <span className="truncate max-w-[150px]">
+                                                                {job.statusMessage
+                                                                    ? `${t('diarization.status.steps.' + job.statusMessage, job.statusMessage)}`
+                                                                    : (job.status === 'pending' ? t('diarization.status.in_queue') : t('diarization.status.still_processing'))}
                                                             </span>
                                                         </span>
                                                     )}
@@ -933,7 +938,9 @@ export function DiarizationView() {
                                             className="w-6 h-6 text-emerald-500/50 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"/>
                                     </div>
                                     <p className="animate-pulse font-medium text-emerald-400">
-                                        {activeJob?.statusMessage || t('diarization.status.processing_default')}
+                                        {activeJob?.statusMessage
+                                            ? t('diarization.status.steps.' + activeJob.statusMessage, activeJob.statusMessage)
+                                            : t('diarization.status.processing_default')}
                                     </p>
                                     <button
                                         onClick={() => loadJobs().then((freshJobs) => {
@@ -950,6 +957,35 @@ export function DiarizationView() {
                                     >
                                         {t('diarization.status.check_status')}
                                     </button>
+                                </div>
+                            )}
+
+                            {step === 'error' && (
+                                <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-6 p-8 text-center">
+                                    <div className="p-4 rounded-full bg-rose-500/10 border border-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.1)]">
+                                        <AlertCircle className="w-12 h-12 text-rose-500"/>
+                                    </div>
+                                    <div>
+                                        <h4 className="text-xl font-bold text-white mb-2">{t('diarization.status.failed')}</h4>
+                                        <p className="text-zinc-400 max-w-md mx-auto leading-relaxed">
+                                            {activeJob?.errorMessage || t('diarization.status.failed_msg')}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col gap-3 w-full max-w-xs">
+                                        <button
+                                            onClick={() => loadJobs(false)}
+                                            className="flex items-center justify-center gap-2 px-6 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-all border border-white/5"
+                                        >
+                                            <RefreshCw className="w-4 h-4"/>
+                                            {t('diarization.status.check_status')}
+                                        </button>
+                                        <button
+                                            onClick={handleBackToList}
+                                            className="px-6 py-3 text-zinc-400 hover:text-white transition-colors font-medium"
+                                        >
+                                            {t('diarization.detail.back')}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 

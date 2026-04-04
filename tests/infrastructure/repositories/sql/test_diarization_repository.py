@@ -2,6 +2,7 @@ from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
 from src.domain.entities.diarization import DiarizationResult, Segment
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 
 
 class TestDiarizationRepository:
@@ -10,7 +11,7 @@ class TestDiarizationRepository:
         record = repo.create_pending("Title", "youtube", "http", "pt", "base")
 
         assert record.id is not None
-        assert record.status == "pending"
+        assert record.status == DiarizationStatus.PENDING.value
         assert record.title == "Title"
 
     def test_save_new_and_update(self, sqlite_memory):
@@ -21,7 +22,7 @@ class TestDiarizationRepository:
 
         # Save new
         record = repo.save(result, "T1", "upload", "f1", "/folder")
-        assert record.status == "processing"
+        assert record.status == DiarizationStatus.PROCESSING.value
         assert len(record.segments) == 1
 
         # Update existing
@@ -37,9 +38,15 @@ class TestDiarizationRepository:
         repo = DiarizationRepository(sqlite_memory)
         record = repo.create_pending("T", "y", "h", "pt")
 
-        repo.update_status(record.id, "failed", error_message="Error X")
-        assert record.status == "failed"
+        repo.update_status(
+            record.id,
+            DiarizationStatus.FAILED.value,
+            error_message="Error X",
+            status_message="Msg Y",
+        )
+        assert record.status == DiarizationStatus.FAILED.value
         assert record.error_message == "Error X"
+        assert record.status_message == "Msg Y"
 
         repo.update_recognition_results(record.id, {"mapping": {"A": "B"}})
         assert record.recognition_results["mapping"]["A"] == "B"

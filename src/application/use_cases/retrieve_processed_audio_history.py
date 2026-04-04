@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
@@ -18,7 +19,7 @@ class RetrieveProcessedAudioHistoryUseCase:
                 "source_type": r.source_type,
                 "external_source": r.external_source,
                 "language": r.language,
-                "status": r.status or "completed",
+                "status": r.status or DiarizationStatus.COMPLETED.value,
                 "model_size": r.model_size,
                 "duration": r.duration,
                 "storage_path": r.storage_path,
@@ -26,6 +27,7 @@ class RetrieveProcessedAudioHistoryUseCase:
                 "recognition_results": r.recognition_results,
                 "source_metadata": r.source_metadata,
                 "error_message": r.error_message,
+                "status_message": r.status_message,
                 "created_at": str(r.created_at) if r.created_at else None,
             }
             for r in records

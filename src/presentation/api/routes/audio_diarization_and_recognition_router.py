@@ -17,6 +17,7 @@ from src.application.use_cases.retrieve_processed_audio_history import (
     RetrieveProcessedAudioHistoryUseCase,
 )
 from src.application.workers import run_audio_diarization_worker
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
 from src.presentation.api.dependencies import (
     get_db,
@@ -60,7 +61,7 @@ async def update_diarization_segments(
         # Update segments and status
         logger.info("Updating segments for diarization %s", diarization_id)
         record.segments = cast(Any, request.segments)
-        record.status = cast(Any, "completed")
+        record.status = cast(Any, DiarizationStatus.COMPLETED.value)
         db.commit()
 
         return {

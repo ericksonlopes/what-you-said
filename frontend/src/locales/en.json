@@ -506,7 +506,14 @@
       "processing_default": "Analyzing audio and separating voices on server...",
       "check_status": "Check Status",
       "still_processing": "Still processing...",
-      "failed_msg": "Processing failed."
+      "failed_msg": "Processing failed.",
+      "steps": {
+        "starting": "Starting...",
+        "downloading": "Downloading...",
+        "diarizing": "Diarizing...",
+        "exporting": "Exporting...",
+        "recognizing": "Recognizing..."
+      }
     },
     "detail": {
       "back": "Back",

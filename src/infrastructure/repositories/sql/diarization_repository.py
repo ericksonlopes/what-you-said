@@ -3,6 +3,7 @@ from typing import List, Optional, cast
 from sqlalchemy.orm import Session
 
 from src.domain.entities.diarization import DiarizationResult
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.infrastructure.repositories.sql.models.diarization_record import (
     DiarizationRecord,
 )
@@ -25,7 +26,7 @@ class DiarizationRepository:
             source_type=source_type,
             external_source=external_source,
             language=language,
-            status="pending",
+            status=DiarizationStatus.PENDING.value,
             model_size=model_size,
         )
         self.db.add(record)
@@ -52,7 +53,7 @@ class DiarizationRepository:
                 db_diarization.folder_path = folder  # type: ignore
                 db_diarization.storage_path = storage_path  # type: ignore
                 db_diarization.segments = [seg.to_dict() for seg in result.segments]  # type: ignore
-                db_diarization.status = "processing"  # type: ignore
+                db_diarization.status = DiarizationStatus.PROCESSING.value  # type: ignore
                 self.db.commit()
                 self.db.refresh(db_diarization)
                 return db_diarization
@@ -66,7 +67,7 @@ class DiarizationRepository:
             folder_path=folder,
             storage_path=storage_path,  # type: ignore
             segments=[seg.to_dict() for seg in result.segments],
-            status="processing",
+            status=DiarizationStatus.PROCESSING.value,
         )
         self.db.add(db_diarization)
         self.db.commit()
@@ -74,7 +75,11 @@ class DiarizationRepository:
         return db_diarization
 
     def update_status(
-        self, diarization_id: str, status: str, error_message: str | None = None
+        self,
+        diarization_id: str,
+        status: str,
+        error_message: str | None = None,
+        status_message: str | None = None,
     ) -> Optional[DiarizationRecord]:
         record = self.get_by_id(diarization_id)
         if not record:
@@ -82,6 +87,8 @@ class DiarizationRepository:
         record.status = status  # type: ignore
         if error_message is not None:
             record.error_message = error_message  # type: ignore
+        if status_message is not None:
+            record.status_message = status_message  # type: ignore
         self.db.commit()
         self.db.refresh(record)
         return record

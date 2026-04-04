@@ -7,6 +7,7 @@ import uuid
 
 from sqlalchemy import Column, String, Float, DateTime, JSON
 
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.infrastructure.repositories.sql.connector import Base
 
 
@@ -22,7 +23,7 @@ class DiarizationRecord(Base):
     source_type = Column(String)
     external_source = Column(String)
     language = Column(String)
-    status = Column(String, default="pending")
+    status = Column(String, default=DiarizationStatus.PENDING.value)
     duration = Column(Float)
     folder_path = Column(String)
     storage_path = Column(String, nullable=True)
@@ -30,5 +31,6 @@ class DiarizationRecord(Base):
     recognition_results = Column(JSON, nullable=True)
     model_size = Column(String, nullable=True)
     error_message = Column(String, nullable=True)
+    status_message = Column(String, nullable=True)
     source_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

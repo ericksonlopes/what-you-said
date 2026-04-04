@@ -505,7 +505,14 @@
       "processing_default": "Analisando áudio e separando as vozes no servidor...",
       "check_status": "Verificar Status",
       "still_processing": "Ainda processando...",
-      "failed_msg": "O processamento falhou."
+      "failed_msg": "O processamento falhou.",
+      "steps": {
+        "starting": "Iniciando...",
+        "downloading": "Baixando...",
+        "diarizing": "Diarizando...",
+        "exporting": "Exportando...",
+        "recognizing": "Reconhecendo..."
+      }
     },
     "detail": {
       "back": "Voltar",

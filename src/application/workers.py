@@ -281,13 +281,22 @@ def _audio_diarization_subprocess(cmd_dict: dict):
         logger.error("Audio diarization failed: %s", e, exc_info=True)
         if diarization_id:
             repo = DiarizationRepository(db)
-            repo.update_status(diarization_id, "failed", error_message=str(e))
+            from src.domain.entities.enums.diarization_status_enum import (
+                DiarizationStatus,
+            )
+
+            repo.update_status(
+                diarization_id,
+                DiarizationStatus.FAILED.value,
+                error_message=str(e),
+                status_message="Falha no processamento",
+            )
             event_bus.publish(
                 "ingestion_status",
                 {
                     "type": "diarization",
                     "id": diarization_id,
-                    "status": "failed",
+                    "status": DiarizationStatus.FAILED.value,
                     "message": f"Erro na diarização: {str(e)}",
                 },
             )
@@ -332,9 +341,16 @@ def run_audio_diarization_worker(cmd: ProcessAudioCommand):
                 db = DBSessionFactory()
                 try:
                     repo = DiarizationRepository(db)
+                    from src.domain.entities.enums.diarization_status_enum import (
+                        DiarizationStatus,
+                    )
+
                     error_msg = f"Processo encerrou inesperadamente com código {process.exitcode}"
                     repo.update_status(
-                        cmd.diarization_id, "failed", error_message=error_msg
+                        cmd.diarization_id,
+                        DiarizationStatus.FAILED.value,
+                        error_message=error_msg,
+                        status_message="Falha no processamento",
                     )
 
                     # Notify frontend via EventBus
@@ -344,7 +360,7 @@ def run_audio_diarization_worker(cmd: ProcessAudioCommand):
                         {
                             "type": "diarization",
                             "id": cmd.diarization_id,
-                            "status": "failed",
+                            "status": DiarizationStatus.FAILED.value,
                             "message": f"Erro crítico no processamento: {error_msg}",
                         },
                     )

@@ -330,5 +330,5 @@ class TestWorkers:
             run_audio_diarization_worker(cmd)
 
             mock_repo.update_status.assert_called_with(
-                "test-id", "failed", error_message=ANY
+                "test-id", "failed", error_message=ANY, status_message=ANY
             )

@@ -22,6 +22,10 @@ from src.infrastructure.services.voice_profile_service import VoiceDB
 from src.domain.interfaces.services.i_event_bus import IEventBus
 
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+from src.domain.entities.enums.diarization_status_enum import (
+    DiarizationStatus,
+    DiarizationStep,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +42,10 @@ class ProcessAudioDiarizationPipelineUseCase:
     def _notify(
         self, diarization_id: str | None, status: str, message: str | None = None
     ):
+        if diarization_id:
+            self.repo.update_status(
+                diarization_id, status, status_message=message or ""
+            )
         if self.event_bus and diarization_id:
             self.event_bus.publish(
                 "ingestion_status",
@@ -88,8 +96,8 @@ class ProcessAudioDiarizationPipelineUseCase:
         if diarization_id:
             self._notify(
                 diarization_id,
-                "processing",
-                f"Iniciando processamento de {source_type}...",
+                DiarizationStatus.PROCESSING.value,
+                DiarizationStep.STARTING.value,
             )
 
         audio_path, video_folder = (
@@ -125,6 +133,11 @@ class ProcessAudioDiarizationPipelineUseCase:
             )
 
             # 4. Export samples and Persist to DB
+            self._notify(
+                diarization_id,
+                DiarizationStatus.PROCESSING.value,
+                DiarizationStep.EXPORTING.value,
+            )
             diarization_result.export_speaker_audio(output_dir=recognition_folder)
             db_record = self.repo.save(
                 result=diarization_result,
@@ -153,9 +166,14 @@ class ProcessAudioDiarizationPipelineUseCase:
                     self.db.commit()
 
             # 6. Finalize
-            self.repo.update_status(diarization_id, "completed")
             self._notify(
-                diarization_id, "completed", f"Diarização de {clean_title} concluída!"
+                diarization_id,
+                DiarizationStatus.COMPLETED.value,
+                f"Diarização de {clean_title} concluída!",
+            )
+            # Clear status_message for completed jobs
+            self.repo.update_status(
+                diarization_id, DiarizationStatus.COMPLETED.value, status_message=""
             )
 
             return {
@@ -176,10 +194,12 @@ class ProcessAudioDiarizationPipelineUseCase:
         process_id: str,
         diarization_id: str | None,
     ) -> tuple[str, str, Optional[Any]]:
-        msg = "Baixando e extraindo áudio da fonte..."
         if diarization_id:
-            self.repo.update_status(diarization_id, "processing")
-            self._notify(diarization_id, "processing", msg)
+            self._notify(
+                diarization_id,
+                DiarizationStatus.PROCESSING.value,
+                DiarizationStep.DOWNLOADING.value,
+            )
 
         yt_metadata = None
         if source_type == "youtube":
@@ -231,9 +251,12 @@ class ProcessAudioDiarizationPipelineUseCase:
         max_s: int | None,
         d_id: str | None,
     ) -> Any:
-        msg = "Analisando locutores..."
         if d_id:
-            self._notify(d_id, "processing", msg)
+            self._notify(
+                d_id,
+                DiarizationStatus.PROCESSING.value,
+                DiarizationStep.DIARIZING.value,
+            )
         return diarizer.run(
             audio_path,
             language=lang,
@@ -245,7 +268,9 @@ class ProcessAudioDiarizationPipelineUseCase:
     def _identify_voices(
         self, recognition_folder: str, hf_token: str, d_id: str | None
     ) -> dict:
-        self._notify(d_id, "processing", "Reconhecendo vozes conhecidas...")
+        self._notify(
+            d_id, DiarizationStatus.PROCESSING.value, DiarizationStep.RECOGNIZING.value
+        )
         voice_db = VoiceDB(db=self.db, hf_token=hf_token)
         if len(voice_db) == 0:
             return {}
