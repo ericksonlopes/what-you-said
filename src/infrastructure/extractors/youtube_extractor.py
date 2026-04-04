@@ -40,17 +40,31 @@ class YoutubeExtractor(IYoutubeExtractor):
         self.language = language
         self._ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
-    def extract_metadata(self, url: str | None = None) -> YoutubeMetadataDTO:
-        """Extracts metadata from the video using yt_dlp."""
-        target_url = url or self.video_url
-        if not target_url:
-            raise ValueError("No URL provided for metadata extraction")
+    def _get_common_ydl_opts(self, quiet: bool = True) -> dict:
+        """Centralized configuration for yt-dlp options."""
+        opts: dict = {
+            "logger": logger,
+            "quiet": quiet,
+            "no_warnings": quiet,
+            "nocheckcertificate": True,
+            "geo_bypass": True,
+            # Force IPv4 to avoid "Connection refused" on some network configurations
+            "source_address": "0.0.0.0",
+            # Mimic a modern browser to avoid blocks
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Referer": "https://www.google.com/",
+            },
+            # Internal yt-dlp retries
+            "retries": 10,
+            "fragment_retries": 10,
+            "retry_sleep_functions": {"http": lambda n: 5 * 2**n},
+            # Mimic web-based player
+            "extractor_args": {"youtube": {"player_client": ["web"]}},
+        }
 
-        logger.info("Starting metadata extraction", context={"url": target_url})
-
-        ydl_opts: dict = {"logger": logger, "quiet": True, "no_warnings": True}
-
-        # Handle Proxy for yt-dlp
         if settings.youtube.proxy_enabled:
             proxy = settings.youtube.proxy_url
             if (
@@ -63,65 +77,95 @@ class YoutubeExtractor(IYoutubeExtractor):
                 proxy = f"http://{settings.youtube.webshare_username}:{settings.youtube.webshare_password}@p.webshare.io:80"
 
             if proxy:
-                ydl_opts["proxy"] = proxy
+                opts["proxy"] = proxy
 
-        try:
+        return opts
+
+    def _run_with_retry(self, action, max_retries: int = 3, initial_delay: int = 5):
+        """Standard retry wrapper for YouTube operations."""
+        last_exception = None
+        for attempt in range(max_retries):
+            try:
+                return action()
+            except Exception as e:
+                last_exception = e
+                # Check for specific fatal errors that shouldn't be retried
+                err_msg = str(e)
+                if any(x in err_msg for x in ["Private video", "not available", "Sign in"]):
+                    logger.error(f"Fatal YouTube error: {e}")
+                    raise
+
+                delay = initial_delay * (2**attempt)
+                logger.warning(
+                    f"YouTube action failed (attempt {attempt+1}/{max_retries}). Retrying in {delay}s...",
+                    context={"error": err_msg},
+                )
+                time.sleep(delay)
+        raise last_exception
+
+    def extract_metadata(self, url: str | None = None) -> YoutubeMetadataDTO:
+        """Extracts metadata from the video using yt_dlp with retries."""
+        target_url = url or self.video_url
+        if not target_url:
+            raise ValueError("No URL provided for metadata extraction")
+
+        logger.info("Starting metadata extraction", context={"url": target_url})
+
+        def _extract():
+            ydl_opts = self._get_common_ydl_opts()
             with YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(target_url, download=False)
                 vid = info_dict.get("id") or self.video_id or "unknown"
-                metadata = YoutubeMetadataDTO(**info_dict, video_id=vid)
+                return YoutubeMetadataDTO(**info_dict, video_id=vid)
 
-                logger.info(
-                    "Metadata successfully extracted",
-                    context={"video_id": vid, "title": metadata.title},
-                )
-                return metadata
-
+        try:
+            metadata = self._run_with_retry(_extract)
+            logger.info(
+                "Metadata successfully extracted",
+                context={"video_id": metadata.video_id, "title": metadata.title},
+            )
+            return metadata
         except Exception as e:
-            error_msg = str(e)
             logger.error(
-                "Error extracting metadata",
-                context={"url": target_url, "error": error_msg},
+                "Error extracting metadata after retries",
+                context={"url": target_url, "error": str(e)},
             )
             return YoutubeMetadataDTO(video_id=self.video_id or "unknown")
 
     def download_audio(
         self, url: str, output_dir: str = "./temp_audio", quality: str = "192"
     ) -> str | None:
-        """Downloads and extracts audio from a YouTube video."""
+        """Downloads and extracts audio from a YouTube video with resilience."""
         os.makedirs(output_dir, exist_ok=True)
-        ydl_opts = {
-            "format": "bestaudio/best",
-            "ffmpeg_location": self._ffmpeg_path,
-            "postprocessors": [
+
+        def _download():
+            ydl_opts = self._get_common_ydl_opts(quiet=True)
+            ydl_opts.update(
                 {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": quality,
+                    "format": "bestaudio/best",
+                    "ffmpeg_location": self._ffmpeg_path,
+                    "postprocessors": [
+                        {
+                            "key": "FFmpegExtractAudio",
+                            "preferredcodec": "mp3",
+                            "preferredquality": quality,
+                        }
+                    ],
+                    "outtmpl": f"{output_dir}/%(title)s.%(ext)s",
                 }
-            ],
-            "outtmpl": f"{output_dir}/%(title)s.%(ext)s",
-            "quiet": True,
-            "no_warnings": True,
-            "logger": logger,
-        }
-
-        # Proxy for download
-        if settings.youtube.proxy_enabled and settings.youtube.proxy_url:
-            ydl_opts["proxy"] = settings.youtube.proxy_url
-
-        try:
+            )
             with YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 base_name = ydl.prepare_filename(info)
-                final_path = str(Path(base_name).with_suffix(".mp3"))
-                return final_path
+                return str(Path(base_name).with_suffix(".mp3"))
+
+        try:
+            return self._run_with_retry(_download)
         except Exception as e:
-            logger.error(f"Download failed: {e}", context={"url": url})
+            logger.error(f"Download failed after ALL retries: {e}", context={"url": url})
             return None
 
-    @staticmethod
-    def extract_playlist_videos(playlist_url: str) -> list[str]:
+    def extract_playlist_videos(self, playlist_url: str) -> list[str]:
         """Extracts all video URLs from a YouTube playlist using yt_dlp."""
         from urllib.parse import urlparse, parse_qs
 
@@ -145,14 +189,13 @@ class YoutubeExtractor(IYoutubeExtractor):
         logger.info(
             "Starting playlist extraction", context={"playlist_url": playlist_url}
         )
-        ydl_opts = {
-            "extract_flat": True,
-            "quiet": True,
-            "no_warnings": True,
-            "ignore_unavailable": True,
-            "logger": logger,
-        }
-        try:
+
+        def _extract():
+            ydl_opts = self._get_common_ydl_opts()
+            ydl_opts.update({
+                "extract_flat": True,
+                "ignore_unavailable": True,
+            })
             with YoutubeDL(ydl_opts) as ydl:
                 playlist_info = ydl.extract_info(playlist_url, download=False)
                 if not playlist_info or "entries" not in playlist_info:
@@ -168,14 +211,17 @@ class YoutubeExtractor(IYoutubeExtractor):
                         url = f"https://www.youtube.com/watch?v={entry.get('id')}"
                     if url:
                         urls.append(url)
-
-                logger.info(
-                    "Playlist successfully extracted",
-                    context={"playlist_url": playlist_url, "count": len(urls)},
-                )
                 return urls
+
+        try:
+            urls = self._run_with_retry(_extract)
+            logger.info(
+                "Playlist successfully extracted",
+                context={"playlist_url": playlist_url, "count": len(urls)},
+            )
+            return urls
         except Exception as e:
-            logger.error(e, context={"playlist_url": playlist_url})
+            logger.error(f"Playlist extraction failed: {e}", context={"playlist_url": playlist_url})
             return []
 
     def extract_transcript(self) -> FetchedTranscript:

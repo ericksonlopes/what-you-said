@@ -111,7 +111,7 @@ function mapBackendJob(r: any): DiarizationJob {
 
 export function DiarizationView() {
     const {t} = useTranslation();
-    const {selectedSubjects, addToast, refreshJobs} = useAppContext();
+    const {selectedSubjects, setSelectedSubjects, subjects, addToast, refreshJobs, refreshSources} = useAppContext();
 
     const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
     const [jobs, setJobs] = useState<DiarizationJob[]>([]);
@@ -542,53 +542,14 @@ export function DiarizationView() {
         }
     };
 
-    const applyIdentification = async () => {
-        if (!activeJob) return;
-
-        setIsSaving(true);
-        try {
-            // Build the name mapping
-            const speakerMapping = speakers.reduce((acc: any, s) => {
-                acc[s.label] = s.assigned;
-                return acc;
-            }, {});
-            
-            // Merge segments for both DB and display
-            const mergedSegmentsData = mergeSpeakerSegments(activeJob.segments, speakerMapping);
-            
-            // Persist to backend (removing the display enrichment)
-            await api.updateDiarization(activeJob.id, {
-                segments: mergedSegmentsData.map(s => ({
-                    start: Number(s.start),
-                    end: Number(s.end),
-                    text: String(s.text),
-                    speaker: String(s.speakerName) // Using the assigned name
-                }))
-            });
-
-            setFinalSegments(mergedSegmentsData);
-            setStep('result');
-
-            const updatedJob: DiarizationJob = {
-                ...activeJob, 
-                status: 'completed', 
-                segments: mergedSegmentsData
-            };
-            setJobs(jobs.map(j => j.id === activeJob.id ? updatedJob : j));
-            setActiveJob(updatedJob);
-
-            addToast('Transcrição finalizada e salva com sucesso!', 'success');
-        } catch (err) {
-            console.error('Failed to finalize diarization:', err);
-            addToast('Falha ao finalizar transcrição', 'error');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
     const handleSaveToContext = async () => {
-        if (finalSegments.length === 0 || selectedSubjects.length === 0) {
-            addToast('Nenhuma transcrição ou contexto selecionado', 'error');
+        if (finalSegments.length === 0) {
+            addToast('Nenhuma transcrição disponível para salvar', 'error');
+            return;
+        }
+
+        if (selectedSubjects.length === 0) {
+            addToast('Selecione um Contexto na barra lateral para poder indexar na base', 'error');
             return;
         }
 
@@ -611,6 +572,18 @@ export function DiarizationView() {
                         speaker: String(s.speakerName)
                     }))
                 });
+
+                // Update local state to reflect the "completed" status and merged segments
+                setFinalSegments(mergedSegmentsData);
+                
+                const updatedJob: DiarizationJob = {
+                    ...activeJob, 
+                    status: 'completed', 
+                    segments: mergedSegmentsData
+                };
+                setJobs(jobs.map(j => j.id === activeJob.id ? updatedJob : j));
+                setActiveJob(updatedJob);
+                setStep('result');
             }
 
             // Then, trigger the ingestion
@@ -629,7 +602,12 @@ export function DiarizationView() {
             });
 
             addToast('Transcrição salva e indexada com sucesso', 'success');
+            
+            // Refresh both jobs and sources to show the new content
             refreshJobs();
+            if (typeof (useAppContext() as any).refreshSources === 'function') {
+                (useAppContext() as any).refreshSources();
+            }
         } catch (err) {
             console.error('Error saving transcript:', err);
             addToast('Falha ao salvar transcrição', 'error');
@@ -923,7 +901,7 @@ export function DiarizationView() {
                                 <button
                                     onClick={handleSaveToContext}
                                     disabled={isSaving || selectedSubjects.length === 0}
-                                    className="flex items-center gap-2 px-6 py-2 bg-emerald-500 text-black text-sm font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                                    className="flex items-center gap-2 px-6 py-2 bg-emerald-500 text-black text-sm font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] disabled:opacity-50"
                                 >
                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>}
                                     {t('diarization.detail.index_base')}
@@ -1165,14 +1143,53 @@ export function DiarizationView() {
                                         </div>
 
                                         <div className="mt-6 pt-5 border-t border-white/5 space-y-3">
+                                            {/* Mandatory Context Selector */}
+                                            <div className="space-y-2">
+                                                <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                                                    {t('diarization.modal.target_context')} <span className="text-rose-500">*</span>
+                                                </label>
+                                                <div className="relative group/select">
+                                                    <select
+                                                        value={selectedSubjects.length > 0 ? selectedSubjects[0].id : ''}
+                                                        onChange={(e) => {
+                                                            const subject = subjects.find(s => s.id === e.target.value);
+                                                            if (subject) setSelectedSubjects([subject]);
+                                                        }}
+                                                        className={`w-full bg-black/40 p-3 rounded-xl border transition-all text-xs font-bold appearance-none cursor-pointer outline-none ${
+                                                            selectedSubjects.length > 0 
+                                                                ? 'border-emerald-500/20 text-emerald-400' 
+                                                                : 'border-rose-500/20 text-rose-400'
+                                                        }`}
+                                                    >
+                                                        <option value="" disabled className="bg-zinc-900 text-zinc-500">
+                                                            -- {t('diarization.modal.no_context')} --
+                                                        </option>
+                                                        {subjects.map((s) => (
+                                                            <option key={s.id} value={s.id} className="bg-zinc-900 text-white">
+                                                                {s.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 group-hover/select:text-emerald-500 transition-colors">
+                                                        <ChevronLeft className="w-4 h-4 -rotate-90" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <button
                                                 onClick={handleSaveToContext}
                                                 disabled={isSaving || selectedSubjects.length === 0}
-                                                className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50"
+                                                className="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50 disabled:grayscale-[0.5]"
                                             >
                                                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5"/>}
                                                 {t('diarization.detail.index_base')}
                                             </button>
+                                            
+                                            {selectedSubjects.length === 0 && (
+                                                <p className="text-[10px] text-rose-400/80 font-medium text-center animate-pulse">
+                                                    {t('diarization.modal.no_context')}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
 

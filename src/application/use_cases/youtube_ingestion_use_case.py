@@ -136,7 +136,8 @@ class YoutubeIngestionUseCase:
                 raise ValueError("No video_url provided for playlist")
 
             logger.info("Processing playlist", context={"playlist_url": playlist_url})
-            video_list = YoutubeExtractor.extract_playlist_videos(playlist_url)
+            extractor = YoutubeExtractor(language=cmd.language)
+            video_list = extractor.extract_playlist_videos(playlist_url)
             if not video_list:
                 logger.warning(
                     "No videos found in playlist",
