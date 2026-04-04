@@ -107,18 +107,115 @@ class TestDiarizationIngestionUseCase:
         with pytest.raises(ValueError, match="Subject not found"):
             use_case.execute(cmd)
 
-    def test_format_transcript_merging(self, use_case_deps):
+    def test_execute_reprocess(self, use_case_deps, sqlite_memory):
         use_case = DiarizationIngestionUseCase(**use_case_deps)
-        segments = [
-            {"start": 0.0, "end": 1.0, "text": "Hello", "speaker": "SPK1"},
-            {"start": 1.1, "end": 2.0, "text": "how are you?", "speaker": "SPK1"},
-            {"start": 2.1, "end": 3.0, "text": "I am fine", "speaker": "SPK2"},
-        ]
-        recognition = {"mapping": {"SPK1": "Alice", "SPK2": "Bob"}}
+        db = sqlite_memory
 
-        # Test private method _format_transcript
-        formatted = use_case._format_transcript(segments, recognition)
+        diarization_id = str(uuid4())
+        record = DiarizationRecord(
+            id=diarization_id,
+            title="Test",
+            status="completed",
+            source_type="youtube",
+            external_source="https://youtube.com/watch?v=123",
+            segments=[{"start": 0, "end": 1, "text": "H", "speaker": "S1"}],
+        )
+        db.add(record)
+        db.commit()
 
-        assert "Alice: Hello how are you?" in formatted
-        assert "Bob: I am fine" in formatted
-        assert "[00:00 - 00:02]" in formatted
+        subject_id = uuid4()
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=subject_id
+        )
+        use_case_deps["cs_service"].get_by_source_info.return_value = MagicMock(
+            id=uuid4()
+        )
+
+        cmd = IngestDiarizationCommand(
+            diarization_id=diarization_id, subject_id=subject_id, reprocess=True
+        )
+
+        use_case.execute(cmd)
+        assert use_case_deps["chunk_service"].delete_by_content_source.called
+        assert use_case_deps["vector_service"].delete.called
+
+    def test_execute_error_handling(self, use_case_deps, sqlite_memory):
+        use_case = DiarizationIngestionUseCase(**use_case_deps)
+        db = sqlite_memory
+
+        diarization_id = str(uuid4())
+        record = DiarizationRecord(
+            id=diarization_id,
+            title="Test",
+            status="completed",
+            source_type="youtube",
+            external_source="https://youtube.com/watch?v=123",
+            segments=[{"start": 0, "end": 1, "text": "H", "speaker": "S1"}],
+        )
+        db.add(record)
+        db.commit()
+
+        use_case_deps["ks_service"].get_subject_by_id.side_effect = Exception(
+            "Service error"
+        )
+
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
+
+        with pytest.raises(Exception, match="Service error"):
+            use_case.execute(cmd)
+
+    def test_execute_failure_after_job_creation(self, use_case_deps, sqlite_memory):
+        use_case = DiarizationIngestionUseCase(**use_case_deps)
+        db = sqlite_memory
+
+        diarization_id = str(uuid4())
+        record = DiarizationRecord(
+            id=diarization_id,
+            title="Test",
+            status="completed",
+            source_type="youtube",
+            external_source="https://youtube.com/watch?v=123",
+            segments=[{"start": 0, "end": 1, "text": "H", "speaker": "S1"}],
+        )
+        db.add(record)
+        db.commit()
+
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=uuid4()
+        )
+        job_mock = MagicMock(id=uuid4())
+        use_case_deps["ingestion_service"].create_job.return_value = job_mock
+        # Fail at _get_or_create_source
+        use_case_deps["cs_service"].get_by_source_info.side_effect = Exception(
+            "Late error"
+        )
+
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
+
+        with pytest.raises(Exception, match="Late error"):
+            use_case.execute(cmd)
+
+        use_case_deps["ingestion_service"].update_job.assert_any_call(
+            job_id=job_mock.id,
+            status=pytest.importorskip(
+                "src.domain.entities.enums.ingestion_job_status_enum"
+            ).IngestionJobStatus.FAILED,
+            error_message="Late error",
+        )
+
+    def test_resolve_source_info_upload(self, use_case_deps):
+        use_case = DiarizationIngestionUseCase(**use_case_deps)
+        record = MagicMock()
+        record.source_type = "upload"
+        record.external_source = "s3://path"
+        record.source_metadata = None
+        
+        st, es = use_case._resolve_source_info(record)
+        assert st == pytest.importorskip("src.domain.entities.enums.source_type_enum_entity").SourceType.AUDIO
+        assert es == "s3://path"
+
+    def test_format_transcript_long_audio(self, use_case_deps):
+        use_case = DiarizationIngestionUseCase(**use_case_deps)
+        segments = [{"start": 3661, "end": 3665, "text": "Long time", "speaker": "S1"}]
+        formatted = use_case._format_transcript(segments, {"mapping": {}})
+        assert "[01:01:01 - 01:01:05]" in formatted
