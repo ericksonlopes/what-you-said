@@ -216,7 +216,44 @@ class YoutubeConfig(BaseSettings):
     )
 
 
+class StorageConfig(BaseSettings):
+    minio_url: str = Field(
+        default="http://localhost:9000", description="MinIO/S3 endpoint URL"
+    )
+    minio_root_user: str = Field(default="root", description="MinIO access key")
+    minio_root_password: str = Field(default="password", description="MinIO secret key")
+    minio_bucket: str = Field(default="whatyousaid", description="MinIO bucket name")
+
+    @field_validator("minio_url", mode="after")
+    @classmethod
+    def _normalize_url(cls, v: str) -> str:
+        v = docker_host_fallback(v, {"minio", "s3"})
+        if not v.startswith("http"):
+            v = f"http://{v}"
+        # Ensure port is present (default MinIO port 9000)
+        from urllib.parse import urlparse
+
+        parsed = urlparse(v)
+        if not parsed.port:
+            v = f"{v}:9000"
+        return v
+
+
+class AudioConfig(BaseSettings):
+    output_base: str = Field(
+        default="./data/audio_output",
+        description="Base directory for audio processing output",
+    )
+    temp_download_dir: str = Field(
+        default="./data/temp_audio",
+        description="Temporary directory for audio downloads",
+    )
+
+
 class AuthConfig(BaseSettings):
+    hf_token: Optional[str] = Field(
+        default=None, description="HuggingFace token for pyannote/whisper models"
+    )
     enable_google: bool = Field(
         default=False, description="Enable Google SSO authentication"
     )
@@ -290,6 +327,13 @@ class Settings(BaseSettings):
     )
     auth: AuthConfig = Field(
         default_factory=AuthConfig, description="Authentication settings"
+    )
+    storage: StorageConfig = Field(
+        default_factory=StorageConfig, description="MinIO/S3 storage settings"
+    )
+    audio: AudioConfig = Field(
+        default_factory=AudioConfig,
+        description="Audio diarization/recognition settings",
     )
 
 

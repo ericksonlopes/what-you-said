@@ -2,15 +2,14 @@ from typing import List, Optional, Any
 from typing import cast
 from uuid import UUID
 
-from src.infrastructure.repositories.sql.utils import ensure_uuid
+import sqlalchemy as sa
+from sqlalchemy.orm import joinedload
 
+from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 from src.config.logger import Logger
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
-
-from sqlalchemy.orm import joinedload
-import sqlalchemy as sa
 
 logger = Logger()
 

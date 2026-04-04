@@ -1,13 +1,23 @@
-import React, { useState } from 'react';
-import { useAppContext } from '../store/AppContext';
-import { useAuth } from '../store/AuthContext';
-import { useTranslation } from 'react-i18next';
+import React, {useState} from 'react';
+import {useAppContext} from '../store/AppContext';
+import {useAuth} from '../store/AuthContext';
+import {useTranslation} from 'react-i18next';
 import {
-  MessageSquare, Search, Database, Activity as ActivityIcon,
-  Plus, CheckSquare, Square, Settings, Layers, User, LogOut
+  Activity as ActivityIcon,
+  CheckSquare,
+  Database,
+  Layers,
+  LogOut,
+  MessageSquare,
+  Mic,
+  Plus,
+  Search,
+  Settings,
+  Square,
+  User
 } from 'lucide-react';
 
-import { SettingsModal } from './SettingsModal';
+import {SettingsModal} from './SettingsModal';
 
 export function Sidebar() {
   const { subjects, selectedSubjects, toggleSubjectSelection, selectOnlySubject, currentView, setCurrentView, setIsAddSubjectModalOpen } = useAppContext();
@@ -31,6 +41,13 @@ export function Sidebar() {
       items: [
         { id: 'sources', label: t('sidebar.operations.sources'), icon: Database },
         { id: 'knowledge_contexts', label: t('sidebar.operations.knowledge_contexts') || 'Knowledge Contexts', icon: Layers },
+      ]
+    },
+    {
+      id: 'tools',
+      label: t('sidebar.groups.tools', 'Tools'),
+      items: [
+        {id: 'diarization', label: t('sidebar.operations.diarization', 'Reconhecimento de Fala'), icon: Mic},
       ]
     },
     {

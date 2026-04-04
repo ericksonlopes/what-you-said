@@ -1,12 +1,32 @@
-from typing import Any, Optional
+from typing import Any, Generator, Optional
 
 from fastapi import Depends, Request
+from sqlalchemy.orm import Session
 
 from src.application.ingestion_context import IngestionContext
 from src.application.use_cases.auth_use_case import AuthUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
+from src.application.use_cases.diarization_ingestion_use_case import (
+    DiarizationIngestionUseCase,
+)
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
+from src.application.use_cases.generate_speaker_audio_access_url import (
+    GenerateSpeakerAudioAccessUrlUseCase,
+)
+from src.application.use_cases.identify_speakers_in_processed_audio import (
+    IdentifySpeakersInProcessedAudioUseCase,
+)
 from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
+from src.application.use_cases.list_s3_audio_files import ListS3AudioFilesUseCase
+from src.application.use_cases.manage_voice_profiles import (
+    RegisterNewVoiceProfileUseCase,
+    TrainVoiceProfileFromSpeakerSegmentUseCase,
+    ListRegisteredVoiceProfilesUseCase,
+    DeleteVoiceProfileUseCase,
+)
+from src.application.use_cases.retrieve_processed_audio_history import (
+    RetrieveProcessedAudioHistoryUseCase,
+)
 from src.application.use_cases.search_use_case import SearchUseCase
 from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
@@ -21,6 +41,7 @@ from src.infrastructure.extractors.crawl4ai_extractor import Crawl4AIExtractor
 from src.infrastructure.repositories.sql.chunk_index_repository import (
     ChunkIndexSQLRepository,
 )
+from src.infrastructure.repositories.sql.connector import Session as DBSessionFactory
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
 )
@@ -45,8 +66,12 @@ from src.infrastructure.services.re_rank_service import ReRankService
 from src.infrastructure.services.youtube_vector_service import YouTubeVectorService
 
 
-# This module acts as the DI container for the FastAPI app.
-# Each function provides an instance of a domain service or use case.
+def get_db() -> Generator[Session, None, None]:
+    db = DBSessionFactory()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 def get_settings() -> Settings:
@@ -402,6 +427,84 @@ def get_web_scraping_use_case(
         event_bus=event_bus,
         extractor=extractor,
     )
+
+
+def get_diarization_ingestion_use_case(
+    db: Session = Depends(get_db),
+    ks_svc: KnowledgeSubjectService = Depends(get_ks_service),
+    cs_svc: ContentSourceService = Depends(get_cs_service),
+    job_svc: IngestionJobService = Depends(get_job_service),
+    model_loader: ModelLoaderService = Depends(get_model_loader),
+    embed_svc: EmbeddingService = Depends(get_embedding_service),
+    chunk_svc: ChunkIndexService = Depends(get_chunk_index_service),
+    vector_svc: ChunkVectorService = Depends(get_chunk_vector_service),
+    event_bus: IEventBus = Depends(get_event_bus),
+    settings: Settings = Depends(get_settings),
+) -> DiarizationIngestionUseCase:
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
+
+    return DiarizationIngestionUseCase(
+        diarization_repo=DiarizationRepository(db),
+        ks_service=ks_svc,
+        cs_service=cs_svc,
+        ingestion_service=job_svc,
+        model_loader_service=model_loader,
+        embedding_service=embed_svc,
+        chunk_service=chunk_svc,
+        vector_service=vector_svc,
+        vector_store_type=settings.vector.store_type.value,
+        event_bus=event_bus,
+    )
+
+
+def get_identify_speakers_use_case(
+    db: Session = Depends(get_db),
+) -> IdentifySpeakersInProcessedAudioUseCase:
+    return IdentifySpeakersInProcessedAudioUseCase(db)
+
+
+def get_retrieve_history_use_case(
+    db: Session = Depends(get_db),
+) -> RetrieveProcessedAudioHistoryUseCase:
+    return RetrieveProcessedAudioHistoryUseCase(db)
+
+
+def get_list_s3_files_use_case(
+    db: Session = Depends(get_db),
+) -> ListS3AudioFilesUseCase:
+    return ListS3AudioFilesUseCase(db)
+
+
+def get_generate_speaker_url_use_case(
+    db: Session = Depends(get_db),
+) -> GenerateSpeakerAudioAccessUrlUseCase:
+    return GenerateSpeakerAudioAccessUrlUseCase(db)
+
+
+def get_register_voice_profile_use_case(
+    db: Session = Depends(get_db),
+) -> RegisterNewVoiceProfileUseCase:
+    return RegisterNewVoiceProfileUseCase(db)
+
+
+def get_train_voice_from_speaker_use_case(
+    db: Session = Depends(get_db),
+) -> TrainVoiceProfileFromSpeakerSegmentUseCase:
+    return TrainVoiceProfileFromSpeakerSegmentUseCase(db)
+
+
+def get_list_voice_profiles_use_case(
+    db: Session = Depends(get_db),
+) -> ListRegisteredVoiceProfilesUseCase:
+    return ListRegisteredVoiceProfilesUseCase(db)
+
+
+def get_delete_voice_profile_use_case(
+    db: Session = Depends(get_db),
+) -> DeleteVoiceProfileUseCase:
+    return DeleteVoiceProfileUseCase(db)
 
 
 # --- Worker context resolution (no HTTP Request required) ---

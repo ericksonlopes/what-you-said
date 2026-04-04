@@ -45,7 +45,7 @@ class TestRedisTaskQueueService:
         yield
         _test_results = []
 
-    @patch("src.infrastructure.redis_connector.RedisConnector.get_client")
+    @patch("src.infrastructure.connectors.redis_connector.RedisConnector.get_client")
     def test_enqueue_pushes_to_redis(self, mock_get_client):
         mock_redis = MagicMock()
         mock_get_client.return_value = mock_redis
@@ -66,7 +66,7 @@ class TestRedisTaskQueueService:
         assert pushed_data["func_name"] == "dummy_func"
         assert pushed_data["args"] == [1, 2]
 
-    @patch("src.infrastructure.redis_connector.RedisConnector.get_client")
+    @patch("src.infrastructure.connectors.redis_connector.RedisConnector.get_client")
     def test_worker_processes_task(self, mock_get_client):
         mock_redis = MagicMock()
         mock_get_client.return_value = mock_redis
@@ -98,7 +98,7 @@ class TestRedisTaskQueueService:
         assert "success" in _test_results
         assert mock_redis.brpop.called
 
-    @patch("src.infrastructure.redis_connector.RedisConnector.get_client")
+    @patch("src.infrastructure.connectors.redis_connector.RedisConnector.get_client")
     def test_worker_handles_exception(self, mock_get_client):
         mock_redis = MagicMock()
         mock_get_client.return_value = mock_redis

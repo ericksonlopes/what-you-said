@@ -9,7 +9,6 @@ from typing import Optional, Any, Dict
 from src.config.settings import settings
 from src.domain.interfaces.logger.logger import ILogger
 
-
 # Global context for logging via contextvars
 _global_log_context: ContextVar[Dict[str, Any]] = ContextVar(
     "global_log_context", default={}
@@ -110,17 +109,22 @@ class StdLogger(ILogger):
         This context excludes any frame from infrastructure python files found in the loggers directory.
         """
         logger_files = StdLogger.get_logger_module_files()
+        logging_module_dir = os.path.dirname(logging.__file__)
         stack = inspect.stack()
         cls_name = ""
         frame_best = stack[1]
         for frame_info in stack:
             filename_abs = os.path.abspath(frame_info.filename)
-            if filename_abs not in logger_files:
-                self_obj = frame_info.frame.f_locals.get("self", None)
-                if self_obj:
-                    cls_name = type(self_obj).__name__
-                frame_best = frame_info
-                break
+            # Skip frames from our own logger infrastructure and Python's logging module
+            if filename_abs in logger_files:
+                continue
+            if filename_abs.startswith(logging_module_dir):
+                continue
+            self_obj = frame_info.frame.f_locals.get("self", None)
+            if self_obj:
+                cls_name = type(self_obj).__name__
+            frame_best = frame_info
+            break
 
         asctime = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
         filename = os.path.basename(frame_best.filename)

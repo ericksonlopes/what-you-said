@@ -225,6 +225,25 @@ export const api = {
     return response.json();
   },
 
+  async ingestDiarization(data: {
+    diarization_id: string;
+    subject_id: string;
+    subject_name?: string;
+    title?: string;
+    language?: string;
+    tokens_per_chunk?: number;
+    tokens_overlap?: number;
+    reprocess?: boolean;
+  }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/ingest/diarization`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    await handleResponseError(response, 'Diarization ingestion failed');
+    return response.json();
+  },
+
 
   async fetchChunks(sourceId?: string, limit: number = 100, offset: number = 0, query?: string): Promise<Chunk[]> {
     const url = new URL(`${API_BASE_URL}/chunks`, globalThis.location.origin);
@@ -305,6 +324,110 @@ export const api = {
       throw new Error('DUPLICATE_SOURCE');
     }
     await handleResponseError(response, 'Web ingestion request failed');
+    return response.json();
+  },
+
+  // Diarization Methods
+  async fetchDiarizations(limit = 20, offset = 0): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/audio?limit=${limit}&offset=${offset}`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to fetch diarizations');
+    return response.json();
+  },
+
+  async deleteDiarization(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/audio/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to delete diarization');
+  },
+
+  async updateDiarization(id: string, data: { segments: any[] }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/audio/${id}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    await handleResponseError(response, 'Failed to update diarization');
+    return response.json();
+  },
+
+  async startAudioProcessing(data: {
+    source_type: 'youtube' | 'upload';
+    source: string;
+    language?: string;
+    num_speakers?: number;
+    min_speakers?: number;
+    max_speakers?: number;
+    model_size?: string;
+    recognize_voices?: boolean;
+  }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/audio`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    await handleResponseError(response, 'Failed to start audio processing');
+    return response.json();
+  },
+
+  async recognizeSpeakers(diarizationId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/audio/${diarizationId}/recognize`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to recognize speakers');
+    return response.json();
+  },
+
+  async getSpeakerAudioUrl(diarizationId: string, speakerLabel: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/audio/${diarizationId}/audio/${speakerLabel}`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to get speaker audio URL');
+    return response.json();
+  },
+
+  async listS3AudioFiles(diarizationId: string, extension?: string): Promise<any> {
+    const params = extension ? `?extension=${extension}` : '';
+    const response = await fetch(`${API_BASE_URL}/audio/${diarizationId}/s3/list${params}`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to list audio files');
+    return response.json();
+  },
+
+  async fetchVoiceProfiles(): Promise<any[]> {
+    const response = await fetch(`${API_BASE_URL}/voices`, {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to fetch voice profiles');
+    return response.json();
+  },
+
+  async trainVoiceFromSpeaker(data: {
+    diarization_id: string;
+    speaker_label: string;
+    name: string;
+    force?: boolean;
+  }): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/voices/train-from-speaker`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    await handleResponseError(response, 'Failed to train voice profile');
+    return response.json();
+  },
+
+  async deleteVoiceProfile(name: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/voices/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to delete voice profile');
     return response.json();
   },
 

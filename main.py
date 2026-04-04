@@ -2,10 +2,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-
 from src.config.logger import setup_logging
 from src.presentation.api.dependencies import get_current_user
 from src.presentation.api.middleware.trace_middleware import TraceMiddleware
+from src.presentation.api.routes import (
+    audio_diarization_and_recognition_router as audio_router,
+)
 from src.presentation.api.routes import (
     auth_router,
     chunk_router,
@@ -17,6 +19,7 @@ from src.presentation.api.routes import (
     source_router,
     subject_router,
 )
+from src.presentation.api.routes import voice_profile_management_router as voice_router
 
 logger = setup_logging()
 
@@ -73,11 +76,17 @@ async def lifespan(app: FastAPI):
             run_file_ingestion_worker,
             run_youtube_ingestion_worker,
             run_web_ingestion_worker,
+            run_audio_diarization_worker,
+            run_diarization_ingestion_worker,
         )
 
         register_task("run_file_ingestion_worker", run_file_ingestion_worker)
         register_task("run_youtube_ingestion_worker", run_youtube_ingestion_worker)
         register_task("run_web_ingestion_worker", run_web_ingestion_worker)
+        register_task("run_audio_diarization_worker", run_audio_diarization_worker)
+        register_task(
+            "run_diarization_ingestion_worker", run_diarization_ingestion_worker
+        )
 
         logger.info("Initializing RedisTaskQueueService...")
         app.state.task_queue = RedisTaskQueueService(num_workers=4)
@@ -119,13 +128,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routes with the /rest prefix
 
-# Public routes
 app.include_router(auth_router.router, prefix="/rest/auth", tags=["Auth"])
 
-# Secured routes (require authentication if enabled)
+
 secured_deps = [Depends(get_current_user)]
+
 app.include_router(
     search_router.router,
     prefix="/rest/search",
@@ -169,6 +177,18 @@ app.include_router(
     notification_router.router,
     prefix="/rest/notifications",
     tags=["Notifications"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    audio_router.router,
+    prefix="/rest/audio",
+    tags=["Audio Diarization & Recognition"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    voice_router.router,
+    prefix="/rest/voices",
+    tags=["Voice Profiles"],
     dependencies=secured_deps,
 )
 

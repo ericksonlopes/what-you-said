@@ -17,4 +17,5 @@ class SourceType(Enum):
     MARKDOWN = "markdown"
     ASCII_DOC = "asciidoc"
     LATEX = "latex"
+    AUDIO = "audio"
     OTHER = "other"

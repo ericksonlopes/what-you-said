@@ -27,5 +27,10 @@ class IngestFileCommand:
     # Optional pre-created job id
     ingestion_job_id: Optional[UUID] = None
 
+    # Origin info (e.g. from YouTube diarization)
+    source_type: Optional[str] = None
+    external_source: Optional[str] = None
+    source_metadata: Optional[dict] = None
+
     # Cleanup logic
     delete_after_ingestion: bool = False

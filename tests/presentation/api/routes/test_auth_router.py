@@ -56,8 +56,9 @@ class TestAuthRouter:
 
     @pytest.mark.asyncio
     async def test_google_login(self, mock_auth_use_case):
-        mock_auth_use_case.get_login_url = AsyncMock(
-            return_value=("http://google.login", "state123")
+        mock_auth_use_case.get_login_url.return_value = (
+            "http://google.login",
+            "state123",
         )
 
         response = client.get("/rest/auth/google/login")
