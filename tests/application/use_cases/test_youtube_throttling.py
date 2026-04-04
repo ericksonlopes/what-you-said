@@ -66,9 +66,8 @@ def test_throttling_logic(monkeypatch):
     monkeypatch.setattr(
         YoutubeExtractor,
         "extract_playlist_videos",
-        lambda url: ["v1", "v2", "v3", "v4", "v5"],
+        lambda *args, **kwargs: ["v1", "v2", "v3", "v4", "v5"],
     )
-
     # Spy on time.sleep
     sleep_calls = []
 

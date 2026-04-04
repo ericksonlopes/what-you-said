@@ -300,7 +300,7 @@ def test_ingest_playlist(monkeypatch):
     from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
     monkeypatch.setattr(
-        YoutubeExtractor, "extract_playlist_videos", lambda url: ["url1", "url2"]
+        YoutubeExtractor, "extract_playlist_videos", lambda *args, **kwargs: ["url1", "url2"]
     )
     monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: url)
     monkeypatch.setattr(
@@ -334,7 +334,7 @@ def test_ingest_playlist_empty_raises(monkeypatch):
     from src.application.dtos.enums.youtube_data_type import YoutubeDataType
     from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
-    monkeypatch.setattr(YoutubeExtractor, "extract_playlist_videos", lambda url: [])
+    monkeypatch.setattr(YoutubeExtractor, "extract_playlist_videos", lambda *args, **kwargs: [])
 
     cmd = IngestYoutubeCommand(
         video_url="https://youtube.com/playlist?list=empty",

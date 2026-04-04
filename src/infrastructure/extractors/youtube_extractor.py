@@ -83,7 +83,7 @@ class YoutubeExtractor(IYoutubeExtractor):
 
     def _run_with_retry(self, action, max_retries: int = 3, initial_delay: int = 5):
         """Standard retry wrapper for YouTube operations."""
-        last_exception = None
+        last_exception: Exception = Exception("YouTube operation failed after retries")
         for attempt in range(max_retries):
             try:
                 return action()
@@ -91,13 +91,15 @@ class YoutubeExtractor(IYoutubeExtractor):
                 last_exception = e
                 # Check for specific fatal errors that shouldn't be retried
                 err_msg = str(e)
-                if any(x in err_msg for x in ["Private video", "not available", "Sign in"]):
+                if any(
+                    x in err_msg for x in ["Private video", "not available", "Sign in"]
+                ):
                     logger.error(f"Fatal YouTube error: {e}")
                     raise
 
                 delay = initial_delay * (2**attempt)
                 logger.warning(
-                    f"YouTube action failed (attempt {attempt+1}/{max_retries}). Retrying in {delay}s...",
+                    f"YouTube action failed (attempt {attempt + 1}/{max_retries}). Retrying in {delay}s...",
                     context={"error": err_msg},
                 )
                 time.sleep(delay)
@@ -162,7 +164,9 @@ class YoutubeExtractor(IYoutubeExtractor):
         try:
             return self._run_with_retry(_download)
         except Exception as e:
-            logger.error(f"Download failed after ALL retries: {e}", context={"url": url})
+            logger.error(
+                f"Download failed after ALL retries: {e}", context={"url": url}
+            )
             return None
 
     def extract_playlist_videos(self, playlist_url: str) -> list[str]:
@@ -192,10 +196,12 @@ class YoutubeExtractor(IYoutubeExtractor):
 
         def _extract():
             ydl_opts = self._get_common_ydl_opts()
-            ydl_opts.update({
-                "extract_flat": True,
-                "ignore_unavailable": True,
-            })
+            ydl_opts.update(
+                {
+                    "extract_flat": True,
+                    "ignore_unavailable": True,
+                }
+            )
             with YoutubeDL(ydl_opts) as ydl:
                 playlist_info = ydl.extract_info(playlist_url, download=False)
                 if not playlist_info or "entries" not in playlist_info:
@@ -221,7 +227,10 @@ class YoutubeExtractor(IYoutubeExtractor):
             )
             return urls
         except Exception as e:
-            logger.error(f"Playlist extraction failed: {e}", context={"playlist_url": playlist_url})
+            logger.error(
+                f"Playlist extraction failed: {e}",
+                context={"playlist_url": playlist_url},
+            )
             return []
 
     def extract_transcript(self) -> FetchedTranscript:
