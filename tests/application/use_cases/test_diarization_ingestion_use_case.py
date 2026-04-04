@@ -96,7 +96,11 @@ class TestDiarizationIngestionUseCase:
 
         diarization_id = str(uuid4())
         record = DiarizationRecord(
-            id=diarization_id, title="T", status="completed", source_type="youtube", segments=[]
+            id=diarization_id,
+            title="T",
+            status="completed",
+            source_type="youtube",
+            segments=[],
         )
         db.add(record)
         db.commit()
@@ -161,7 +165,9 @@ class TestDiarizationIngestionUseCase:
             "Service error"
         )
 
-        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
+        cmd = IngestDiarizationCommand(
+            diarization_id=diarization_id, subject_id=uuid4()
+        )
 
         with pytest.raises(Exception, match="Service error"):
             use_case.execute(cmd)
@@ -192,7 +198,9 @@ class TestDiarizationIngestionUseCase:
             "Late error"
         )
 
-        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
+        cmd = IngestDiarizationCommand(
+            diarization_id=diarization_id, subject_id=uuid4()
+        )
 
         with pytest.raises(Exception, match="Late error"):
             use_case.execute(cmd)
@@ -211,9 +219,14 @@ class TestDiarizationIngestionUseCase:
         record.source_type = "upload"
         record.external_source = "s3://path"
         record.source_metadata = None
-        
+
         st, es = use_case._resolve_source_info(record)
-        assert st == pytest.importorskip("src.domain.entities.enums.source_type_enum_entity").SourceType.AUDIO
+        assert (
+            st
+            == pytest.importorskip(
+                "src.domain.entities.enums.source_type_enum_entity"
+            ).SourceType.AUDIO
+        )
         assert es == "s3://path"
 
     def test_format_transcript_long_audio(self, use_case_deps):
@@ -221,42 +234,71 @@ class TestDiarizationIngestionUseCase:
         segments = [{"start": 3661, "end": 3665, "text": "Long time", "speaker": "S1"}]
         formatted = use_case._format_transcript(segments, {"mapping": {}})
         assert "[01:01:01 - 01:01:05]" in formatted
+
     def test_execute_empty_transcript_error(self, use_case_deps, sqlite_memory):
         use_case = DiarizationIngestionUseCase(**use_case_deps)
         db = sqlite_memory
         diarization_id = str(uuid4())
-        record = DiarizationRecord(id=diarization_id, title="T", segments=[], source_type="youtube", status="completed")
+        record = DiarizationRecord(
+            id=diarization_id,
+            title="T",
+            segments=[],
+            source_type="youtube",
+            status="completed",
+        )
         db.add(record)
         db.commit()
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
-        
-        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=uuid4()
+        )
+
+        cmd = IngestDiarizationCommand(
+            diarization_id=diarization_id, subject_id=uuid4()
+        )
         with pytest.raises(ValueError, match="No segments found"):
             use_case.execute(cmd)
 
     def test_resolve_source_info_branches(self, use_case_deps):
         use_case = DiarizationIngestionUseCase(**use_case_deps)
-        
+
         # Test 1: Invalid source_type -> OTHER
-        record = MagicMock(source_type="garbage", external_source="url", source_metadata=None)
+        record = MagicMock(
+            source_type="garbage", external_source="url", source_metadata=None
+        )
         st, es = use_case._resolve_source_info(record)
         assert st == SourceType.OTHER
-        
+
         # Test 2: Source metadata with original_url
-        record = MagicMock(source_type="youtube", external_source="yt-url", source_metadata={"original_url": "orig-url"})
+        record = MagicMock(
+            source_type="youtube",
+            external_source="yt-url",
+            source_metadata={"original_url": "orig-url"},
+        )
         st, es = use_case._resolve_source_info(record)
         assert es == "orig-url"
 
     def test_generate_split_docs_no_tokenizer(self, use_case_deps, monkeypatch):
         use_case = DiarizationIngestionUseCase(**use_case_deps)
-        use_case.model_loader_service.model = None # No model/tokenizer
-        
+        use_case.model_loader_service.model = None  # No model/tokenizer
+
         record = MagicMock(source_metadata={"meta": "data"})
         mock_splitter = MagicMock()
-        mock_splitter.split_documents.return_value = [Document(page_content="c", metadata={})]
-        monkeypatch.setattr("langchain_text_splitters.RecursiveCharacterTextSplitter", lambda **kwargs: mock_splitter)
-        
-        docs = use_case._generate_split_docs("text", "title", "source", SourceType.PDF, IngestDiarizationCommand(diarization_id=uuid4(), subject_id=uuid4()), record)
+        mock_splitter.split_documents.return_value = [
+            Document(page_content="c", metadata={})
+        ]
+        monkeypatch.setattr(
+            "langchain_text_splitters.RecursiveCharacterTextSplitter",
+            lambda **kwargs: mock_splitter,
+        )
+
+        docs = use_case._generate_split_docs(
+            "text",
+            "title",
+            "source",
+            SourceType.PDF,
+            IngestDiarizationCommand(diarization_id=uuid4(), subject_id=uuid4()),
+            record,
+        )
         assert len(docs) == 1
         mock_splitter.split_documents.assert_called_once()
 
@@ -264,17 +306,27 @@ class TestDiarizationIngestionUseCase:
         use_case = DiarizationIngestionUseCase(**use_case_deps)
         db = sqlite_memory
         diarization_id = str(uuid4())
-        record = DiarizationRecord(id=diarization_id, title="T", source_type="youtube", segments=[{"text": "h", "start": 0, "end": 1}], status="completed")
+        record = DiarizationRecord(
+            id=diarization_id,
+            title="T",
+            source_type="youtube",
+            segments=[{"text": "h", "start": 0, "end": 1}],
+            status="completed",
+        )
         db.add(record)
         db.commit()
-        
+
         job_id = uuid4()
         mock_job = MagicMock(id=job_id)
         use_case_deps["ingestion_service"].get_by_id.return_value = mock_job
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
+            id=uuid4()
+        )
         use_case_deps["cs_service"].create_source.return_value = MagicMock(id=uuid4())
 
-        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4(), ingestion_job_id=job_id)
+        cmd = IngestDiarizationCommand(
+            diarization_id=diarization_id, subject_id=uuid4(), ingestion_job_id=job_id
+        )
         result = use_case.execute(cmd)
         assert result["job_id"] == job_id
         use_case_deps["ingestion_service"].get_by_id.assert_called_with(job_id)

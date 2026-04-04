@@ -139,10 +139,10 @@ async def start_audio_processing_pipeline(
     },
 )
 async def identify_speakers_in_existing_diarization(
-        diarization_id: str,
-        use_case: Annotated[
-            IdentifySpeakersInProcessedAudioUseCase, Depends(get_identify_speakers_use_case)
-        ],
+    diarization_id: str,
+    use_case: Annotated[
+        IdentifySpeakersInProcessedAudioUseCase, Depends(get_identify_speakers_use_case)
+    ],
 ):
     logger.info("Speaker recognition request for diarization_id=%s", diarization_id)
     try:
@@ -166,7 +166,7 @@ async def identify_speakers_in_existing_diarization(
 )
 async def list_available_s3_files_for_recognition(
     diarization_id: str,
-        use_case: Annotated[ListS3AudioFilesUseCase, Depends(get_list_s3_files_use_case)],
+    use_case: Annotated[ListS3AudioFilesUseCase, Depends(get_list_s3_files_use_case)],
     extension: str | None = None,
 ):
     """
@@ -189,11 +189,11 @@ async def list_available_s3_files_for_recognition(
     },
 )
 async def generate_signed_url_for_speaker_audio(
-        diarization_id: str,
-        speaker_label: str,
-        use_case: Annotated[
-            GenerateSpeakerAudioAccessUrlUseCase, Depends(get_generate_speaker_url_use_case)
-        ],
+    diarization_id: str,
+    speaker_label: str,
+    use_case: Annotated[
+        GenerateSpeakerAudioAccessUrlUseCase, Depends(get_generate_speaker_url_use_case)
+    ],
 ):
     try:
         return use_case.execute(diarization_id, speaker_label)
@@ -208,11 +208,11 @@ async def generate_signed_url_for_speaker_audio(
 
 @router.get("")
 async def retrieve_all_processed_audio_history(
-        use_case: Annotated[
-            RetrieveProcessedAudioHistoryUseCase, Depends(get_retrieve_history_use_case)
-        ],
-        limit: int = 10,
-        offset: int = 0,
+    use_case: Annotated[
+        RetrieveProcessedAudioHistoryUseCase, Depends(get_retrieve_history_use_case)
+    ],
+    limit: int = 10,
+    offset: int = 0,
 ):
     return use_case.execute(limit=limit, offset=offset)
 

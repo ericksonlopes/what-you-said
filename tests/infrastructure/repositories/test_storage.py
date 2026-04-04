@@ -93,12 +93,13 @@ class TestStorageService:
             Params={"Bucket": svc.bucket, "Key": "remote.wav"},
             ExpiresIn=3600,
         )
+
     @patch("boto3.client")
     def test_delete_file(self, mock_boto):
         mock_s3 = MagicMock()
         mock_boto.return_value = mock_s3
         svc = StorageService()
-        
+
         svc.delete_file("remote.wav")
         mock_s3.delete_object.assert_called_with(Bucket=svc.bucket, Key="remote.wav")
 
@@ -107,11 +108,11 @@ class TestStorageService:
         mock_s3 = MagicMock()
         mock_boto.return_value = mock_s3
         svc = StorageService()
-        
+
         mock_paginator = MagicMock()
         mock_s3.get_paginator.return_value = mock_paginator
-        mock_paginator.paginate.return_value = [{}] # Empty page
-        
+        mock_paginator.paginate.return_value = [{}]  # Empty page
+
         files = svc.list_files(prefix="test/")
         assert len(files) == 0
 
@@ -120,9 +121,10 @@ class TestStorageService:
     def test_ensure_bucket_already_exists(self, mock_logger, mock_boto):
         mock_s3 = MagicMock()
         mock_boto.return_value = mock_s3
-        mock_s3.head_bucket.return_value = {} # Exists
-        
-        svc = StorageService()
+        mock_s3.head_bucket.return_value = {}  # Exists
+
+        StorageService()
+
         assert not mock_s3.create_bucket.called
 
     @patch("boto3.client")
@@ -130,7 +132,7 @@ class TestStorageService:
         mock_s3 = MagicMock()
         mock_boto.return_value = mock_s3
         svc = StorageService()
-        
+
         # Test default destination
         svc.upload_file("local.wav")
         mock_s3.upload_file.assert_called_with("local.wav", svc.bucket, "local.wav")

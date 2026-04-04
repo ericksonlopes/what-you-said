@@ -13,7 +13,7 @@ from src.presentation.api.dependencies import (
     get_identify_speakers_use_case,
     get_retrieve_history_use_case,
     get_generate_speaker_url_use_case,
-    get_list_s3_files_use_case
+    get_list_s3_files_use_case,
 )
 
 client = TestClient(app)
@@ -126,7 +126,8 @@ class TestAudioDiarizationRouter:
     def test_update_diarization_segments_db_error(self, mock_db):
         app.dependency_overrides[get_db] = lambda: mock_db
         with patch(
-                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_id") as mock_get:
+            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_id"
+        ) as mock_get:
             mock_get.side_effect = Exception("DB Fail")
             response = client.patch("/rest/audio/123", json={"segments": []})
             assert response.status_code == 500
@@ -134,14 +135,16 @@ class TestAudioDiarizationRouter:
 
     def test_identify_speakers_value_error_400(self, mock_db):
         app.dependency_overrides[get_identify_speakers_use_case] = lambda: MagicMock(
-            execute=MagicMock(side_effect=ValueError("invalid")))
+            execute=MagicMock(side_effect=ValueError("invalid"))
+        )
         response = client.post("/rest/audio/123/recognize")
         assert response.status_code == 400
         app.dependency_overrides.clear()
 
     def test_identify_speakers_exception_500(self, mock_db):
         app.dependency_overrides[get_identify_speakers_use_case] = lambda: MagicMock(
-            execute=MagicMock(side_effect=Exception("crash")))
+            execute=MagicMock(side_effect=Exception("crash"))
+        )
         response = client.post("/rest/audio/123/recognize")
         assert response.status_code == 500
         app.dependency_overrides.clear()
@@ -156,22 +159,26 @@ class TestAudioDiarizationRouter:
 
     def test_list_s3_files_error_404(self, mock_db):
         app.dependency_overrides[get_list_s3_files_use_case] = lambda: MagicMock(
-            execute=MagicMock(side_effect=ValueError("not found")))
+            execute=MagicMock(side_effect=ValueError("not found"))
+        )
         response = client.get("/rest/audio/123/s3/list")
         assert response.status_code == 404
         app.dependency_overrides.clear()
 
     def test_generate_signed_url_error_500(self, mock_db):
         app.dependency_overrides[get_generate_speaker_url_use_case] = lambda: MagicMock(
-            execute=MagicMock(side_effect=Exception("s3 error")))
+            execute=MagicMock(side_effect=Exception("s3 error"))
+        )
         response = client.get("/rest/audio/123/audio/S1")
         assert response.status_code == 500
         app.dependency_overrides.clear()
 
     def test_delete_record_not_found(self, mock_db):
         app.dependency_overrides[get_db] = lambda: mock_db
-        with patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.delete",
-                   return_value=False):
+        with patch(
+            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.delete",
+            return_value=False,
+        ):
             response = client.delete("/rest/audio/nonexistent")
             assert response.status_code == 404
         app.dependency_overrides.clear()

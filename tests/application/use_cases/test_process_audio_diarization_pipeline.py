@@ -147,12 +147,15 @@ class TestProcessAudioDiarizationPipeline:
         mock_record = MagicMock()
         mock_record.id = "existing-uuid"
 
-        with patch(
-            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.save",
-            return_value=mock_record,
-        ), patch(
-            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.update_status"
-        ) as mock_update_status:
+        with (
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.save",
+                return_value=mock_record,
+            ),
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.update_status"
+            ) as mock_update_status,
+        ):
             use_case = ProcessAudioDiarizationPipelineUseCase(
                 sqlite_memory, event_bus=mock_event_bus
             )
@@ -214,4 +217,3 @@ class TestProcessAudioDiarizationPipeline:
 
             assert result["title"] == "audio"
             assert result["storage_path"] == "processed/uuid-789/recognition"
-

@@ -24,10 +24,10 @@ router = APIRouter()
 
 @router.post("", responses={400: {"description": "Bad Request"}})
 async def register_new_voice_profile(
-        request: VoiceProfileRegistrationRequest,
-        use_case: Annotated[
-            RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)
-        ],
+    request: VoiceProfileRegistrationRequest,
+    use_case: Annotated[
+        RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)
+    ],
 ):
     try:
         voice_id = use_case.execute(
@@ -48,10 +48,10 @@ async def register_new_voice_profile(
 )
 async def train_voice_profile_from_existing_speaker_segment(
     request: VoiceProfileTrainingFromSpeakerRequest,
-        use_case: Annotated[
-            TrainVoiceProfileFromSpeakerSegmentUseCase,
-            Depends(get_train_voice_from_speaker_use_case),
-        ],
+    use_case: Annotated[
+        TrainVoiceProfileFromSpeakerSegmentUseCase,
+        Depends(get_train_voice_from_speaker_use_case),
+    ],
 ):
     try:
         voice_id = use_case.execute(
@@ -71,19 +71,19 @@ async def train_voice_profile_from_existing_speaker_segment(
 
 @router.get("")
 async def list_all_registered_voice_profiles(
-        use_case: Annotated[
-            ListRegisteredVoiceProfilesUseCase, Depends(get_list_voice_profiles_use_case)
-        ],
+    use_case: Annotated[
+        ListRegisteredVoiceProfilesUseCase, Depends(get_list_voice_profiles_use_case)
+    ],
 ):
     return use_case.execute()
 
 
 @router.delete("/{name}", responses={404: {"description": "Not Found"}})
 async def delete_existing_voice_profile(
-        name: str,
-        use_case: Annotated[
-            DeleteVoiceProfileUseCase, Depends(get_delete_voice_profile_use_case)
-        ],
+    name: str,
+    use_case: Annotated[
+        DeleteVoiceProfileUseCase, Depends(get_delete_voice_profile_use_case)
+    ],
 ):
     try:
         use_case.execute(name)

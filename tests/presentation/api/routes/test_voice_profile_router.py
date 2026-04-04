@@ -7,7 +7,7 @@ from src.presentation.api.dependencies import (
     get_register_voice_profile_use_case,
     get_train_voice_from_speaker_use_case,
     get_list_voice_profiles_use_case,
-    get_delete_voice_profile_use_case
+    get_delete_voice_profile_use_case,
 )
 
 client = TestClient(app)
@@ -18,8 +18,10 @@ class TestVoiceProfileRouter:
     def test_register_voice_profile_success(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_register_voice_profile_use_case] = lambda: mock_use_case
-        
+        app.dependency_overrides[get_register_voice_profile_use_case] = lambda: (
+            mock_use_case
+        )
+
         mock_use_case.execute.return_value = "v-123"
         response = client.post(
             "/rest/voices", json={"name": "Alice", "audio_path": "s3://path"}
@@ -32,7 +34,9 @@ class TestVoiceProfileRouter:
     def test_train_from_speaker_success(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_train_voice_from_speaker_use_case] = lambda: mock_use_case
+        app.dependency_overrides[get_train_voice_from_speaker_use_case] = lambda: (
+            mock_use_case
+        )
 
         mock_use_case.execute.return_value = "v-456"
         payload = {
@@ -49,7 +53,9 @@ class TestVoiceProfileRouter:
     def test_list_voices(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_list_voice_profiles_use_case] = lambda: mock_use_case
+        app.dependency_overrides[get_list_voice_profiles_use_case] = lambda: (
+            mock_use_case
+        )
 
         mock_use_case.execute.return_value = [{"name": "Alice"}]
         response = client.get("/rest/voices")
@@ -61,7 +67,9 @@ class TestVoiceProfileRouter:
     def test_delete_voice_success(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: mock_use_case
+        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: (
+            mock_use_case
+        )
 
         mock_use_case.execute.return_value = None
         response = client.delete("/rest/voices/Alice")
@@ -73,7 +81,9 @@ class TestVoiceProfileRouter:
     def test_delete_voice_not_found(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: mock_use_case
+        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: (
+            mock_use_case
+        )
 
         mock_use_case.execute.side_effect = KeyError("not found")
         response = client.delete("/rest/voices/Unknown")

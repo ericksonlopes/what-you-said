@@ -11,11 +11,13 @@ import src.infrastructure.repositories.sql.connector as connector
 def setup_app_state():
     """Ensure app.state has necessary attributes for tests."""
     from main import app
+
     if not hasattr(app.state, "model_loader"):
         app.state.model_loader = MagicMock()
     if not hasattr(app.state, "rerank_service"):
         app.state.rerank_service = MagicMock()
     yield
+
 
 @pytest.fixture(autouse=True)
 def mock_auth():
@@ -23,10 +25,12 @@ def mock_auth():
     from main import app
     from src.presentation.api.dependencies import get_current_user
     from src.domain.entities.user import User
+
     mock_user = User(id="admin", email="admin@whatyousaid.local", full_name="Admin")
     app.dependency_overrides[get_current_user] = lambda: mock_user
     yield
     app.dependency_overrides.pop(get_current_user, None)
+
 
 @pytest.fixture()
 def sqlite_memory():

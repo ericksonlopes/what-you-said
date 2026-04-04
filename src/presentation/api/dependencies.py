@@ -31,6 +31,7 @@ from src.application.use_cases.search_use_case import SearchUseCase
 from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.config.settings import Settings
+
 # Import services and repositories
 from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
@@ -459,49 +460,49 @@ def get_diarization_ingestion_use_case(
 
 
 def get_identify_speakers_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> IdentifySpeakersInProcessedAudioUseCase:
     return IdentifySpeakersInProcessedAudioUseCase(db)
 
 
 def get_retrieve_history_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> RetrieveProcessedAudioHistoryUseCase:
     return RetrieveProcessedAudioHistoryUseCase(db)
 
 
 def get_list_s3_files_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> ListS3AudioFilesUseCase:
     return ListS3AudioFilesUseCase(db)
 
 
 def get_generate_speaker_url_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> GenerateSpeakerAudioAccessUrlUseCase:
     return GenerateSpeakerAudioAccessUrlUseCase(db)
 
 
 def get_register_voice_profile_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> RegisterNewVoiceProfileUseCase:
     return RegisterNewVoiceProfileUseCase(db)
 
 
 def get_train_voice_from_speaker_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> TrainVoiceProfileFromSpeakerSegmentUseCase:
     return TrainVoiceProfileFromSpeakerSegmentUseCase(db)
 
 
 def get_list_voice_profiles_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> ListRegisteredVoiceProfilesUseCase:
     return ListRegisteredVoiceProfilesUseCase(db)
 
 
 def get_delete_voice_profile_use_case(
-        db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
 ) -> DeleteVoiceProfileUseCase:
     return DeleteVoiceProfileUseCase(db)
 

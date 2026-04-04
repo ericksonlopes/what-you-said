@@ -185,19 +185,32 @@ class TestWorkers:
                 mock_get_logger.return_value = mock_logger
                 run_web_ingestion_worker(cmd)
                 mock_logger.error.assert_called_once()
+
     def test_run_diarization_ingestion_worker_success(self):
         from src.application.workers import run_diarization_ingestion_worker
-        from src.application.dtos.commands.ingest_diarization_command import IngestDiarizationCommand
+        from src.application.dtos.commands.ingest_diarization_command import (
+            IngestDiarizationCommand,
+        )
         from uuid import uuid4
 
         with (
-            patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx,
+            patch(
+                "src.presentation.api.dependencies.resolve_ingestion_context"
+            ) as mock_ctx,
             patch("src.presentation.api.dependencies.resolve_vector_repository"),
             patch("src.presentation.api.dependencies.resolve_rerank_service"),
-            patch("src.infrastructure.services.chunk_vector_service.ChunkVectorService"),
-            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_cls,
-            patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"),
-            patch("src.application.use_cases.diarization_ingestion_use_case.DiarizationIngestionUseCase") as mock_use_case_cls,
+            patch(
+                "src.infrastructure.services.chunk_vector_service.ChunkVectorService"
+            ),
+            patch(
+                "src.infrastructure.repositories.sql.connector.Session"
+            ) as mock_session_cls,
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"
+            ),
+            patch(
+                "src.application.use_cases.diarization_ingestion_use_case.DiarizationIngestionUseCase"
+            ) as mock_use_case_cls,
         ):
             mock_use_case = MagicMock()
             mock_use_case_cls.return_value = mock_use_case
@@ -213,6 +226,7 @@ class TestWorkers:
 
     def test_run_diarization_ingestion_worker_no_app(self):
         from src.application.workers import run_diarization_ingestion_worker
+
         registry._services = {}
         cmd = MagicMock()
         run_diarization_ingestion_worker(cmd)
@@ -220,7 +234,10 @@ class TestWorkers:
 
     def test_run_diarization_ingestion_worker_exception(self):
         from src.application.workers import run_diarization_ingestion_worker
-        with patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx:
+
+        with patch(
+            "src.presentation.api.dependencies.resolve_ingestion_context"
+        ) as mock_ctx:
             mock_ctx.side_effect = Exception("Test error")
             cmd = MagicMock()
             with patch("src.application.workers.logger") as mock_logger:
@@ -231,9 +248,13 @@ class TestWorkers:
         from src.application.workers import _audio_diarization_subprocess
 
         with (
-            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_cls,
+            patch(
+                "src.infrastructure.repositories.sql.connector.Session"
+            ) as mock_session_cls,
             patch("src.infrastructure.services.redis_event_bus.RedisEventBus"),
-            patch("src.application.use_cases.process_audio_diarization_pipeline.ProcessAudioDiarizationPipelineUseCase") as mock_use_case_cls,
+            patch(
+                "src.application.use_cases.process_audio_diarization_pipeline.ProcessAudioDiarizationPipelineUseCase"
+            ) as mock_use_case_cls,
         ):
             mock_use_case = MagicMock()
             mock_use_case_cls.return_value = mock_use_case
@@ -249,14 +270,16 @@ class TestWorkers:
                 "max_speakers": None,
                 "model_size": "base",
                 "recognize_voices": True,
-                "diarization_id": "test-id"
+                "diarization_id": "test-id",
             }
             _audio_diarization_subprocess(cmd_dict)
             mock_use_case.execute.assert_called_once()
 
     def test_run_audio_diarization_worker_success(self):
         from src.application.workers import run_audio_diarization_worker
-        from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
+        from src.application.dtos.commands.process_audio_command import (
+            ProcessAudioCommand,
+        )
 
         with (
             patch("multiprocessing.get_context") as mock_get_ctx,
@@ -269,19 +292,25 @@ class TestWorkers:
 
             cmd = ProcessAudioCommand(source_type="youtube", source="url")
             run_audio_diarization_worker(cmd)
-            
+
             mock_ctx.Process.assert_called_once()
             mock_process.start.assert_called_once()
             mock_process.join.assert_called_once()
 
     def test_run_audio_diarization_worker_failure(self):
         from src.application.workers import run_audio_diarization_worker
-        from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
+        from src.application.dtos.commands.process_audio_command import (
+            ProcessAudioCommand,
+        )
 
         with (
             patch("multiprocessing.get_context") as mock_get_ctx,
-            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_factory,
-            patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository") as mock_repo_cls,
+            patch(
+                "src.infrastructure.repositories.sql.connector.Session"
+            ) as mock_session_factory,
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"
+            ) as mock_repo_cls,
             patch("src.infrastructure.services.redis_event_bus.RedisEventBus"),
         ):
             mock_ctx = MagicMock()
@@ -295,7 +324,11 @@ class TestWorkers:
             mock_repo = MagicMock()
             mock_repo_cls.return_value = mock_repo
 
-            cmd = ProcessAudioCommand(source_type="youtube", source="url", diarization_id="test-id")
+            cmd = ProcessAudioCommand(
+                source_type="youtube", source="url", diarization_id="test-id"
+            )
             run_audio_diarization_worker(cmd)
-            
-            mock_repo.update_status.assert_called_with("test-id", "failed", error_message=ANY)
+
+            mock_repo.update_status.assert_called_with(
+                "test-id", "failed", error_message=ANY
+            )
