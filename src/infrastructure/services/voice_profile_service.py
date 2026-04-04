@@ -45,6 +45,9 @@ class VoiceDB:
         return embedding.tolist()
 
     def add(self, name: str, audio_path: str, force: bool | None = False) -> str:
+        if not name or not name.strip():
+            raise ValueError("Name required")
+
         temp_download_dir = settings.audio.temp_download_dir
         local_temp_file = None
 

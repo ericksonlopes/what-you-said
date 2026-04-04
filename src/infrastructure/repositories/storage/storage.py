@@ -38,7 +38,9 @@ class StorageService:
             self.s3.create_bucket(Bucket=self.bucket)
             logger.info("Bucket '%s' created", self.bucket)
 
-    def upload_file(self, local_path: str, s3_key: str) -> str:
+    def upload_file(self, local_path: str, s3_key: str | None = None) -> str:
+        if s3_key is None:
+            s3_key = local_path
         self.s3.upload_file(local_path, self.bucket, s3_key)
         return s3_key
 

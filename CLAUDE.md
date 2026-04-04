@@ -59,11 +59,18 @@ Clean architecture with DDD-style layering:
 ## Key Patterns
 
 - **Environment variables** use double-underscore `__` as nested delimiter for Pydantic Settings (e.g., `SQL__TYPE`, `VECTOR__STORE_TYPE`, `REDIS__HOST`). See `.env.example`.
-- **Pluggable stores**: Vector store and SQL database are selected at runtime via config. Adding a new vector store means implementing `IVectorRepository`.
-- **Background processing**: Ingestion tasks are queued via `RedisTaskQueueService` and executed by workers. Real-time progress is pushed through `RedisEventBus` (SSE).
+- **Pluggable stores**: Vector store and SQL database are selected at runtime via config. Adding a new vector store means implementing `IVectorRepository`. Optional dependency groups in `pyproject.toml` (`faiss`, `chroma`, `weaviate`, `qdrant`, `postgres`, `mysql`, `mariadb`, `mssql`) must be installed for the chosen backend.
+- **Background processing**: Ingestion tasks are queued via `RedisTaskQueueService` and executed by workers registered in `main.py` lifespan. Real-time progress is pushed through `RedisEventBus` (SSE).
+- **IngestionContext**: `src/application/ingestion_context.py` is a dataclass grouping shared dependencies (services, event bus, settings) for all ingestion use cases. Workers resolve it via `dependencies.resolve_ingestion_context(app)`.
+- **Audio diarization workers** spawn a separate process via `multiprocessing.get_context("spawn")` to avoid torch/CUDA thread deadlocks inside Redis worker daemon threads. This is intentional — do not refactor to run in-thread.
+- **SQL connector globals**: `src/infrastructure/repositories/sql/connector.py` creates module-level `engine` and `Session` at import time from settings. Tests must monkey-patch these globals (see `conftest.py`'s `sqlite_memory` fixture).
 - **Tests** mirror `src/` structure under `tests/`. The `conftest.py` provides an in-memory SQLite fixture (`sqlite_memory`) and mocks auth globally. Tests use `pytest` markers extensively (see `pytest.ini`).
 - **Coverage** excludes entities, models, DTOs, schemas, mappers, and scripts (see `.coveragerc`).
 - **Agent skills and workflows** live in `.agents/skills/` and `.agents/workflows/` (see `AGENTS.md`).
+
+## API Route Prefixes
+
+All routes are under `/rest/` — auth at `/rest/auth`, ingestion at `/rest/ingest`, search at `/rest/search`, audio diarization at `/rest/audio`, voice profiles at `/rest/voices`. The `/health` endpoint is unauthenticated. All other routes require JWT auth via `get_current_user` dependency.
 
 ## Python Version
 

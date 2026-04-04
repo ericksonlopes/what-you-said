@@ -15,6 +15,9 @@ class RegisterNewVoiceProfileUseCase:
         self.db = db
 
     def execute(self, name: str, audio_path: str, force: bool | None = False) -> str:
+        if not name or not name.strip():
+            raise ValueError("Name required")
+
         hf_token = settings.auth.hf_token or ""
         voice_db = VoiceDB(db=self.db, hf_token=hf_token)
         return voice_db.add(name=name, audio_path=audio_path, force=force)

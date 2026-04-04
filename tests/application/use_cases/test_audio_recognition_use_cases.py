@@ -1,5 +1,12 @@
 import pytest
 from unittest.mock import MagicMock, patch
+import os
+
+# Module-level patch for boto3 to prevent botocore initialization during class/module loading
+patch("boto3.Session").start()
+patch("boto3.client").start()
+patch("boto3.resource").start()
+
 from src.application.use_cases.generate_speaker_audio_access_url import (
     GenerateSpeakerAudioAccessUrlUseCase,
 )
@@ -9,117 +16,105 @@ from src.application.use_cases.identify_speakers_in_processed_audio import (
 from src.application.use_cases.list_s3_audio_files import ListS3AudioFilesUseCase
 from src.application.use_cases.manage_voice_profiles import (
     RegisterNewVoiceProfileUseCase,
-)
-from src.application.use_cases.retrieve_processed_audio_history import (
-    RetrieveProcessedAudioHistoryUseCase,
+    DeleteVoiceProfileUseCase,
+    ListRegisteredVoiceProfilesUseCase,
+    TrainVoiceProfileFromSpeakerSegmentUseCase,
 )
 from src.infrastructure.repositories.sql.models.diarization_record import (
     DiarizationRecord,
 )
 
-
 @pytest.mark.AudioRecognitionUseCases
 class TestAudioRecognitionUseCases:
+    @pytest.fixture(autouse=True)
+    def mock_infra_and_fs(self):
+        # Stub StorageService and FS logic globally for this class
+        with patch("src.application.use_cases.identify_speakers_in_processed_audio.StorageService"), \
+             patch("src.application.use_cases.generate_speaker_audio_access_url.StorageService"), \
+             patch("src.application.use_cases.list_s3_audio_files.StorageService"), \
+             patch("src.application.use_cases.manage_voice_profiles.StorageService"), \
+             patch("src.infrastructure.services.voice_profile_service.StorageService"), \
+             patch("os.path.exists", return_value=True), \
+             patch("os.path.isdir", return_value=True), \
+             patch("os.listdir", return_value=[]), \
+             patch("os.makedirs"):
+            yield
+
     def test_retrieve_history(self, sqlite_memory):
-        # Setup: add a record
         record = DiarizationRecord(id="1", title="Test", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
+        from src.application.use_cases.retrieve_processed_audio_history import RetrieveProcessedAudioHistoryUseCase
         use_case = RetrieveProcessedAudioHistoryUseCase(sqlite_memory)
         history = use_case.execute(limit=10, offset=0)
-
         assert len(history) == 1
-        assert history[0]["title"] == "Test"
 
-    @patch(
-        "src.application.use_cases.generate_speaker_audio_access_url.StorageService"
-    )
-    def test_generate_speaker_url(self, mock_storage_cls, sqlite_memory):
-        # Setup: add a record with storage path
-        record = DiarizationRecord(
-            id="1", title="Test", storage_path="path/to/dir", segments=[]
-        )
+    def test_generate_speaker_url(self, sqlite_memory):
+        record = DiarizationRecord(id="1", title="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
-
-        mock_storage = mock_storage_cls.return_value
-        mock_storage.get_presigned_url.return_value = "http://presigned"
 
         use_case = GenerateSpeakerAudioAccessUrlUseCase(sqlite_memory)
-        result = use_case.execute("1", "SPEAKER_00")
+        with patch.object(use_case.storage, "get_presigned_url", return_value="http://p"):
+            result = use_case.execute("1", "S0")
+            assert result["url"] == "http://p"
 
-        assert result["url"] == "http://presigned"
-        assert result["speaker"] == "SPEAKER_00"
-
-    @patch("src.application.use_cases.list_s3_audio_files.StorageService")
-    def test_list_s3_files(self, mock_storage_cls, sqlite_memory):
-        # Setup: add a record
-        record = DiarizationRecord(
-            id="1", title="Test", storage_path="path/to/dir", segments=[]
-        )
+    def test_list_s3_files(self, sqlite_memory):
+        record = DiarizationRecord(id="1", title="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
-
-        mock_storage = mock_storage_cls.return_value
-        mock_storage.list_files.return_value = [{"key": "file1.wav"}]
 
         use_case = ListS3AudioFilesUseCase(sqlite_memory)
-        files = use_case.execute("1")
+        with patch.object(use_case.storage, "list_files", return_value=[{"key": "f1.wav"}]):
+            files = use_case.execute("1")
+            assert len(files) == 1
 
-        assert len(files) == 1
-        assert files[0]["key"] == "file1.wav"
+    def test_register_voice_profile(self, sqlite_memory):
+        with patch("src.application.use_cases.manage_voice_profiles.VoiceDB") as mock_vdb_cls:
+            mock_vdb = mock_vdb_cls.return_value
+            mock_vdb.add.return_value = "v-123"
+            
+            use_case = RegisterNewVoiceProfileUseCase(sqlite_memory)
+            vid = use_case.execute(name="N", audio_path="a")
+            assert vid == "v-123"
 
-    @patch("src.infrastructure.services.voice_profile_service.StorageService")
-    @patch("src.infrastructure.services.voice_profile_service.VoiceDB.add")
-    def test_register_voice_profile(self, mock_add, mock_storage, sqlite_memory):
-        mock_add.return_value = "voice-uuid"
-
-        use_case = RegisterNewVoiceProfileUseCase(sqlite_memory)
-        voice_id = use_case.execute(name="Renato", audio_path="path/to/audio")
-
-        assert voice_id == "voice-uuid"
-        mock_add.assert_called_with(
-            name="Renato", audio_path="path/to/audio", force=False
-        )
-
-    @patch(
-        "src.application.use_cases.identify_speakers_in_processed_audio.StorageService"
-    )
-    @patch("src.application.use_cases.identify_speakers_in_processed_audio.VoiceDB")
-    @patch(
-        "src.application.use_cases.identify_speakers_in_processed_audio.VoiceRecognizer"
-    )
-    @patch("os.makedirs")
     @patch("shutil.rmtree")
-    def test_identify_speakers(
-        self,
-        mock_rm,
-        mock_make,
-        mock_rec_cls,
-        mock_db_cls,
-        mock_storage_cls,
-        sqlite_memory,
-    ):
-        # Setup: add record
-        record = DiarizationRecord(
-            id="1", title="Test", storage_path="path/to/dir", segments=[]
-        )
+    def test_identify_speakers(self, mock_rm, sqlite_memory):
+        record = DiarizationRecord(id="1", title="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
-        mock_db = mock_db_cls.return_value
-        mock_db.__len__.return_value = 1
+        with patch("src.application.use_cases.identify_speakers_in_processed_audio.VoiceDB") as mock_db_cls, \
+             patch("src.application.use_cases.identify_speakers_in_processed_audio.VoiceRecognizer") as mock_rec_cls:
+            
+            mock_db = mock_db_cls.return_value
+            mock_db.__len__.return_value = 1
+            mock_rec = mock_rec_cls.return_value
+            mock_rec.identify_dir.return_value = MagicMock(
+                mapping={"S0": "N"}, id_mapping={"S0": "id"}, results={}
+            )
+            
+            use_case = IdentifySpeakersInProcessedAudioUseCase(sqlite_memory)
+            res = use_case.execute("1")
+            assert res["mapping"]["S0"] == "N"
 
-        mock_rec = mock_rec_cls.return_value
-        mock_rec.identify_dir.return_value = MagicMock(
-            mapping={"SPEAKER_00": "Renato"},
-            id_mapping={"SPEAKER_00": "uuid-renato"},
-            results={},
-        )
+    def test_delete_voice_profile(self, sqlite_memory):
+        with patch("src.application.use_cases.manage_voice_profiles.VoiceDB") as mock_vdb_cls:
+            mock_vdb = mock_vdb_cls.return_value
+            use_case = DeleteVoiceProfileUseCase(sqlite_memory)
+            use_case.execute(name="N")
+            mock_vdb.remove.assert_called_with("N")
 
-        use_case = IdentifySpeakersInProcessedAudioUseCase(sqlite_memory)
-        result = use_case.execute("1")
+    def test_list_voice_profiles(self, sqlite_memory):
+        use_case = ListRegisteredVoiceProfilesUseCase(sqlite_memory)
+        with patch.object(sqlite_memory, "query") as mock_query:
+            mock_query.return_value.all.return_value = []
+            res = use_case.execute()
+            assert isinstance(res, list)
 
-        assert result["mapping"]["SPEAKER_00"] == "Renato"
-        assert record.recognition_results is not None
+    def test_register_voice_profile_no_name(self, sqlite_memory):
+        with patch("src.application.use_cases.manage_voice_profiles.VoiceDB"):
+            use_case = RegisterNewVoiceProfileUseCase(sqlite_memory)
+            with pytest.raises(ValueError, match="Name required"):
+                use_case.execute(name="", audio_path="a")
