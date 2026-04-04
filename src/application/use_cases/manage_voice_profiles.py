@@ -3,7 +3,9 @@ import os
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
-from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
+)
 from src.infrastructure.repositories.storage.storage import StorageService
 from src.infrastructure.services.voice_profile_service import VoiceDB
 
@@ -24,13 +26,14 @@ class ListRegisteredVoiceProfilesUseCase:
 
     def execute(self) -> list[dict]:
         from src.infrastructure.repositories.sql.models.voice_record import VoiceRecord
+
         records = self.db.query(VoiceRecord).all()
         return [
             {
                 "id": r.id,
                 "name": r.name,
                 "audio_source": r.audio_source,
-                "created_at": r.created_at.isoformat() if r.created_at else None
+                "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in records
         ]

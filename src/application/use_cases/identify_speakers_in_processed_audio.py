@@ -6,7 +6,9 @@ from typing import Any, cast
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
-from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
+)
 from src.infrastructure.repositories.storage.storage import StorageService
 from src.infrastructure.services.pyannote_voice_recognizer import VoiceRecognizer
 from src.infrastructure.services.voice_profile_service import VoiceDB
@@ -58,7 +60,7 @@ class IdentifySpeakersInProcessedAudioUseCase:
                     spk: {
                         "identified": r.best_match,
                         "voice_id": r.best_match_id,
-                        "score": r.best_score
+                        "score": r.best_score,
                     }
                     for spk, r in batch.results.items()
                 },

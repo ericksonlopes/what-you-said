@@ -88,7 +88,6 @@ class VoiceDB:
             logger.info("Extracting embedding for voice: %s", name)
             new_embedding = np.array(self._extract_embedding(audio_path))
             voice_id = str(uuid.uuid4())
-            clean_name = name.lower().replace(" ", "_")
 
             if existing:
                 logger.info("Reinforcing existing voice profile: %s", name)

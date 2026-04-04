@@ -1,15 +1,19 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from langchain_core.documents import Document
 
-from src.application.dtos.commands.ingest_diarization_command import IngestDiarizationCommand
+from src.application.dtos.commands.ingest_diarization_command import (
+    IngestDiarizationCommand,
+)
 from src.config.logger import Logger
 from src.domain.entities.chunk_entity import ChunkEntity
 from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
 from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.domain.entities.enums.source_type_enum_entity import SourceType
-from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
+)
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.embedding_service import EmbeddingService
@@ -73,7 +77,6 @@ class DiarizationIngestionUseCase:
         source = None
 
         try:
-            # 1. Fetch Diarization Record
             record = self.diarization_repo.get_by_id(str(cmd.diarization_id))
             if not record:
                 raise ValueError(f"Diarization record not found: {cmd.diarization_id}")
@@ -82,41 +85,16 @@ class DiarizationIngestionUseCase:
             if not subject:
                 raise ValueError(f"Subject not found: {cmd.subject_id}")
 
-            # 2. Determine Source Info
-            # If it's a YouTube video, the external_source should be the URL
-            # If it was an upload, it might be an S3 path or filename
-            source_type_val = record.source_type
-            if source_type_val == "upload":
-                # Map 'upload' to 'audio' or 'video' if appropriate, or keep as is if supported
-                source_type = SourceType.AUDIO 
-            else:
-                try:
-                    source_type = SourceType(source_type_val.lower())
-                except ValueError:
-                    source_type = SourceType.OTHER
+            source_type, external_source = self._resolve_source_info(record)
 
-            external_source = record.external_source
-            # Prefer original URL from metadata if available (for YouTube)
-            if record.source_metadata and isinstance(record.source_metadata, dict):
-                external_source = record.source_metadata.get("original_url") or external_source
-
-            # 3. Create or retrieve Ingestion Job
             if cmd.ingestion_job_id:
                 ingestion = self.ingestion_service.get_by_id(cmd.ingestion_job_id)
 
             if ingestion is None:
-                ingestion = self.ingestion_service.create_job(
-                    content_source_id=None,
-                    status=IngestionJobStatus.STARTED,
-                    embedding_model=self.model_loader_service.model_name,
-                    pipeline_version="1.0",
-                    ingestion_type=f"diarization_{source_type.value}",
-                    vector_store_type=self.vector_store_type,
-                    external_source=external_source,
-                    subject_id=subject.id,
+                ingestion = self._create_ingestion_job(
+                    external_source, source_type, subject.id
                 )
 
-            # 4. Format Transcript
             self.ingestion_service.update_job(
                 job_id=ingestion.id,
                 status=IngestionJobStatus.PROCESSING,
@@ -125,41 +103,18 @@ class DiarizationIngestionUseCase:
                 total_steps=4,
             )
 
-            full_text = self._format_transcript(record.segments, record.recognition_results)
+            full_text = self._format_transcript(
+                cast(list, record.segments), cast(dict, record.recognition_results)
+            )
             if not full_text:
                 raise ValueError("No segments found in diarization record")
 
-            # 5. Create or Get Source
-            source = self.cs_service.get_by_source_info(
-                source_type=source_type,
-                external_source=external_source,
-                subject_id=subject.id,
+            display_title = cmd.title or cast(str, record.title) or "Transcrição"
+            source = self._get_or_create_source(
+                source_type, external_source, subject.id, display_title, cmd, record
             )
 
-            display_title = cmd.title or record.title or "Transcrição"
-
-            if not source:
-                source = self.cs_service.create_source(
-                    subject_id=subject.id,
-                    source_type=source_type,
-                    external_source=external_source,
-                    status=ContentSourceStatus.PROCESSING,
-                    title=display_title,
-                    language=cmd.language,
-                    source_metadata=record.source_metadata,
-                )
-            else:
-                # Update status
-                self.cs_service.update_processing_status(
-                    source.id, ContentSourceStatus.PROCESSING
-                )
-
-                # Reprocessing cleanup if requested
-                if cmd.reprocess:
-                    self.chunk_service.delete_by_content_source(source.id)
-                    self.vector_service.delete(filters={"content_source_id": str(source.id)})
-
-            # 6. Generate chunks and Embeddings
+            # Generate chunks and Embeddings
             self.ingestion_service.update_job(
                 job_id=ingestion.id,
                 status=IngestionJobStatus.PROCESSING,
@@ -169,46 +124,17 @@ class DiarizationIngestionUseCase:
                 content_source_id=source.id,
             )
 
-            tokenizer = (
-                self.model_loader_service.model.tokenizer
-                if hasattr(self.model_loader_service, "model")
-                and hasattr(self.model_loader_service.model, "tokenizer")
-                else None
+            split_docs = self._generate_split_docs(
+                full_text, display_title, external_source, source_type, cmd, record
             )
 
-            base_metadata = {
-                "source": external_source,
-                "title": display_title,
-                "source_type": source_type.value,
-                "diarization_id": str(cmd.diarization_id),
-            }
-            if record.source_metadata:
-                base_metadata.update(record.source_metadata)
-
-            if tokenizer:
-                splitter_service = TextSplitterService(tokenizer=tokenizer)
-                split_docs = splitter_service.split_text(
-                    text=full_text,
-                    tokens_per_chunk=cmd.tokens_per_chunk,
-                    tokens_overlap=cmd.tokens_overlap,
-                    metadata=base_metadata,
-                )
-            else:
-                from langchain_text_splitters import RecursiveCharacterTextSplitter
-                langchain_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=cmd.tokens_per_chunk * 4,
-                    chunk_overlap=cmd.tokens_overlap * 4,
-                )
-                full_doc = Document(page_content=full_text, metadata=base_metadata)
-                split_docs = langchain_splitter.split_documents([full_doc])
-
-            # 7. Build and Persist Chunks
+            # Persist Chunks
             chunks = self._build_chunk_entities(
                 split_docs, source, subject, cmd, ingestion.id
             )
             self.chunk_service.create_chunks(chunks)
 
-            # 8. Index in Vector Store
+            # Index
             self.ingestion_service.update_job(
                 job_id=ingestion.id,
                 status=IngestionJobStatus.PROCESSING,
@@ -216,31 +142,10 @@ class DiarizationIngestionUseCase:
                 current_step=3,
                 total_steps=4,
             )
-            
             self.vector_service.index_documents(chunks)
 
-            # 9. Finalize
-            self.ingestion_service.update_job(
-                job_id=ingestion.id,
-                status=IngestionJobStatus.FINISHED,
-                status_message="Ingestion complete",
-                current_step=4,
-                total_steps=4,
-                chunks_count=len(chunks),
-            )
-            
-            total_tokens = sum(c.tokens_count for c in chunks if c.tokens_count is not None)
-            dims = getattr(self.model_loader_service, "dimensions", 0)
-            
-            self.cs_service.finish_ingestion(
-                content_source_id=source.id,
-                embedding_model=self.model_loader_service.model_name,
-                dimensions=int(dims) if dims else 0,
-                chunks=len(chunks),
-                total_tokens=total_tokens,
-                max_tokens_per_chunk=cmd.tokens_per_chunk,
-                source_metadata=base_metadata,
-            )
+            # Finalize
+            self._finalize_ingestion(ingestion, source, chunks, cmd)
 
             return {
                 "diarization_id": str(cmd.diarization_id),
@@ -259,33 +164,188 @@ class DiarizationIngestionUseCase:
                 )
             raise
 
-    def _format_transcript(self, segments: List[Dict[str, Any]], recognition: Optional[Dict[str, Any]]) -> str:
+    def _resolve_source_info(self, record: Any) -> tuple[SourceType, str]:
+        source_type_val = cast(str, record.source_type)
+        if source_type_val == "upload":
+            source_type = SourceType.AUDIO
+        else:
+            try:
+                source_type = SourceType(source_type_val.lower())
+            except ValueError:
+                source_type = SourceType.OTHER
+
+        external_source = cast(str, record.external_source)
+        if record.source_metadata and isinstance(record.source_metadata, dict):
+            original = record.source_metadata.get("original_url")
+            if original:
+                external_source = original
+
+        return source_type, external_source
+
+    def _create_ingestion_job(
+        self, external_source: str, source_type: SourceType, subject_id: UUID
+    ) -> Any:
+        return self.ingestion_service.create_job(
+            content_source_id=None,
+            status=IngestionJobStatus.STARTED,
+            embedding_model=self.model_loader_service.model_name,
+            pipeline_version="1.0",
+            ingestion_type=f"diarization_{source_type.value}",
+            vector_store_type=self.vector_store_type,
+            external_source=external_source,
+            subject_id=subject_id,
+        )
+
+    def _get_or_create_source(
+        self,
+        source_type: SourceType,
+        external_source: str,
+        subject_id: UUID,
+        display_title: str,
+        cmd: IngestDiarizationCommand,
+        record: Any,
+    ) -> Any:
+        source = self.cs_service.get_by_source_info(
+            source_type=source_type,
+            external_source=external_source,
+            subject_id=subject_id,
+        )
+
+        if not source:
+            source = self.cs_service.create_source(
+                subject_id=subject_id,
+                source_type=source_type,
+                external_source=external_source,
+                status=ContentSourceStatus.PROCESSING,
+                title=display_title,
+                language=cmd.language,
+                source_metadata=cast(dict, record.source_metadata),
+            )
+        else:
+            self.cs_service.update_processing_status(
+                source.id, ContentSourceStatus.PROCESSING
+            )
+            if cmd.reprocess:
+                self.chunk_service.delete_by_content_source(source.id)
+                self.vector_service.delete(
+                    filters={"content_source_id": str(source.id)}
+                )
+        return source
+
+    def _generate_split_docs(
+        self,
+        full_text: str,
+        title: str,
+        source: str,
+        source_type: SourceType,
+        cmd: IngestDiarizationCommand,
+        record: Any,
+    ) -> List[Document]:
+        base_metadata = {
+            "source": source,
+            "title": title,
+            "source_type": source_type.value,
+            "diarization_id": str(cmd.diarization_id),
+        }
+        if record.source_metadata:
+            base_metadata.update(record.source_metadata)
+
+        tokenizer = getattr(self.model_loader_service, "model", None)
+        tokenizer = getattr(tokenizer, "tokenizer", None) if tokenizer else None
+
+        if tokenizer:
+            splitter_service = TextSplitterService(tokenizer=tokenizer)
+            return splitter_service.split_text(
+                text=full_text,
+                tokens_per_chunk=cmd.tokens_per_chunk,
+                tokens_overlap=cmd.tokens_overlap,
+                metadata=base_metadata,
+            )
+
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+        langchain_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=cmd.tokens_per_chunk * 4,
+            chunk_overlap=cmd.tokens_overlap * 4,
+        )
+        full_doc = Document(page_content=full_text, metadata=base_metadata)
+        return langchain_splitter.split_documents([full_doc])
+
+    def _finalize_ingestion(
+        self,
+        ingestion: Any,
+        source: Any,
+        chunks: List[ChunkEntity],
+        cmd: IngestDiarizationCommand,
+    ) -> None:
+        self.ingestion_service.update_job(
+            job_id=ingestion.id,
+            status=IngestionJobStatus.FINISHED,
+            status_message="Ingestion complete",
+            current_step=4,
+            total_steps=4,
+            chunks_count=len(chunks),
+        )
+
+        total_tokens = sum(c.tokens_count for c in chunks if c.tokens_count is not None)
+        dims = getattr(self.model_loader_service, "dimensions", 0)
+
+        self.cs_service.finish_ingestion(
+            content_source_id=source.id,
+            embedding_model=self.model_loader_service.model_name,
+            dimensions=int(dims) if dims else 0,
+            chunks=len(chunks),
+            total_tokens=total_tokens,
+            max_tokens_per_chunk=cmd.tokens_per_chunk,
+            source_metadata=source.source_metadata,
+        )
+
+    def _format_seconds(self, seconds: float) -> str:
+        m, s = divmod(int(seconds), 60)
+        h, m = divmod(m, 60)
+        if h > 0:
+            return f"{h:02d}:{m:02d}:{s:02d}"
+        return f"{m:02d}:{s:02d}"
+
+    def _format_transcript(
+        self, segments: List[Dict[str, Any]], recognition: Optional[Dict[str, Any]]
+    ) -> str:
         if not segments:
             return ""
-        
-        mapping = {}
-        if recognition and "mapping" in recognition:
-            mapping = recognition["mapping"]
-            
-        lines = []
+
+        mapping = recognition.get("mapping", {}) if recognition else {}
+
+        merged_lines = []
+        curr_speaker, curr_start, curr_end, curr_texts = None, None, None, []
+
         for seg in segments:
-            speaker_label = seg.get("speaker", "UNKNOWN")
-            speaker_name = mapping.get(speaker_label, speaker_label)
-            
-            start = seg.get("start", 0)
-            end = seg.get("end", 0)
-            
-            def format_time(seconds: float) -> str:
-                m, s = divmod(int(seconds), 60)
-                h, m = divmod(m, 60)
-                if h > 0:
-                    return f"{h:02d}:{m:02d}:{s:02d}"
-                return f"{m:02d}:{s:02d}"
-            
-            timestamp = f"[{format_time(start)} - {format_time(end)}]"
-            lines.append(f"{timestamp} {speaker_name}: {seg.get('text', '').strip()}")
-            
-        return "\n".join(lines)
+            spk_label = seg.get("speaker", "UNKNOWN")
+            spk_name = mapping.get(spk_label, spk_label)
+            start = float(seg.get("start", 0))
+            end = float(seg.get("end", 0))
+            text = seg.get("text", "").strip()
+
+            if spk_name == curr_speaker:
+                curr_end = end
+                if text:
+                    curr_texts.append(text)
+            else:
+                if curr_speaker is not None:
+                    ts = f"[{self._format_seconds(cast(float, curr_start))} - {self._format_seconds(cast(float, curr_end))}]"
+                    merged_lines.append(f"{ts} {curr_speaker}: {' '.join(curr_texts)}")
+
+                curr_speaker, curr_start, curr_end, curr_texts = (
+                    spk_name,
+                    start,
+                    end,
+                    [text] if text else [],
+                )
+
+        if curr_speaker is not None:
+            ts = f"[{self._format_seconds(cast(float, curr_start))} - {self._format_seconds(cast(float, curr_end))}]"
+            merged_lines.append(f"{ts} {curr_speaker}: {' '.join(curr_texts)}")
+
+        return "\n".join(merged_lines)
 
     def _build_chunk_entities(
         self,

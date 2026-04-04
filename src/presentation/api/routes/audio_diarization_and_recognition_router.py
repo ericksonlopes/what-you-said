@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Annotated
+from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -31,16 +31,18 @@ router = APIRouter()
 
 @router.patch("/{diarization_id}")
 async def update_diarization_segments(
-        diarization_id: str,
-        request: UpdateDiarizationRequest,
-        db: Annotated[Session, Depends(get_db)],
+    diarization_id: str,
+    request: UpdateDiarizationRequest,
+    db: Annotated[Session, Depends(get_db)],
 ):
     """
     Updates the segments of a diarization and marks it as completed.
     This is used when the user confirms the final transcript.
     """
-    from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
-    from typing import Any, cast
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
+    from typing import cast
 
     try:
         repo = DiarizationRepository(db)
@@ -51,10 +53,15 @@ async def update_diarization_segments(
         # Update segments and status
         logger.info("Updating segments for diarization %s", diarization_id)
         record.segments = cast(Any, request.segments)
-        record.status = "completed"
+        record.status = cast(Any, "completed")
         db.commit()
 
-        return {"status": "success", "message": "Diarization updated and marked as completed"}
+        return {
+            "status": "success",
+            "message": "Diarization updated and marked as completed",
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         logger.error("Failed to update diarization segments: %s", str(e), exc_info=True)
@@ -64,7 +71,7 @@ async def update_diarization_segments(
 @router.post("")
 async def start_audio_processing_pipeline(
     request: AudioProcessingRequest,
-        db: Annotated[Session, Depends(get_db)],
+    db: Annotated[Session, Depends(get_db)],
     task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
 ):
     logger.info(
@@ -74,7 +81,9 @@ async def start_audio_processing_pipeline(
     )
 
     # Create a pending record immediately so the frontend can show progress
-    from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
 
     repo = DiarizationRepository(db)
     record = repo.create_pending(
@@ -86,7 +95,7 @@ async def start_audio_processing_pipeline(
     )
 
     cmd = ProcessAudioCommand(
-        diarization_id=record.id,
+        diarization_id=cast(str, record.id),
         source_type=request.source_type.value,
         source=request.source,
         language=request.language or "pt",
@@ -201,9 +210,11 @@ async def retrieve_all_processed_audio_history(
     },
 )
 async def delete_diarization_record(
-        diarization_id: str, db: Annotated[Session, Depends(get_db)]
+    diarization_id: str, db: Annotated[Session, Depends(get_db)]
 ):
-    from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
 
     repo = DiarizationRepository(db)
     deleted = repo.delete(diarization_id)

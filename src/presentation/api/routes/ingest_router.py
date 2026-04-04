@@ -12,7 +12,9 @@ from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCo
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
 from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
-from src.application.use_cases.diarization_ingestion_use_case import DiarizationIngestionUseCase
+from src.application.use_cases.diarization_ingestion_use_case import (
+    DiarizationIngestionUseCase,
+)
 from src.application.workers import (
     run_file_ingestion_worker,
     run_youtube_ingestion_worker,
@@ -133,9 +135,9 @@ async def ingest_file(
     tokens_per_chunk: Annotated[int, Form()] = 512,
     tokens_overlap: Annotated[int, Form()] = 50,
     do_ocr: Annotated[bool, Form()] = False,
-        source_type: Annotated[Optional[str], Form()] = None,
-        external_source: Annotated[Optional[str], Form()] = None,
-        source_metadata: Annotated[Optional[str], Form()] = None,
+    source_type: Annotated[Optional[str], Form()] = None,
+    external_source: Annotated[Optional[str], Form()] = None,
+    source_metadata: Annotated[Optional[str], Form()] = None,
 ):
     """
     Upload and ingest a file using Docling.
@@ -171,9 +173,13 @@ async def ingest_file(
     if source_metadata:
         try:
             import json
+
             parsed_metadata = json.loads(source_metadata)
         except Exception:
-            logger.warning("Failed to parse source_metadata as JSON", context={"raw": source_metadata})
+            logger.warning(
+                "Failed to parse source_metadata as JSON",
+                context={"raw": source_metadata},
+            )
 
     cmd = IngestFileCommand(
         file_path=temp_path,
@@ -343,7 +349,10 @@ async def ingest_diarization(
     """
     logger.info(
         "API request to ingest diarization",
-        context={"diarization_id": request.diarization_id, "subject_id": request.subject_id},
+        context={
+            "diarization_id": request.diarization_id,
+            "subject_id": request.subject_id,
+        },
     )
 
     from src.application.dtos.commands.ingest_diarization_command import (

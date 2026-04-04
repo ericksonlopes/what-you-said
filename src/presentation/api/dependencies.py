@@ -10,7 +10,9 @@ from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjec
 from src.application.use_cases.search_use_case import SearchUseCase
 from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
-from src.application.use_cases.diarization_ingestion_use_case import DiarizationIngestionUseCase
+from src.application.use_cases.diarization_ingestion_use_case import (
+    DiarizationIngestionUseCase,
+)
 from src.config.settings import Settings
 
 # Import services and repositories

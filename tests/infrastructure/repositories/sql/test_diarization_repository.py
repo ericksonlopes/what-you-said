@@ -1,42 +1,58 @@
-import pytest
-from src.infrastructure.repositories.sql.repositories import DiarizationRepository
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
+)
 from src.domain.entities.diarization import DiarizationResult, Segment
 
-@pytest.mark.DiarizationRepository
-class TestDiarizationRepository:
-    def test_save_and_retrieve(self, sqlite_memory):
-        repo = DiarizationRepository(sqlite_memory)
-        
-        # Prepare mock result
-        result = DiarizationResult(
-            segments=[Segment(start=0.0, end=1.0, speaker="SPEAKER_00", text="Hello")],
-            speakers={"SPEAKER_00"},
-            duration=1.0,
-            language="en"
-        )
-        
-        record = repo.save(
-            result=result,
-            title="Test Video",
-            source_type="youtube",
-            external_source="http://youtube.com/test",
-            folder="./data/test",
-            storage_path="processed/test"
-        )
-        
-        assert record.id is not None
-        assert record.title == "Test Video"
-        assert record.segments[0]["text"] == "Hello"
-        
-        # Test get_by_id
-        retrieved = repo.get_by_id(record.id)
-        assert retrieved is not None
-        assert retrieved.title == "Test Video"
-        
-        # Test get_all
-        all_records = repo.get_all()
-        assert len(all_records) == 1
 
-    def test_get_by_id_not_found(self, sqlite_memory):
+class TestDiarizationRepository:
+    def test_create_pending(self, sqlite_memory):
         repo = DiarizationRepository(sqlite_memory)
-        assert repo.get_by_id("non-existent") is None
+        record = repo.create_pending("Title", "youtube", "http", "pt", "base")
+
+        assert record.id is not None
+        assert record.status == "pending"
+        assert record.title == "Title"
+
+    def test_save_new_and_update(self, sqlite_memory):
+        repo = DiarizationRepository(sqlite_memory)
+        result = DiarizationResult(
+            segments=[Segment(start=0, end=1, text="t", speaker="S1")], language="en"
+        )
+
+        # Save new
+        record = repo.save(result, "T1", "upload", "f1", "/folder")
+        assert record.status == "processing"
+        assert len(record.segments) == 1
+
+        # Update existing
+        result2 = DiarizationResult(segments=[], language="fr")
+        updated = repo.save(
+            result2, "T2", "upload", "f1", "/folder2", diarization_id=record.id
+        )
+        assert updated.id == record.id
+        assert updated.title == "T2"
+        assert updated.language == "fr"
+
+    def test_update_status_and_recognition(self, sqlite_memory):
+        repo = DiarizationRepository(sqlite_memory)
+        record = repo.create_pending("T", "y", "h", "pt")
+
+        repo.update_status(record.id, "failed", error_message="Error X")
+        assert record.status == "failed"
+        assert record.error_message == "Error X"
+
+        repo.update_recognition_results(record.id, {"mapping": {"A": "B"}})
+        assert record.recognition_results["mapping"]["A"] == "B"
+
+    def test_get_all_and_delete(self, sqlite_memory):
+        repo = DiarizationRepository(sqlite_memory)
+        r1 = repo.create_pending("T1", "y", "h", "pt")
+        repo.create_pending("T2", "y", "h", "pt")
+
+        all_recs = repo.get_all(limit=10)
+
+        assert len(all_recs) == 2
+
+        repo.delete(r1.id)
+        assert len(repo.get_all()) == 1
+        assert repo.get_by_id(r1.id) is None

@@ -34,7 +34,9 @@ class YoutubeExtractor(IYoutubeExtractor):
 
     def __init__(self, video_id: str | None = None, language: str = "pt"):
         self.video_id = video_id
-        self.video_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else None
+        self.video_url = (
+            f"https://www.youtube.com/watch?v={video_id}" if video_id else None
+        )
         self.language = language
         self._ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
@@ -77,10 +79,15 @@ class YoutubeExtractor(IYoutubeExtractor):
 
         except Exception as e:
             error_msg = str(e)
-            logger.error("Error extracting metadata", context={"url": target_url, "error": error_msg})
+            logger.error(
+                "Error extracting metadata",
+                context={"url": target_url, "error": error_msg},
+            )
             return YoutubeMetadataDTO(video_id=self.video_id or "unknown")
 
-    def download_audio(self, url: str, output_dir: str = "./temp_audio", quality: str = "192") -> str | None:
+    def download_audio(
+        self, url: str, output_dir: str = "./temp_audio", quality: str = "192"
+    ) -> str | None:
         """Downloads and extracts audio from a YouTube video."""
         os.makedirs(output_dir, exist_ok=True)
         ydl_opts = {
@@ -173,6 +180,9 @@ class YoutubeExtractor(IYoutubeExtractor):
 
     def extract_transcript(self) -> FetchedTranscript:
         """Fetches the transcript for a given video with fallback support and retries."""
+        if not self.video_id:
+            raise ValueError("video_id is required to extract transcript")
+
         # Define preferred languages: requested first, then common Portuguese variants
         preferred_languages = [self.language]
         for lang in ["pt", "pt-BR", "ptbr"]:

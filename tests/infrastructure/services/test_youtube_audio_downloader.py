@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch
-from src.infrastructure.services.youtube_audio_downloader import AudioDownloader
+from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
 
 @pytest.mark.Downloader
-class TestAudioDownloader:
-    @patch("yt_dlp.YoutubeDL")
+class TestYoutubeExtractorDownload:
+    @patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL")
     @patch("os.makedirs")
     def test_download_success(self, mock_makedirs, mock_ytdl):
         # Mocking yt_dlp to return a fake filename
@@ -13,21 +13,26 @@ class TestAudioDownloader:
         mock_instance.extract_info.return_value = {"title": "Test Audio", "ext": "webm"}
         mock_instance.prepare_filename.return_value = "temp_audio/Test Audio.webm"
 
-        downloader = AudioDownloader(output_dir="temp_audio")
-        result = downloader.download("https://www.youtube.com/watch?v=dummy")
+        extractor = YoutubeExtractor()
+        result = extractor.download_audio(
+            "https://www.youtube.com/watch?v=dummy", output_dir="temp_audio"
+        )
 
-        # In the real code, it changes extension to .mp3
-        assert result == "temp_audio/Test Audio.mp3"
+        # In the code, it changes extension to .mp3 using Path.with_suffix
+        assert (
+            result == "temp_audio\\Test Audio.mp3"
+            or result == "temp_audio/Test Audio.mp3"
+        )
         assert mock_instance.extract_info.called
         assert mock_makedirs.called
 
-    @patch("yt_dlp.YoutubeDL")
+    @patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL")
     def test_download_failure(self, mock_ytdl):
         # Simulating exception during download
         mock_instance = mock_ytdl.return_value.__enter__.return_value
         mock_instance.extract_info.side_effect = Exception("Download error")
 
-        downloader = AudioDownloader()
-        result = downloader.download("https://www.youtube.com/watch?v=bad")
+        extractor = YoutubeExtractor()
+        result = extractor.download_audio("https://www.youtube.com/watch?v=bad")
 
         assert result is None

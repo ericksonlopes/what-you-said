@@ -39,7 +39,10 @@ class TestIngestionJobSQLRepository:
     def test_create_job_error(self):
         # Mock session to raise an error during add
         from unittest.mock import patch
-        with patch("src.infrastructure.repositories.sql.ingestion_job_repository.Connector") as mock_connector:
+
+        with patch(
+            "src.infrastructure.repositories.sql.ingestion_job_repository.Connector"
+        ) as mock_connector:
             mock_session = mock_connector.return_value.__enter__.return_value
             mock_session.add.side_effect = Exception("DB Error")
             with pytest.raises(Exception):

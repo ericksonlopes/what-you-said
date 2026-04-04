@@ -9,7 +9,6 @@ from typing import Optional, Any, Dict
 from src.config.settings import settings
 from src.domain.interfaces.logger.logger import ILogger
 
-
 # Global context for logging via contextvars
 _global_log_context: ContextVar[Dict[str, Any]] = ContextVar(
     "global_log_context", default={}

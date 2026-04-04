@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+
 from langchain_core.documents import Document
 
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
@@ -58,317 +59,60 @@ class FileIngestionUseCase:
         self.plain_text_extractor = PlainTextExtractor()
 
     def execute(self, cmd: IngestFileCommand) -> Dict[str, Any]:
-        self.event_bus.publish(
-            "ingestion_status",
-            {
-                "job_id": str(cmd.ingestion_job_id) if cmd.ingestion_job_id else "new",
-                "status": "started",
-                "file_name": cmd.file_name,
-            },
-        )
+        self._notify_status(cmd, "started")
         logger.info(
             "Starting File ingestion",
-            context={
-                "file_name": cmd.file_name,
-                "subject_id": str(cmd.subject_id) if cmd.subject_id else None,
-            },
+            context={"file_name": cmd.file_name, "subject_id": str(cmd.subject_id)},
         )
 
-        ingestion = None
-        source = None
-
+        ingestion, source = None, None
         try:
             subject = self._resolve_subject(cmd)
-            
-            # Use source_type from command if provided, else determine from filename/origin
-            if cmd.source_type:
-                try:
-                    source_type = SourceType(cmd.source_type.lower())
-                except ValueError:
-                    source_type = self._determine_source_type(cmd.file_name, cmd.external_source)
-            else:
-                source_type = self._determine_source_type(cmd.file_name, cmd.external_source)
-
-            # Use external_source from command if provided (e.g. YouTube URL)
+            source_type = self._determine_source_type_refined(cmd)
             external_source = cmd.external_source or cmd.file_name
 
-            # 1. Create or retrieve Ingestion Job
-            if cmd.ingestion_job_id:
-                ingestion = self.ingestion_service.get_by_id(cmd.ingestion_job_id)
-
-            if ingestion is None:
-                ingestion = self.ingestion_service.create_job(
-                    content_source_id=None,
-                    status=IngestionJobStatus.STARTED,
-                    embedding_model=self.model_loader_service.model_name,
-                    pipeline_version="1.0",
-                    ingestion_type=source_type.value,
-                    vector_store_type=self.vector_store_type,
-                    external_source=external_source,
-                )
-
-            # 2. Extract content
-            self.ingestion_service.update_job(
-                job_id=ingestion.id,
-                status=IngestionJobStatus.PROCESSING,
-                status_message=f"Extracting content from {cmd.file_name}...",
-                current_step=1,
-                total_steps=4,
-            )
-            self.event_bus.publish(
-                "ingestion_status",
-                {
-                    "job_id": str(ingestion.id),
-                    "status": "processing",
-                    "step": "extracting",
-                    "title": cmd.title or cmd.file_name,
-                },
+            ingestion = self._get_or_create_job(cmd, source_type, external_source)
+            self._notify_status(
+                cmd, "processing", job_id=ingestion.id, step="extracting"
             )
 
+            # 1. Extraction
             source_path = cmd.file_url or cmd.file_path
             if not source_path:
-                raise ValueError(
-                    "Neither file_path nor file_url provided for ingestion"
-                )
+                raise ValueError("Neither file_path nor file_url provided")
 
-            try:
-                docs = self.extractor.extract(source_path, do_ocr=cmd.do_ocr)
-            except Exception as e:
-                error_str = str(e).lower()
-                if "format not allowed" in error_str or "unsupported" in error_str:
-                    logger.info(
-                        "Docling does not support format, falling back to PlainTextExtractor",
-                        context={"file_name": cmd.file_name},
-                    )
-                    docs = self.plain_text_extractor.extract(source_path)
-                else:
-                    # For other errors, re-raise
-                    raise
+            docs = self._extract_docs(source_path, cmd)
+            source_type = self._refine_source_type(docs, source_type)
 
-            if not docs:
-                raise ValueError(f"No content extracted from file {cmd.file_name}")
-
-            # Refine source_type based on actual extracted metadata if available
-            extracted_ext = docs[0].metadata.get("source_type")
-            docling_detected = docs[0].metadata.get("docling_source_type")
-
-            logger.debug(
-                "Attempting source_type refinement",
-                context={
-                    "extracted_ext": extracted_ext,
-                    "docling_detected": docling_detected,
-                    "current_source_type": source_type.value,
-                },
+            # 2. Source Management
+            source = self._get_or_create_source(
+                subject, source_type, external_source, docs[0].metadata, cmd
             )
+            if cmd.reprocess:
+                self._handle_reprocessing(source, ingestion)
 
-            # Prioritize Docling's specific detection if it's a known format,
-            # but preserve YOUTUBE/WEB if already set (don't downgrade to TXT)
-            to_try = [docling_detected, extracted_ext]
-            for ext_str in to_try:
-                if ext_str and isinstance(ext_str, str):
-                    try:
-                        refined = SourceType(ext_str.lower())
-                        # Only refine if it's not a downgrade from high-level source to generic format
-                        if refined != SourceType.OTHER:
-                            if source_type in [SourceType.YOUTUBE, SourceType.WEB] and refined == SourceType.TXT:
-                                logger.debug("Skipping refinement: preserving high-level source type over TXT format")
-                                continue
-                            
-                            source_type = refined
-                            logger.info(
-                                "Refined source_type",
-                                context={
-                                    "file_name": cmd.file_name,
-                                    "source_type": source_type.value,
-                                    "detected_ext": ext_str,
-                                },
-                            )
-                            break
-                    except ValueError:
-                        pass
-
-            # 3. Initialize Source Ingestion
-            source = self.cs_service.get_by_source_info(
-                source_type=source_type,
-                external_source=external_source,
-                subject_id=cmd.subject_id,
-            )
-            
-            # Prepare merged metadata
-            final_metadata = {**docs[0].metadata}
-            if cmd.source_metadata:
-                final_metadata.update(cmd.source_metadata)
-
-            if not source:
-                source = self.cs_service.create_source(
-                    subject_id=subject.id,
-                    source_type=source_type,
-                    external_source=external_source,
-                    status=ContentSourceStatus.PROCESSING,
-                    title=cmd.title or cmd.file_name,
-                    language=cmd.language,
-                    source_metadata=final_metadata,
-                )
-            else:
-                # --- REPROCESSING CLEANUP ---
-                if source and source.id and getattr(cmd, "reprocess", False):
-                    sid = source.id
-                    logger.info(
-                        "REPROCESSING: Performing pre-ingestion cleanup",
-                        context={
-                            "source_id": str(sid),
-                            "filename": getattr(cmd, "filename", "unknown"),
-                        },
-                    )
-                    try:
-                        sql_del = self.chunk_service.delete_by_content_source(sid)
-                        # We use a filter to target only this source's chunks
-                        filters = {"content_source_id": str(sid)}
-                        vec_del = self.vector_service.delete(filters=filters)
-
-                        # Mark previous jobs as REPROCESSED
-                        if ingestion and ingestion.id:
-                            self.ingestion_service.mark_previous_jobs_as_reprocessed(
-                                content_source_id=sid, current_job_id=ingestion.id
-                            )
-
-                        logger.info(
-                            "File reprocessing cleanup finished",
-                            context={"sql_deleted": sql_del, "vector_deleted": vec_del},
-                        )
-                    except Exception as ce:
-                        logger.warning(
-                            "Error during reprocessing cleanup",
-                            context={"source_id": str(source.id), "error": str(ce)},
-                        )
-
-                # Update status to processing if it exists
-                self.cs_service.update_processing_status(
-                    source.id, ContentSourceStatus.PROCESSING
-                )
-
-            # 4. Generate chunks and Embeddings
-            self.ingestion_service.update_job(
+            # 3. Processing (Splitting, Embedding, Indexing)
+            self._notify_status(
+                cmd,
+                "processing",
                 job_id=ingestion.id,
-                status=IngestionJobStatus.PROCESSING,
-                status_message=f"Generating embeddings for {len(docs)} chunks...",
-                current_step=2,
-                total_steps=4,
-                content_source_id=source.id,  # Link job to source in DB
-            )
-            self.event_bus.publish(
-                "ingestion_status",
-                {
-                    "job_id": str(ingestion.id),
-                    "status": "processing",
-                    "step": "embedding",
-                    "chunks_count": len(docs),
-                },
-            )
-            tokenizer = (
-                self.model_loader_service.model.tokenizer
-                if hasattr(self.model_loader_service, "model")
-                and hasattr(self.model_loader_service.model, "tokenizer")
-                else None
+                step="embedding",
+                chunks_count=len(docs),
             )
 
-            effective_tokens = cmd.tokens_per_chunk
+            chunks = self._process_chunks(docs, source, subject, cmd, ingestion.id)
 
-            full_text = "\n\n".join([doc.page_content for doc in docs])
-            base_metadata = docs[0].metadata if docs else {}
-
-            if tokenizer and docs:
-                splitter_service = TextSplitterService(tokenizer=tokenizer)
-                split_docs = splitter_service.split_text(
-                    text=full_text,
-                    tokens_per_chunk=effective_tokens,
-                    tokens_overlap=cmd.tokens_overlap,
-                    metadata=base_metadata,
-                )
-            elif docs:
-                # Fallback to basic RecursiveCharacterTextSplitter if no tokenizer
-                from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-                langchain_splitter = RecursiveCharacterTextSplitter(
-                    chunk_size=effective_tokens * 4,
-                    chunk_overlap=cmd.tokens_overlap * 4,
-                )
-                # Create a temporary document with the full text for langchain_splitter
-                full_doc = Document(page_content=full_text, metadata=base_metadata)
-                split_docs = langchain_splitter.split_documents([full_doc])
-            else:
-                split_docs = []
-
-            # 5. Build and Persist Chunks
-            chunks = self._build_chunk_entities(
-                split_docs, source, subject, cmd, ingestion.id
-            )
-            self.chunk_service.create_chunks(chunks)
-
-            # 6. Index in Vector Store
-            self.ingestion_service.update_job(
-                job_id=ingestion.id,
-                status=IngestionJobStatus.PROCESSING,
-                status_message="Indexing in vector store...",
-                current_step=3,
-                total_steps=4,
-            )
-            self.event_bus.publish(
-                "ingestion_status",
-                {
-                    "job_id": str(ingestion.id),
-                    "status": "processing",
-                    "step": "indexing",
-                },
-            )
-
+            self._notify_status(cmd, "processing", job_id=ingestion.id, step="indexing")
             created_ids = self.vector_service.index_documents(chunks)
 
-            # 7. Finalize
-            self.ingestion_service.update_job(
+            # 4. Finalize
+            self._finalize(ingestion, source, chunks, docs[0].metadata, cmd)
+            self._notify_status(
+                cmd,
+                "completed",
                 job_id=ingestion.id,
-                status=IngestionJobStatus.FINISHED,
-                status_message=f"Ingestion complete: {cmd.title or cmd.file_name}",
-                current_step=4,
-                total_steps=4,
+                source_id=source.id,
                 chunks_count=len(chunks),
-            )
-            self.event_bus.publish(
-                "ingestion_status",
-                {
-                    "job_id": str(ingestion.id),
-                    "status": "completed",
-                    "title": cmd.title or cmd.file_name,
-                    "source_id": str(source.id),
-                    "chunks_count": len(chunks),
-                },
-            )
-
-            total_tokens = sum(
-                c.tokens_count for c in chunks if c.tokens_count is not None
-            )
-            dims = getattr(self.model_loader_service, "dimensions", None)
-            dims_val: int = int(dims) if dims is not None else 0
-
-            max_tokens = cmd.tokens_per_chunk
-            logger.info(
-                "FileIngestion finished",
-                context={
-                    "source_id": str(source.id),
-                    "requested_tokens": cmd.tokens_per_chunk,
-                    "limit": self.model_loader_service.max_seq_length,
-                    "effective_tokens": max_tokens,
-                },
-            )
-
-            self.cs_service.finish_ingestion(
-                content_source_id=source.id,
-                embedding_model=self.model_loader_service.model_name,
-                dimensions=dims_val,
-                chunks=len(chunks),
-                total_tokens=total_tokens,
-                max_tokens_per_chunk=max_tokens,
-                source_metadata=docs[0].metadata,
             )
 
             return {
@@ -380,146 +124,290 @@ class FileIngestionUseCase:
             }
 
         except Exception as e:
-            logger.error(e, context={"action": "file_ingestion_execute"})
-            if ingestion:
-                error_msg = str(e).lower()
-                status = IngestionJobStatus.FAILED
-
-                # Treat 404 or Not Found as Cancelled (as requested by user)
-                if "404" in error_msg or "not found" in error_msg:
-                    status = IngestionJobStatus.CANCELLED
-
-                self.ingestion_service.update_job(
-                    job_id=ingestion.id,
-                    status=status,
-                    error_message=str(e),
-                )
-                self.event_bus.publish(
-                    "ingestion_status",
-                    {
-                        "job_id": str(ingestion.id),
-                        "status": status.value,
-                        "error": str(e),
-                    },
-                )
-            if source:
-                self.cs_service.update_processing_status(
-                    content_source_id=source.id, status=ContentSourceStatus.FAILED
-                )
+            self._handle_error(e, ingestion, source)
             raise
         finally:
-            if (
-                cmd.delete_after_ingestion
-                and cmd.file_path
-                and os.path.exists(cmd.file_path)
-            ):
-                try:
-                    # If it's in a temp dir we created, delete the whole dir
-                    # Assumption: it's in a subfolder of tempfile.gettempdir()
-                    parent_dir = os.path.dirname(cmd.file_path)
-                    if "tmp" in parent_dir.lower() or "temp" in parent_dir.lower():
-                        shutil.rmtree(parent_dir, ignore_errors=True)
-                    else:
-                        os.remove(cmd.file_path)
-                    logger.info(
-                        "Cleaned up temporary file/directory",
-                        context={"path": cmd.file_path},
-                    )
-                except Exception as ex:
-                    logger.warning(
-                        "Failed to cleanup temporary files",
-                        context={"path": cmd.file_path, "error": str(ex)},
-                    )
+            self._cleanup(cmd)
+
+    def _notify_status(
+        self,
+        cmd: IngestFileCommand,
+        status: str,
+        job_id: Any = "new",
+        step: Optional[str] = None,
+        **kwargs,
+    ):
+        payload = {
+            "job_id": str(job_id),
+            "status": status,
+            "file_name": cmd.file_name,
+            "title": cmd.title or cmd.file_name,
+        }
+        if step:
+            payload["step"] = step
+        payload.update(kwargs)
+        self.event_bus.publish("ingestion_status", payload)
+
+    def _extract_docs(self, source_path: str, cmd: IngestFileCommand) -> List[Document]:
+        try:
+            docs = self.extractor.extract(source_path, do_ocr=cmd.do_ocr)
+        except Exception as e:
+            if any(m in str(e).lower() for m in ["format not allowed", "unsupported"]):
+                docs = self.plain_text_extractor.extract(source_path)
+            else:
+                raise
+        if not docs:
+            raise ValueError(f"No content extracted from {cmd.file_name}")
+        return docs
+
+    def _refine_source_type(
+        self, docs: List[Document], current: SourceType
+    ) -> SourceType:
+        docling_detected = docs[0].metadata.get("docling_source_type")
+        extracted_ext = docs[0].metadata.get("source_type")
+
+        for ext in [docling_detected, extracted_ext]:
+            if not ext or not isinstance(ext, str):
+                continue
+            try:
+                refined = SourceType(ext.lower())
+                if refined == SourceType.OTHER:
+                    continue
+                if (
+                    current in [SourceType.YOUTUBE, SourceType.WEB]
+                    and refined == SourceType.TXT
+                ):
+                    continue
+                return refined
+            except ValueError:
+                continue
+        return current
+
+    def _get_or_create_job(
+        self, cmd: IngestFileCommand, source_type: SourceType, external_source: str
+    ) -> Any:
+        if cmd.ingestion_job_id:
+            job = self.ingestion_service.get_by_id(cmd.ingestion_job_id)
+            if job:
+                return job
+
+        return self.ingestion_service.create_job(
+            content_source_id=None,
+            status=IngestionJobStatus.STARTED,
+            embedding_model=self.model_loader_service.model_name,
+            pipeline_version="1.0",
+            ingestion_type=source_type.value,
+            vector_store_type=self.vector_store_type,
+            external_source=external_source,
+        )
+
+    def _get_or_create_source(
+        self,
+        subject: Any,
+        source_type: SourceType,
+        external_source: str,
+        metadata: dict,
+        cmd: IngestFileCommand,
+    ) -> Any:
+        source = self.cs_service.get_by_source_info(
+            source_type, external_source, cmd.subject_id
+        )
+        final_meta = {**metadata, **(cmd.source_metadata or {})}
+
+        if not source:
+            return self.cs_service.create_source(
+                subject_id=subject.id,
+                source_type=source_type,
+                external_source=external_source,
+                status=ContentSourceStatus.PROCESSING,
+                title=cmd.title or cmd.file_name,
+                language=cmd.language,
+                source_metadata=final_meta,
+            )
+
+        self.cs_service.update_processing_status(
+            source.id, ContentSourceStatus.PROCESSING
+        )
+        return source
+
+    def _process_chunks(
+        self,
+        docs: List[Document],
+        source: Any,
+        subject: Any,
+        cmd: IngestFileCommand,
+        job_id: UUID,
+    ) -> List[ChunkEntity]:
+        full_text = "\n\n".join([doc.page_content for doc in docs])
+        tokenizer = (
+            getattr(self.model_loader_service.model, "tokenizer", None)
+            if hasattr(self.model_loader_service, "model")
+            else None
+        )
+
+        if tokenizer:
+            splitter = TextSplitterService(tokenizer=tokenizer)
+            split_docs = splitter.split_text(
+                full_text, cmd.tokens_per_chunk, cmd.tokens_overlap, docs[0].metadata
+            )
+        else:
+            from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+            ls = RecursiveCharacterTextSplitter(
+                chunk_size=cmd.tokens_per_chunk * 4,
+                chunk_overlap=cmd.tokens_overlap * 4,
+            )
+            split_docs = ls.split_documents(
+                [Document(page_content=full_text, metadata=docs[0].metadata)]
+            )
+
+        chunks = self._build_chunk_entities(split_docs, source, subject, cmd, job_id)
+        self.chunk_service.create_chunks(chunks)
+        return chunks
+
+    def _handle_reprocessing(self, source: Any, ingestion: Any):
+        sid = source.id
+        self.chunk_service.delete_by_content_source(sid)
+        self.vector_service.delete(filters={"content_source_id": str(sid)})
+        if ingestion:
+            self.ingestion_service.mark_previous_jobs_as_reprocessed(sid, ingestion.id)
+
+    def _finalize(
+        self,
+        job: Any,
+        source: Any,
+        chunks: List[ChunkEntity],
+        metadata: dict,
+        cmd: IngestFileCommand,
+    ):
+        self.ingestion_service.update_job(
+            job.id,
+            IngestionJobStatus.FINISHED,
+            f"Ingestion complete: {cmd.file_name}",
+            chunks_count=len(chunks),
+        )
+        tokens = sum(c.tokens_count for c in chunks if c.tokens_count)
+        dims = getattr(self.model_loader_service, "dimensions", 0)
+        self.cs_service.finish_ingestion(
+            source.id,
+            self.model_loader_service.model_name,
+            int(dims or 0),
+            len(chunks),
+            tokens,
+            cmd.tokens_per_chunk,
+            metadata,
+        )
+
+    def _handle_error(self, e: Exception, ingestion: Any, source: Any):
+        logger.error(e, context={"action": "file_ingestion_execute"})
+        if ingestion:
+            msg = str(e).lower()
+            status = (
+                IngestionJobStatus.CANCELLED
+                if ("404" in msg or "not found" in msg)
+                else IngestionJobStatus.FAILED
+            )
+            self.ingestion_service.update_job(
+                ingestion.id, status, error_message=str(e)
+            )
+        if source:
+            self.cs_service.update_processing_status(
+                source.id, ContentSourceStatus.FAILED
+            )
+
+    def _cleanup(self, cmd: IngestFileCommand):
+        if (
+            cmd.delete_after_ingestion
+            and cmd.file_path
+            and os.path.exists(cmd.file_path)
+        ):
+            parent = os.path.dirname(cmd.file_path)
+            if any(t in parent.lower() for t in ["tmp", "temp"]):
+                shutil.rmtree(parent, ignore_errors=True)
+            else:
+                os.remove(cmd.file_path)
 
     def _resolve_subject(self, cmd: IngestFileCommand):
         if cmd.subject_id:
-            subject = self.ks_service.get_subject_by_id(cmd.subject_id)
-            if not subject:
-                raise ValueError(f"Subject not found: {cmd.subject_id}")
-            return subject
-        if cmd.subject_name:
-            subject = self.ks_service.get_by_name(cmd.subject_name)
-            if not subject:
-                raise ValueError(f"Subject not found: {cmd.subject_name}")
-            return subject
-        raise ValueError("Either subject_id or subject_name must be provided")
+            s = self.ks_service.get_subject_by_id(cmd.subject_id)
+        elif cmd.subject_name:
+            s = self.ks_service.get_by_name(cmd.subject_name)
+        else:
+            raise ValueError("Subject missing")
+        if not s:
+            raise ValueError("Subject not found")
+        return s
 
-    def _determine_source_type(self, file_name: str, external_source: Optional[str] = None) -> SourceType:
-        # 1. Check if external_source is a YouTube URL
-        if external_source and ("youtube.com" in external_source or "youtu.be" in external_source):
+    def _determine_source_type_refined(self, cmd: IngestFileCommand) -> SourceType:
+        if cmd.source_type:
+            try:
+                return SourceType(cmd.source_type.lower())
+            except ValueError:
+                pass
+
+        ext = cmd.file_name.split(".")[-1].lower() if "." in cmd.file_name else ""
+        if cmd.external_source and any(
+            d in cmd.external_source for d in ["youtube.com", "youtu.be"]
+        ):
             return SourceType.YOUTUBE
-        
-        # 2. Check extension
-        ext = file_name.split(".")[-1].lower()
-        try:
-            return SourceType(ext)
-        except ValueError:
-            # Fallback for common types or generic ARTICLE if unknown
-            if ext in ["doc", "docx"]:
-                return SourceType.DOCX
-            if ext in ["ppt", "pptx"]:
-                return SourceType.PPTX
-            if ext in ["xls", "xlsx"]:
-                return SourceType.XLSX
-            if ext in ["md", "markdown"]:
-                return SourceType.MARKDOWN
-            if ext in ["jpg", "jpeg", "png", "webp"]:
-                return SourceType.IMAGE
-            if ext == "txt":
-                return SourceType.TXT
-            return SourceType.OTHER  # Default fallback for unknown supported types
+
+        mapping = {
+            "doc": SourceType.DOCX,
+            "docx": SourceType.DOCX,
+            "ppt": SourceType.PPTX,
+            "pptx": SourceType.PPTX,
+            "xls": SourceType.XLSX,
+            "xlsx": SourceType.XLSX,
+            "md": SourceType.MARKDOWN,
+            "markdown": SourceType.MARKDOWN,
+            "jpg": SourceType.IMAGE,
+            "png": SourceType.IMAGE,
+            "txt": SourceType.TXT,
+        }
+        return mapping.get(ext, SourceType.OTHER)
 
     def _build_chunk_entities(
         self,
         docs: List[Document],
-        source,
-        subject,
+        source: Any,
+        subject: Any,
         cmd: IngestFileCommand,
         job_id: UUID,
     ) -> List[ChunkEntity]:
-        list_chunks: List[ChunkEntity] = []
-
-        # Try to get tokenizer for more accurate token counting
-        tokenizer = None
-        if hasattr(self.model_loader_service, "model") and hasattr(
-            self.model_loader_service.model, "tokenizer"
-        ):
-            tokenizer = self.model_loader_service.model.tokenizer
-
+        tokenizer = (
+            getattr(self.model_loader_service.model, "tokenizer", None)
+            if hasattr(self.model_loader_service, "model")
+            else None
+        )
+        chunks = []
         for i, doc in enumerate(docs):
-            tokens_count = None
+            t_count = 0
             if tokenizer:
                 try:
-                    # Some tokenizers might require specific encode calls
-                    tokens = tokenizer.encode(
-                        doc.page_content, add_special_tokens=False
+                    t_count = len(
+                        tokenizer.encode(doc.page_content, add_special_tokens=False)
                     )
-                    tokens_count = len(tokens)
                 except Exception:
-                    try:
-                        tokens = tokenizer.encode(doc.page_content)
-                        tokens_count = len(tokens)
-                    except Exception:
-                        pass
+                    t_count = len(doc.page_content) // 4
+            else:
+                t_count = len(doc.page_content) // 4
 
-            if tokens_count is None:
-                tokens_count = len(doc.page_content) // 4  # Fallback approximation
-
-            chunk_entity = ChunkEntity(
-                id=uuid.uuid4(),
-                job_id=job_id,
-                content_source_id=source.id,
-                source_type=SourceType(source.source_type),
-                external_source=source.external_source,
-                subject_id=subject.id,
-                index=i,
-                content=doc.page_content,
-                tokens_count=tokens_count,
-                extra={**doc.metadata, "vector_store_type": self.vector_store_type},
-                language=cmd.language,
-                embedding_model=self.model_loader_service.model_name,
-                created_at=datetime.now(timezone.utc),
-                version_number=1,
+            chunks.append(
+                ChunkEntity(
+                    id=uuid.uuid4(),
+                    job_id=job_id,
+                    content_source_id=source.id,
+                    source_type=SourceType(source.source_type),
+                    external_source=source.external_source,
+                    subject_id=subject.id,
+                    index=i,
+                    content=doc.page_content,
+                    tokens_count=t_count,
+                    extra={**doc.metadata, "vector_store_type": self.vector_store_type},
+                    language=cmd.language,
+                    embedding_model=self.model_loader_service.model_name,
+                    created_at=datetime.now(timezone.utc),
+                    version_number=1,
+                )
             )
-            list_chunks.append(chunk_entity)
-        return list_chunks
+        return chunks

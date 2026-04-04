@@ -196,7 +196,7 @@ export function DiarizationView() {
 
     // SSE Real-time updates
     useEffect(() => {
-        const eventSource = new EventSource('/api/notifications/events');
+        const eventSource = new EventSource('/rest/notifications/events');
 
         eventSource.onmessage = async (event) => {
             try {
@@ -255,11 +255,43 @@ export function DiarizationView() {
         };
     }, [loadJobs, addToast]);
 
+    const mergeSpeakerSegments = (segments: any[], recognition?: any) => {
+        if (!segments || segments.length === 0) return [];
+        
+        const merged: any[] = [];
+        let current: any = null;
+        
+        const mapping = recognition?.mapping || recognition || {};
+
+        segments.forEach((seg, idx) => {
+            const speakerName = mapping[seg.speaker] || seg.speaker;
+            
+            if (current && current.speakerName === speakerName) {
+                // Merge
+                current.end = seg.end;
+                current.endTime = formatDuration(seg.end);
+                current.text = `${current.text} ${seg.text}`;
+            } else {
+                // New speaker
+                current = {
+                    ...seg,
+                    id: idx,
+                    speakerName: speakerName,
+                    startTime: formatDuration(seg.start),
+                    endTime: formatDuration(seg.end)
+                };
+                merged.push(current);
+            }
+        });
+        
+        return merged;
+    };
+
     const buildTranscriptFromSegments = (segments: any[], recognition?: any) => {
         if (!segments || segments.length === 0) return '';
-        return segments.map(seg => {
-            const speaker = recognition?.[seg.speaker] || seg.speaker;
-            return `${speaker}: ${seg.text}`;
+        const merged = mergeSpeakerSegments(segments, recognition);
+        return merged.map(seg => {
+            return `[${seg.startTime} - ${seg.endTime}] ${seg.speakerName}: ${seg.text}`;
         }).join('\n');
     };
 
@@ -293,14 +325,8 @@ export function DiarizationView() {
             setTranscript(text);
             
             // Populate finalSegments from segments if it's already completed
-            const enriched = job.segments.map((seg, idx) => ({
-                ...seg,
-                id: idx,
-                speakerName: job.recognitionResults?.mapping?.[seg.speaker] || seg.speaker,
-                startTime: formatDuration(seg.start),
-                endTime: formatDuration(seg.end)
-            }));
-            setFinalSegments(enriched);
+            const merged = mergeSpeakerSegments(job.segments, job.recognitionResults);
+            setFinalSegments(merged);
             setStep('result');
         } else if (job.status === 'ready') {
             console.log('Job is ready or needs identification, setting up identification step');
@@ -494,44 +520,39 @@ export function DiarizationView() {
 
         setIsSaving(true);
         try {
-            // Build final segments with assigned names and timestamps
-            const enrichedSegments = activeJob.segments.map((seg, idx) => {
-                const speaker = speakers.find(s => s.label === seg.speaker);
-                const name = speaker?.assigned || seg.speaker;
-                return {
-                    ...seg,
-                    id: idx,
-                    speaker: name, // Overwrite original speaker label with name for the DB
-                    speakerName: name,
-                    startTime: formatDuration(seg.start),
-                    endTime: formatDuration(seg.end)
-                };
-            });
-
-            // Persist to backend
+            // Build the name mapping
+            const speakerMapping = speakers.reduce((acc: any, s) => {
+                acc[s.label] = s.assigned;
+                return acc;
+            }, {});
+            
+            // Merge segments for both DB and display
+            const mergedSegmentsData = mergeSpeakerSegments(activeJob.segments, speakerMapping);
+            
+            // Persist to backend (removing the display enrichment)
             await api.updateDiarization(activeJob.id, {
-                segments: enrichedSegments.map(s => ({
+                segments: mergedSegmentsData.map(s => ({
                     start: Number(s.start),
                     end: Number(s.end),
                     text: String(s.text),
-                    speaker: String(s.speaker)
+                    speaker: String(s.speakerName) // Using the assigned name
                 }))
             });
 
-            setFinalSegments(enrichedSegments);
+            setFinalSegments(mergedSegmentsData);
             
-            // Build transcript string for legacy purposes if needed
-            const finalTranscript = enrichedSegments.map(seg => 
+            // Build transcript string for legacy purposes
+            const finalTranscript = mergedSegmentsData.map(seg => 
                 `[${seg.startTime} - ${seg.endTime}] ${seg.speakerName}: ${seg.text}`
             ).join('\n');
 
             setTranscript(finalTranscript);
             setStep('result');
 
-            const updatedJob = {
+            const updatedJob: DiarizationJob = {
                 ...activeJob, 
-                status: 'completed' as const, 
-                segments: enrichedSegments
+                status: 'completed', 
+                segments: mergedSegmentsData
             };
             setJobs(jobs.map(j => j.id === activeJob.id ? updatedJob : j));
             setActiveJob(updatedJob);

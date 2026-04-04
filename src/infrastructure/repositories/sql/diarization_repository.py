@@ -3,7 +3,9 @@ from typing import List, Optional, cast
 from sqlalchemy.orm import Session
 
 from src.domain.entities.diarization import DiarizationResult
-from src.infrastructure.repositories.sql.models.diarization_record import DiarizationRecord
+from src.infrastructure.repositories.sql.models.diarization_record import (
+    DiarizationRecord,
+)
 
 
 class DiarizationRepository:
@@ -11,12 +13,12 @@ class DiarizationRepository:
         self.db = db
 
     def create_pending(
-            self,
-            title: str,
-            source_type: str,
-            external_source: str,
-            language: str,
-            model_size: str | None = None,
+        self,
+        title: str,
+        source_type: str,
+        external_source: str,
+        language: str,
+        model_size: str | None = None,
     ) -> DiarizationRecord:
         record = DiarizationRecord(
             title=title,
@@ -32,14 +34,14 @@ class DiarizationRepository:
         return record
 
     def save(
-            self,
-            result: DiarizationResult,
-            title: str,
-            source_type: str,
-            external_source: str,
-            folder: str,
-            storage_path: str | None = None,
-            diarization_id: str | None = None,
+        self,
+        result: DiarizationResult,
+        title: str,
+        source_type: str,
+        external_source: str,
+        folder: str,
+        storage_path: str | None = None,
+        diarization_id: str | None = None,
     ) -> DiarizationRecord:
         if diarization_id:
             db_diarization = self.get_by_id(diarization_id)
@@ -72,7 +74,7 @@ class DiarizationRepository:
         return db_diarization
 
     def update_status(
-            self, diarization_id: str, status: str, error_message: str | None = None
+        self, diarization_id: str, status: str, error_message: str | None = None
     ) -> Optional[DiarizationRecord]:
         record = self.get_by_id(diarization_id)
         if not record:
@@ -115,7 +117,7 @@ class DiarizationRepository:
         return True
 
     def update_recognition_results(
-            self, diarization_id: str, recognition_results: dict
+        self, diarization_id: str, recognition_results: dict
     ) -> Optional[DiarizationRecord]:
         record = self.get_by_id(diarization_id)
         if not record:
