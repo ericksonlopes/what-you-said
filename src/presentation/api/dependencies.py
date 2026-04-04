@@ -10,6 +10,7 @@ from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjec
 from src.application.use_cases.search_use_case import SearchUseCase
 from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
+from src.application.use_cases.diarization_ingestion_use_case import DiarizationIngestionUseCase
 from src.config.settings import Settings
 
 # Import services and repositories
@@ -406,6 +407,36 @@ def get_web_scraping_use_case(
         vector_store_type=settings.vector.store_type.value,
         event_bus=event_bus,
         extractor=extractor,
+    )
+
+
+def get_diarization_ingestion_use_case(
+    db: Session = Depends(get_db),
+    ks_svc: KnowledgeSubjectService = Depends(get_ks_service),
+    cs_svc: ContentSourceService = Depends(get_cs_service),
+    job_svc: IngestionJobService = Depends(get_job_service),
+    model_loader: ModelLoaderService = Depends(get_model_loader),
+    embed_svc: EmbeddingService = Depends(get_embedding_service),
+    chunk_svc: ChunkIndexService = Depends(get_chunk_index_service),
+    vector_svc: ChunkVectorService = Depends(get_chunk_vector_service),
+    event_bus: IEventBus = Depends(get_event_bus),
+    settings: Settings = Depends(get_settings),
+) -> DiarizationIngestionUseCase:
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
+
+    return DiarizationIngestionUseCase(
+        diarization_repo=DiarizationRepository(db),
+        ks_service=ks_svc,
+        cs_service=cs_svc,
+        ingestion_service=job_svc,
+        model_loader_service=model_loader,
+        embedding_service=embed_svc,
+        chunk_service=chunk_svc,
+        vector_service=vector_svc,
+        vector_store_type=settings.vector.store_type.value,
+        event_bus=event_bus,
     )
 
 

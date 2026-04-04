@@ -44,7 +44,7 @@ export type ContentSource = {
   sourceMetadata?: Record<string, any>;
 };
 
-export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts';
+export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts' | 'diarization';
 
 export type ToastType = 'success' | 'info' | 'error';
 

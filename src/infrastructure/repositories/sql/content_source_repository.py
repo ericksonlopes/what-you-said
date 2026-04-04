@@ -3,11 +3,10 @@ from typing import Optional, List, Any
 from typing import cast
 from uuid import UUID
 
-from src.infrastructure.repositories.sql.utils import ensure_uuid
-
 from src.config.logger import Logger
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
+from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 
 logger = Logger()
 INVALID_UUID_MSG = "Invalid subject_id UUID string provided"

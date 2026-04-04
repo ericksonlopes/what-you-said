@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
-import { Subject, ViewState, Toast, ToastType, ContentSource, IngestionTask, ModelInfo } from '../types';
-import { api } from '../services/api';
-import { useTranslation } from 'react-i18next';
-import { useAuth } from './AuthContext';
+import React, {createContext, ReactNode, useCallback, useContext, useEffect, useState} from 'react';
+import {ContentSource, IngestionTask, ModelInfo, Subject, Toast, ToastType, ViewState} from '../types';
+import {api} from '../services/api';
+import {useTranslation} from 'react-i18next';
+import {useAuth} from './AuthContext';
 
 // 1. Estrutura de classes/objetos para gerenciar o estado da aplicação.
 // Utilizamos a Context API do React para simular o st.session_state de forma reativa e tipada.
@@ -70,7 +70,7 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
   const [isJobsLoaded, setIsJobsLoaded] = useState(false);
   const [currentView, setCurrentView] = useState<ViewState>(() => {
     const saved = localStorage.getItem('currentView') as ViewState;
-    const validViews: ViewState[] = ['chat', 'search', 'sources', 'activity', 'database', 'knowledge_contexts'];
+    const validViews: ViewState[] = ['chat', 'search', 'sources', 'activity', 'database', 'knowledge_contexts', 'diarization'];
     const initial = validViews.includes(saved) ? saved : 'search';
     return initial;
   });

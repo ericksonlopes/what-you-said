@@ -4,12 +4,13 @@ import uuid
 from typing import cast
 from urllib.parse import unquote
 
+import numpy as np
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
-from src.infrastructure.utils.audio_utils import get_best_device
-from src.infrastructure.repositories.sql.models.diarization import VoiceRecord
+from src.infrastructure.repositories.sql.models.voice_record import VoiceRecord
 from src.infrastructure.repositories.storage.storage import StorageService
+from src.infrastructure.utils.audio_utils import get_best_device
 
 logger = logging.getLogger(__name__)
 
@@ -83,35 +84,36 @@ class VoiceDB:
             existing = (
                 self.db.query(VoiceRecord).filter(VoiceRecord.name == name).first()
             )
-            if existing:
-                if not force:
-                    raise ValueError(
-                        f"Voice profile '{name}' already exists. Use force=true to overwrite."
-                    )
-
-                old_key = cast(str, existing.audio_source)
-                try:
-                    self.storage.delete_file(old_key)
-                except Exception as e:
-                    logger.warning("Could not delete old S3 file %s: %s", old_key, e)
-
-                self.db.delete(existing)
-                self.db.commit()
 
             logger.info("Extracting embedding for voice: %s", name)
-            embedding = self._extract_embedding(audio_path)
+            new_embedding = np.array(self._extract_embedding(audio_path))
             voice_id = str(uuid.uuid4())
-
             clean_name = name.lower().replace(" ", "_")
-            target_s3_key = f"voices/{clean_name}/reference_{voice_id}.wav"
 
+            if existing:
+                logger.info("Reinforcing existing voice profile: %s", name)
+                # Combine embeddings (simple average)
+                old_emb = np.array(existing.embedding)
+                combined_emb = (old_emb + new_embedding) / 2.0
+                existing.embedding = combined_emb.tolist()
+
+                # Store additional audio sample in the voice's UUID folder
+                target_s3_key = f"voices/{existing.id}/sample_{voice_id}.wav"
+                self.storage.upload_file(audio_path, target_s3_key)
+
+                self.db.commit()
+                return str(existing.id)
+
+            # Create new voice if doesn't exist
+            # Use voice_id (UUID) as the folder name
+            target_s3_key = f"voices/{voice_id}/reference_{voice_id}.wav"
             logger.info("Uploading reference audio to: %s", target_s3_key)
             s3_url_key = self.storage.upload_file(audio_path, target_s3_key)
 
             new_voice = VoiceRecord(
                 id=voice_id,
                 name=name,
-                embedding=embedding,
+                embedding=new_embedding.tolist(),
                 audio_source=s3_url_key,
             )
             self.db.add(new_voice)

@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
-from src.infrastructure.repositories.sql.utils import ensure_uuid
+from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 from src.domain.interfaces.repository.user_repository import IUserRepository
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.user import User as UserModel

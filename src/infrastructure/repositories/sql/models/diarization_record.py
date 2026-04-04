@@ -22,19 +22,14 @@ class DiarizationRecord(Base):
     source_type = Column(String)
     external_source = Column(String)
     language = Column(String)
+    status = Column(String, default="pending")
     duration = Column(Float)
     folder_path = Column(String)
     storage_path = Column(String, nullable=True)
     segments = Column(JSON)
     recognition_results = Column(JSON, nullable=True)
+    model_size = Column(String, nullable=True)
+    error_message = Column(String, nullable=True)
+    source_metadata = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-
-class VoiceRecord(Base):
-    __tablename__ = "voices"
-
-    id = Column(String, primary_key=True, default=_generate_uuid)
-    name = Column(String, unique=True, index=True)
-    embedding = Column(JSON)
-    audio_source = Column(String)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)

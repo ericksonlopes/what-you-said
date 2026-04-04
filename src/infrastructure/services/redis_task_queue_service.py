@@ -125,12 +125,16 @@ class RedisTaskQueueService(ITaskQueue):
         from src.application.dtos.commands.process_audio_command import (
             ProcessAudioCommand,
         )
+        from src.application.dtos.commands.ingest_diarization_command import (
+            IngestDiarizationCommand,
+        )
 
         command_classes = {
             "IngestFileCommand": IngestFileCommand,
             "IngestYoutubeCommand": IngestYoutubeCommand,
             "IngestWebCommand": IngestWebCommand,
             "ProcessAudioCommand": ProcessAudioCommand,
+            "IngestDiarizationCommand": IngestDiarizationCommand,
         }
 
         result = []

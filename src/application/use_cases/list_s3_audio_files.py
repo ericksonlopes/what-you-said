@@ -1,7 +1,9 @@
 import logging
+
 from sqlalchemy.orm import Session
+
+from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
 from src.infrastructure.repositories.storage.storage import StorageService
-from src.infrastructure.repositories.sql.repositories import DiarizationRepository
 
 logger = logging.getLogger(__name__)
 

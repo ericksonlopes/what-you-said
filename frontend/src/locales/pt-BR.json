@@ -32,7 +32,8 @@
       "failed": "FALHOU",
       "duplicate": "DUPLICADO",
       "cancelled": "CANCELADO",
-      "reprocessed": "REPROCESSADO"
+      "reprocessed": "REPROCESSADO",
+      "na": "n/d"
     },
     "time": {
       "now": "agora mesmo",
@@ -57,6 +58,7 @@
       "title": "Operações",
       "chat": "Chat RAG (Bloqueado)",
       "search": "Busca Semântica",
+      "diarization": "Diarização",
       "sources": "Fontes de Conteúdo",
       "chunks": "Fontes > Chunks",
       "activity": "Monitor de Atividade",
@@ -477,5 +479,107 @@
     "login_success": "Bem-vindo de volta! Login realizado com sucesso.",
     "login_error": "Falha na autenticação. Por favor, verifique suas credenciais e tente novamente.",
     "login_description_short": "Por favor, faça login para acessar seu hub de conhecimento vetorizado."
-  }
-}
+    },
+    "diarization": {
+    "title": "Diarização",
+    "subtitle": "Gerencie suas transcrições e identificações de voz.",
+    "new_btn": "Nova Diarização",
+    "table": {
+      "name": "Nome",
+      "date": "Data",
+      "type": "Tipo",
+      "model": "Modelo",
+      "duration": "Duração",
+      "status": "Status",
+      "actions": "Ações",
+      "loading": "Carregando diarizações...",
+      "none": "Nenhuma diarização encontrada.",
+      "edit_name": "Editar nome",
+      "delete": "Excluir"
+    },
+    "status": {
+      "completed": "Concluído",
+      "waiting": "Aguardando",
+      "failed": "Falhou",
+      "in_queue": "Na fila",
+      "processing_default": "Analisando áudio e separando as vozes no servidor...",
+      "check_status": "Verificar Status",
+      "still_processing": "Ainda processando...",
+      "failed_msg": "O processamento falhou."
+    },
+    "detail": {
+      "back": "Voltar",
+      "file_details": "Detalhes do Arquivo",
+      "original_name": "Nome Original",
+      "process_date": "Data de Processamento",
+      "speakers_count": "Locutores",
+      "viewing_completed": "Visualizando transcrição concluída.",
+      "server_processing": "O arquivo está sendo processado no servidor.",
+      "id_speakers_help": "Identifique os locutores para finalizar a transcrição.",
+      "id_speakers_title": "Identificação de Locutores",
+      "id_speakers_desc": "Ouvimos {{count}} vozes distintas no arquivo. Ouça os trechos extraídos e confirme a identidade de cada pessoa antes de gerar a transcrição final.",
+      "auto_identify": "Auto-Identificar",
+      "voice_label": "Voz {{index}}",
+      "confidence": "Confiança",
+      "speaker_placeholder": "Nome do locutor",
+      "train_voice": "Treinar esta voz",
+      "reinforce_voice": "Reforçar esta voz",
+      "generate_transcript": "Gerar Transcrição Final",
+      "final_transcript": "Transcrição Final",
+      "segments_count": "{{count}} segmentos gerados",
+      "index_base": "Indexar na Base"
+    },
+    "modal": {
+      "new_title": "Nova Diarização",
+      "file_tab": "Arquivo Local",
+      "youtube_tab": "Link do YouTube",
+      "drag_drop": "Clique para procurar ou arraste o arquivo aqui",
+      "supported_formats": "Suporta MP3, WAV, MP4, WebM",
+      "video_url_label": "URL do Vídeo",
+      "language_label": "Idioma",
+      "model_label": "Modelo",
+      "target_context": "Contexto de Destino",
+      "no_context": "Nenhum Contexto Selecionado",
+      "optional_context": "Opcional - selecione na barra lateral para salvar a transcrição.",
+      "start_btn": "Iniciar Processamento",
+      "models": {
+        "base": "Base (rápido)",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large V2 (melhor)"
+      },
+      "languages": {
+        "pt": "Português",
+        "en": "English",
+        "es": "Español"
+      }
+    },
+    "train_modal": {
+      "title": "Treinamento de Voz",
+      "desc": "O sistema usará o trecho de áudio selecionado para aprender as características vocais desta pessoa. Nas próximas transcrições, ela será identificada automaticamente.",
+      "profile_name_label": "Nome do Perfil de Voz",
+      "placeholder": "Ex: João Silva",
+      "save_btn": "Salvar Perfil"
+    },
+    "notifications": {
+      "delete_success": "Registro excluído",
+      "delete_error": "Falha ao excluir registro",
+      "start_success": "Processamento de áudio iniciado!",
+      "start_error": "Falha ao iniciar processamento",
+      "identify_success": "Reconhecimento de voz concluído!",
+      "identify_error": "Falha no reconhecimento de voz",
+      "finalize_success": "Transcrição finalizada e salva com sucesso!",
+      "finalize_error": "Falha ao finalizar transcrição",
+      "save_success": "Transcrição indexada na base com sucesso",
+      "save_error": "Falha ao salvar transcrição",
+      "train_success": "Perfil de voz \"{{name}}\" salvo com sucesso!",
+      "train_error": "Falha ao treinar perfil de voz",
+      "no_selection_error": "Nenhuma transcrição ou contexto selecionado",
+      "youtube_link_error": "Insira um link do YouTube",
+      "file_selection_error": "Selecione um arquivo",
+      "playback_error": "Falha ao reproduzir áudio",
+      "audio_fetch_error": "Falha ao obter áudio do locutor",
+      "load_error": "Falha ao carregar diarizações"
+    }
+    }
+    }

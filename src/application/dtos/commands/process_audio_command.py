@@ -12,3 +12,4 @@ class ProcessAudioCommand:
     max_speakers: Optional[int] = 2
     model_size: str = "large-v2"
     recognize_voices: bool = True
+    diarization_id: Optional[str] = None

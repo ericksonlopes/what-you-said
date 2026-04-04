@@ -3,19 +3,21 @@ import tempfile
 from typing import Annotated, Dict, Optional
 from uuid import UUID
 
+import anyio
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi import UploadFile, File, Form
-import anyio
 
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
-from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
+from src.application.use_cases.diarization_ingestion_use_case import DiarizationIngestionUseCase
 from src.application.workers import (
     run_file_ingestion_worker,
     run_youtube_ingestion_worker,
     run_web_ingestion_worker,
+    run_diarization_ingestion_worker,
 )
 from src.config.logger import Logger
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
@@ -23,6 +25,7 @@ from src.presentation.api.dependencies import (
     get_ingest_youtube_use_case,
     get_file_ingestion_use_case,
     get_web_scraping_use_case,
+    get_diarization_ingestion_use_case,
     get_task_queue_service,
 )
 from src.presentation.api.schemas.ingest_schemas import (
@@ -30,6 +33,7 @@ from src.presentation.api.schemas.ingest_schemas import (
     YoutubeIngestRequest,
     FileUrlIngestRequest,
     WebIngestRequest,
+    DiarizationIngestRequest,
 )
 
 logger = Logger()
@@ -129,6 +133,9 @@ async def ingest_file(
     tokens_per_chunk: Annotated[int, Form()] = 512,
     tokens_overlap: Annotated[int, Form()] = 50,
     do_ocr: Annotated[bool, Form()] = False,
+        source_type: Annotated[Optional[str], Form()] = None,
+        external_source: Annotated[Optional[str], Form()] = None,
+        source_metadata: Annotated[Optional[str], Form()] = None,
 ):
     """
     Upload and ingest a file using Docling.
@@ -159,6 +166,15 @@ async def ingest_file(
         content = await file.read()
         await buffer.write(content)
 
+    # Parse metadata if present
+    parsed_metadata = None
+    if source_metadata:
+        try:
+            import json
+            parsed_metadata = json.loads(source_metadata)
+        except Exception:
+            logger.warning("Failed to parse source_metadata as JSON", context={"raw": source_metadata})
+
     cmd = IngestFileCommand(
         file_path=temp_path,
         file_name=filename,
@@ -169,6 +185,9 @@ async def ingest_file(
         tokens_per_chunk=tokens_per_chunk,
         tokens_overlap=tokens_overlap,
         do_ocr=do_ocr,
+        source_type=source_type,
+        external_source=external_source,
+        source_metadata=parsed_metadata,
     )
 
     cmd.delete_after_ingestion = True
@@ -300,4 +319,59 @@ async def ingest_web(
     return {
         "message": "Web scraping ingestion started in background.",
         "url": request.url,
+    }
+
+
+@router.post(
+    "/diarization",
+    response_model=Dict,
+    responses={
+        400: {"description": "Validation error"},
+        404: {"description": "Diarization not found"},
+        500: {"description": "Internal server error"},
+    },
+)
+async def ingest_diarization(
+    request: Annotated[DiarizationIngestRequest, Body()],
+    use_case: Annotated[
+        DiarizationIngestionUseCase, Depends(get_diarization_ingestion_use_case)
+    ],
+    task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
+):
+    """
+    Ingest a completed diarization direct from the database.
+    """
+    logger.info(
+        "API request to ingest diarization",
+        context={"diarization_id": request.diarization_id, "subject_id": request.subject_id},
+    )
+
+    from src.application.dtos.commands.ingest_diarization_command import (
+        IngestDiarizationCommand,
+    )
+
+    try:
+        cmd = IngestDiarizationCommand(
+            diarization_id=UUID(request.diarization_id),
+            subject_id=UUID(request.subject_id),
+            subject_name=request.subject_name,
+            title=request.title,
+            language=request.language,
+            tokens_per_chunk=request.tokens_per_chunk,
+            tokens_overlap=request.tokens_overlap,
+            reprocess=request.reprocess,
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    task_queue.enqueue(
+        run_diarization_ingestion_worker,
+        cmd,
+        task_title=request.title or "Diarization Ingestion",
+        metadata={"diarization_id": request.diarization_id},
+    )
+
+    return {
+        "message": "Diarization ingestion started in background.",
+        "diarization_id": request.diarization_id,
     }

@@ -3,13 +3,12 @@ from typing import Optional, List, Any, Union
 from typing import cast
 from uuid import UUID
 
-from src.infrastructure.repositories.sql.utils import ensure_uuid
-
 from sqlalchemy.orm import joinedload
 
 from src.config.logger import Logger
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.ingestion_job import IngestionJobModel
+from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 
 logger = Logger()
 DUPLICATE_FILTER = "%Duplicate%"

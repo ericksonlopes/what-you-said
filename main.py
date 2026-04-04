@@ -77,12 +77,14 @@ async def lifespan(app: FastAPI):
             run_youtube_ingestion_worker,
             run_web_ingestion_worker,
             run_audio_diarization_worker,
+            run_diarization_ingestion_worker,
         )
 
         register_task("run_file_ingestion_worker", run_file_ingestion_worker)
         register_task("run_youtube_ingestion_worker", run_youtube_ingestion_worker)
         register_task("run_web_ingestion_worker", run_web_ingestion_worker)
         register_task("run_audio_diarization_worker", run_audio_diarization_worker)
+        register_task("run_diarization_ingestion_worker", run_diarization_ingestion_worker)
 
         logger.info("Initializing RedisTaskQueueService...")
         app.state.task_queue = RedisTaskQueueService(num_workers=4)

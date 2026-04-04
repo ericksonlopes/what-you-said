@@ -32,7 +32,8 @@
       "failed": "FAILED",
       "duplicate": "DUPLICATE",
       "cancelled": "CANCELLED",
-      "reprocessed": "REPROCESSED"
+      "reprocessed": "REPROCESSED",
+      "na": "n/a"
     },
     "time": {
       "now": "just now",
@@ -57,6 +58,7 @@
       "title": "Operations",
       "chat": "RAG Chat (Locked)",
       "search": "Semantic Search",
+      "diarization": "Diarization",
       "sources": "Content Sources",
       "chunks": "Sources > Chunks",
       "activity": "Activity Monitor",
@@ -478,5 +480,107 @@
     "login_success": "Welcome back! Login successful.",
     "login_error": "Authentication failed. Please check your credentials and try again.",
     "login_description_short": "Please sign in to access your vectorized knowledge hub."
-  }
-}
+    },
+    "diarization": {
+    "title": "Diarization",
+    "subtitle": "Manage your transcriptions and voice identifications.",
+    "new_btn": "New Diarization",
+    "table": {
+      "name": "Name",
+      "date": "Date",
+      "type": "Type",
+      "model": "Model",
+      "duration": "Duration",
+      "status": "Status",
+      "actions": "Actions",
+      "loading": "Loading diarizations...",
+      "none": "No diarization found.",
+      "edit_name": "Edit name",
+      "delete": "Delete"
+    },
+    "status": {
+      "completed": "Completed",
+      "waiting": "Waiting",
+      "failed": "Failed",
+      "in_queue": "In Queue",
+      "processing_default": "Analyzing audio and separating voices on server...",
+      "check_status": "Check Status",
+      "still_processing": "Still processing...",
+      "failed_msg": "Processing failed."
+    },
+    "detail": {
+      "back": "Back",
+      "file_details": "File Details",
+      "original_name": "Original Name",
+      "process_date": "Process Date",
+      "speakers_count": "Speakers",
+      "viewing_completed": "Viewing completed transcription.",
+      "server_processing": "The file is being processed on the server.",
+      "id_speakers_help": "Identify the speakers to finalize the transcription.",
+      "id_speakers_title": "Speaker Identification",
+      "id_speakers_desc": "We heard {{count}} distinct voices in the file. Listen to the extracted snippets and confirm each person's identity before generating the final transcript.",
+      "auto_identify": "Auto-Identify",
+      "voice_label": "Voice {{index}}",
+      "confidence": "Confidence",
+      "speaker_placeholder": "Speaker name",
+      "train_voice": "Train this voice",
+      "reinforce_voice": "Reinforce this voice",
+      "generate_transcript": "Generate Final Transcript",
+      "final_transcript": "Final Transcript",
+      "segments_count": "{{count}} segments generated",
+      "index_base": "Index in Base"
+    },
+    "modal": {
+      "new_title": "New Diarization",
+      "file_tab": "Local File",
+      "youtube_tab": "YouTube Link",
+      "drag_drop": "Click to browse or drag file here",
+      "supported_formats": "Supports MP3, WAV, MP4, WebM",
+      "video_url_label": "Video URL",
+      "language_label": "Language",
+      "model_label": "Model",
+      "target_context": "Target Context",
+      "no_context": "No Context Selected",
+      "optional_context": "Optional - select in sidebar to save transcription.",
+      "start_btn": "Start Processing",
+      "models": {
+        "base": "Base (fast)",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large V2 (best)"
+      },
+      "languages": {
+        "pt": "Portuguese",
+        "en": "English",
+        "es": "Spanish"
+      }
+    },
+    "train_modal": {
+      "title": "Voice Training",
+      "desc": "The system will use the selected audio snippet to learn this person's vocal characteristics. In future transcriptions, they will be automatically identified.",
+      "profile_name_label": "Voice Profile Name",
+      "placeholder": "Ex: John Doe",
+      "save_btn": "Save Profile"
+    },
+    "notifications": {
+      "delete_success": "Record deleted",
+      "delete_error": "Failed to delete record",
+      "start_success": "Audio processing started!",
+      "start_error": "Failed to start processing",
+      "identify_success": "Voice recognition completed!",
+      "identify_error": "Voice recognition failed",
+      "finalize_success": "Transcription finalized and saved successfully!",
+      "finalize_error": "Failed to finalize transcription",
+      "save_success": "Transcription indexed successfully",
+      "save_error": "Failed to save transcription",
+      "train_success": "Voice profile \"{{name}}\" saved successfully!",
+      "train_error": "Failed to train voice profile",
+      "no_selection_error": "No transcription or context selected",
+      "youtube_link_error": "Insert a YouTube link",
+      "file_selection_error": "Select a file",
+      "playback_error": "Failed to play audio",
+      "audio_fetch_error": "Failed to fetch speaker audio",
+      "load_error": "Failed to load diarizations"
+    }
+    }
+    }

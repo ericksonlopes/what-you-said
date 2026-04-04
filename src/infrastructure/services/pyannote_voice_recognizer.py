@@ -30,12 +30,13 @@ class VoiceRecognizer:
             self._inference = Inference(model, window="whole", device=device)
         return self._inference
 
-    def _compare(self, embedding: np.ndarray) -> list[tuple[str, float]]:
+    def _compare(self, embedding: np.ndarray) -> list[tuple[str, float, str]]:
         scores = []
         for name, info in self.voice_db.voices.items():
             ref_emb = np.array(info["embedding"])
+            voice_id = info["id"]
             sim = cosine_similarity(embedding, ref_emb)
-            scores.append((name, sim))
+            scores.append((name, sim, voice_id))
         scores.sort(key=lambda x: x[1], reverse=True)
         return scores
 

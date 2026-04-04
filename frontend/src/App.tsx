@@ -26,6 +26,7 @@ import {SearchView} from './components/SearchView';
 import {ChunksViewer} from './components/ChunksViewer';
 import {AddSubjectModal} from './components/AddSubjectModal';
 import {KnowledgeAdminView} from './components/KnowledgeAdminView';
+import {DiarizationView} from './components/DiarizationView';
 import {ErrorBoundary} from './components/ErrorBoundary';
 import {ContentSource} from './types';
 
@@ -576,6 +577,7 @@ function MainContent() {
           {currentView === 'search' && <SearchView />}
           {currentView === 'database' && <ChunksViewer />}
           {currentView === 'knowledge_contexts' && <KnowledgeAdminView />}
+          {currentView === 'diarization' && <DiarizationView/>}
         </ErrorBoundary>
       </main>
 

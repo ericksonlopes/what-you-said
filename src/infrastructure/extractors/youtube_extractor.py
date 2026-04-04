@@ -1,5 +1,8 @@
+import os
 import time
+from pathlib import Path
 
+import imageio_ffmpeg
 from youtube_transcript_api import (
     YouTubeTranscriptApi,
     FetchedTranscript,
@@ -27,23 +30,26 @@ logger = Logger()
 
 
 class YoutubeExtractor(IYoutubeExtractor):
-    """Extracts metadata and transcripts from YouTube videos."""
+    """Extracts metadata, transcripts and downloads audio from YouTube videos."""
 
-    def __init__(self, video_id: str, language: str = "pt"):
+    def __init__(self, video_id: str | None = None, language: str = "pt"):
         self.video_id = video_id
-        self.video_url = f"https://www.youtube.com/watch?v={video_id}"
+        self.video_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else None
         self.language = language
+        self._ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
-    def extract_metadata(self) -> YoutubeMetadataDTO:
+    def extract_metadata(self, url: str | None = None) -> YoutubeMetadataDTO:
         """Extracts metadata from the video using yt_dlp."""
-        logger.info("Starting metadata extraction", context={"video_id": self.video_id})
+        target_url = url or self.video_url
+        if not target_url:
+            raise ValueError("No URL provided for metadata extraction")
 
-        ydl_opts: dict = {"logger": logger}
+        logger.info("Starting metadata extraction", context={"url": target_url})
+
+        ydl_opts: dict = {"logger": logger, "quiet": True, "no_warnings": True}
 
         # Handle Proxy for yt-dlp
-        if not settings.youtube.proxy_enabled:
-            logger.debug("Proxy usage is disabled in settings.")
-        else:
+        if settings.youtube.proxy_enabled:
             proxy = settings.youtube.proxy_url
             if (
                 not proxy
@@ -52,64 +58,60 @@ class YoutubeExtractor(IYoutubeExtractor):
                 and settings.youtube.webshare_password
                 and settings.youtube.webshare_password.strip()
             ):
-                # Fallback construct webshare proxy URL for yt-dlp
                 proxy = f"http://{settings.youtube.webshare_username}:{settings.youtube.webshare_password}@p.webshare.io:80"
 
             if proxy:
                 ydl_opts["proxy"] = proxy
-                # Mask password for logging
-                masked_proxy = proxy
-                if "@" in proxy:
-                    parts = proxy.split("@")
-                    if ":" in parts[0]:
-                        creds = parts[0].split(":")
-                        if len(creds) >= 2:
-                            masked_proxy = f"{creds[0]}:****@{parts[1]}"
-                logger.debug(
-                    "Using proxy for metadata extraction",
-                    context={"proxy": masked_proxy},
-                )
 
         try:
             with YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(self.video_url, download=False)
-
-                metadata = YoutubeMetadataDTO(**info_dict, video_id=self.video_id)
+                info_dict = ydl.extract_info(target_url, download=False)
+                vid = info_dict.get("id") or self.video_id or "unknown"
+                metadata = YoutubeMetadataDTO(**info_dict, video_id=vid)
 
                 logger.info(
                     "Metadata successfully extracted",
-                    context={"video_id": self.video_id, "title": metadata.title},
+                    context={"video_id": vid, "title": metadata.title},
                 )
                 return metadata
 
         except Exception as e:
             error_msg = str(e)
-            if "Proxy Authentication Required" in error_msg:
-                logger.error(
-                    "Proxy Authentication Failed (407). Check your credentials.",
-                    context={"video_id": self.video_id, "action": "extract_metadata"},
-                )
-                raise YoutubeNetworkException(
-                    self.video_id,
-                    "Proxy authentication failed. Verify YOUTUBE__WEBSHARE settings.",
-                )
+            logger.error("Error extracting metadata", context={"url": target_url, "error": error_msg})
+            return YoutubeMetadataDTO(video_id=self.video_id or "unknown")
 
-            if "This video is private" in error_msg:
-                raise YoutubeVideoPrivateException(self.video_id)
-            if "unplayable" in error_msg.lower():
-                raise YoutubeVideoUnplayableException(self.video_id, reason=error_msg)
-            if (
-                "getaddrinfo failed" in error_msg
-                or "Failed to establish a new connection" in error_msg
-                or "Tunnel connection failed" in error_msg
-            ):
-                raise YoutubeNetworkException(self.video_id, error_msg)
+    def download_audio(self, url: str, output_dir: str = "./temp_audio", quality: str = "192") -> str | None:
+        """Downloads and extracts audio from a YouTube video."""
+        os.makedirs(output_dir, exist_ok=True)
+        ydl_opts = {
+            "format": "bestaudio/best",
+            "ffmpeg_location": self._ffmpeg_path,
+            "postprocessors": [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": quality,
+                }
+            ],
+            "outtmpl": f"{output_dir}/%(title)s.%(ext)s",
+            "quiet": True,
+            "no_warnings": True,
+            "logger": logger,
+        }
 
-            logger.error(
-                "Error extracting metadata for video",
-                context={"video_id": self.video_id, "error": error_msg},
-            )
-            return YoutubeMetadataDTO(video_id=self.video_id)
+        # Proxy for download
+        if settings.youtube.proxy_enabled and settings.youtube.proxy_url:
+            ydl_opts["proxy"] = settings.youtube.proxy_url
+
+        try:
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                base_name = ydl.prepare_filename(info)
+                final_path = str(Path(base_name).with_suffix(".mp3"))
+                return final_path
+        except Exception as e:
+            logger.error(f"Download failed: {e}", context={"url": url})
+            return None
 
     @staticmethod
     def extract_playlist_videos(playlist_url: str) -> list[str]:

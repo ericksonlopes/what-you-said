@@ -2,7 +2,7 @@ import os
 import shutil
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from langchain_core.documents import Document
@@ -79,7 +79,18 @@ class FileIngestionUseCase:
 
         try:
             subject = self._resolve_subject(cmd)
-            source_type = self._determine_source_type(cmd.file_name)
+            
+            # Use source_type from command if provided, else determine from filename/origin
+            if cmd.source_type:
+                try:
+                    source_type = SourceType(cmd.source_type.lower())
+                except ValueError:
+                    source_type = self._determine_source_type(cmd.file_name, cmd.external_source)
+            else:
+                source_type = self._determine_source_type(cmd.file_name, cmd.external_source)
+
+            # Use external_source from command if provided (e.g. YouTube URL)
+            external_source = cmd.external_source or cmd.file_name
 
             # 1. Create or retrieve Ingestion Job
             if cmd.ingestion_job_id:
@@ -93,7 +104,7 @@ class FileIngestionUseCase:
                     pipeline_version="1.0",
                     ingestion_type=source_type.value,
                     vector_store_type=self.vector_store_type,
-                    external_source=cmd.file_name,
+                    external_source=external_source,
                 )
 
             # 2. Extract content
@@ -150,13 +161,19 @@ class FileIngestionUseCase:
                 },
             )
 
-            # Prioritize Docling's specific detection if it's a known format
+            # Prioritize Docling's specific detection if it's a known format,
+            # but preserve YOUTUBE/WEB if already set (don't downgrade to TXT)
             to_try = [docling_detected, extracted_ext]
             for ext_str in to_try:
                 if ext_str and isinstance(ext_str, str):
                     try:
                         refined = SourceType(ext_str.lower())
+                        # Only refine if it's not a downgrade from high-level source to generic format
                         if refined != SourceType.OTHER:
+                            if source_type in [SourceType.YOUTUBE, SourceType.WEB] and refined == SourceType.TXT:
+                                logger.debug("Skipping refinement: preserving high-level source type over TXT format")
+                                continue
+                            
                             source_type = refined
                             logger.info(
                                 "Refined source_type",
@@ -173,18 +190,24 @@ class FileIngestionUseCase:
             # 3. Initialize Source Ingestion
             source = self.cs_service.get_by_source_info(
                 source_type=source_type,
-                external_source=cmd.file_name,
+                external_source=external_source,
                 subject_id=cmd.subject_id,
             )
+            
+            # Prepare merged metadata
+            final_metadata = {**docs[0].metadata}
+            if cmd.source_metadata:
+                final_metadata.update(cmd.source_metadata)
+
             if not source:
                 source = self.cs_service.create_source(
                     subject_id=subject.id,
                     source_type=source_type,
-                    external_source=cmd.file_name,
+                    external_source=external_source,
                     status=ContentSourceStatus.PROCESSING,
                     title=cmd.title or cmd.file_name,
                     language=cmd.language,
-                    source_metadata=docs[0].metadata,
+                    source_metadata=final_metadata,
                 )
             else:
                 # --- REPROCESSING CLEANUP ---
@@ -421,7 +444,12 @@ class FileIngestionUseCase:
             return subject
         raise ValueError("Either subject_id or subject_name must be provided")
 
-    def _determine_source_type(self, file_name: str) -> SourceType:
+    def _determine_source_type(self, file_name: str, external_source: Optional[str] = None) -> SourceType:
+        # 1. Check if external_source is a YouTube URL
+        if external_source and ("youtube.com" in external_source or "youtu.be" in external_source):
+            return SourceType.YOUTUBE
+        
+        # 2. Check extension
         ext = file_name.split(".")[-1].lower()
         try:
             return SourceType(ext)

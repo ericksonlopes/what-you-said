@@ -1,8 +1,6 @@
 from typing import Optional, List, Any, cast
 from uuid import UUID
 
-from src.infrastructure.repositories.sql.utils import ensure_uuid
-
 from sqlalchemy.orm import selectinload
 
 from src.config.logger import Logger
@@ -10,6 +8,7 @@ from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.knowledge_subject import (
     KnowledgeSubjectModel,
 )
+from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 
 logger = Logger()
 

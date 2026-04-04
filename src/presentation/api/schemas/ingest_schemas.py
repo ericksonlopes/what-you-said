@@ -54,3 +54,14 @@ class WebIngestRequest(BaseModel):
     exclude_links: bool = True
     ingestion_job_id: Optional[str] = None
     reprocess: bool = False
+
+
+class DiarizationIngestRequest(BaseModel):
+    diarization_id: str
+    subject_id: str
+    subject_name: Optional[str] = None
+    title: Optional[str] = None
+    language: str = "pt"
+    tokens_per_chunk: int = 512
+    tokens_overlap: int = 50
+    reprocess: bool = False

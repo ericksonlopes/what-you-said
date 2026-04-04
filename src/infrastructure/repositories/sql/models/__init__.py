@@ -4,10 +4,11 @@
 
 from . import chunk_index  # noqa: F401
 from . import content_source  # noqa: F401
-from . import diarization  # noqa: F401
+from . import diarization_record  # noqa: F401
 from . import ingestion_job  # noqa: F401
 from . import knowledge_subject  # noqa: F401
 from . import user  # noqa: F401
+from . import voice_record
 
 __all__ = [
     "knowledge_subject",
@@ -15,5 +16,6 @@ __all__ = [
     "ingestion_job",
     "chunk_index",
     "user",
-    "diarization",
+    "diarization_record",
+    "voice_record",
 ]

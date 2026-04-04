@@ -4,6 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+
 from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
 from src.application.use_cases.generate_speaker_audio_access_url import (
     GenerateSpeakerAudioAccessUrlUseCase,
@@ -20,6 +21,7 @@ from src.domain.interfaces.services.i_task_queue import ITaskQueue
 from src.presentation.api.dependencies import get_db, get_task_queue_service
 from src.presentation.api.schemas.audio_processing_requests import (
     AudioProcessingRequest,
+    UpdateDiarizationRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,9 +29,42 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@router.patch("/{diarization_id}")
+async def update_diarization_segments(
+        diarization_id: str,
+        request: UpdateDiarizationRequest,
+        db: Annotated[Session, Depends(get_db)],
+):
+    """
+    Updates the segments of a diarization and marks it as completed.
+    This is used when the user confirms the final transcript.
+    """
+    from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+    from typing import Any, cast
+
+    try:
+        repo = DiarizationRepository(db)
+        record = repo.get_by_id(diarization_id)
+        if not record:
+            raise HTTPException(status_code=404, detail="Diarization not found")
+
+        # Update segments and status
+        logger.info("Updating segments for diarization %s", diarization_id)
+        record.segments = cast(Any, request.segments)
+        record.status = "completed"
+        db.commit()
+
+        return {"status": "success", "message": "Diarization updated and marked as completed"}
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to update diarization segments: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
 @router.post("")
 async def start_audio_processing_pipeline(
     request: AudioProcessingRequest,
+        db: Annotated[Session, Depends(get_db)],
     task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
 ):
     logger.info(
@@ -38,7 +73,20 @@ async def start_audio_processing_pipeline(
         request.source,
     )
 
+    # Create a pending record immediately so the frontend can show progress
+    from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+
+    repo = DiarizationRepository(db)
+    record = repo.create_pending(
+        title=request.source,
+        source_type=request.source_type.value,
+        external_source=request.source,
+        language=request.language or "pt",
+        model_size=request.model_size or "base",
+    )
+
     cmd = ProcessAudioCommand(
+        diarization_id=record.id,
         source_type=request.source_type.value,
         source=request.source,
         language=request.language or "pt",
@@ -59,6 +107,7 @@ async def start_audio_processing_pipeline(
     )
 
     return {
+        "id": record.id,
         "message": "Audio processing started in background.",
         "source_type": request.source_type.value,
         "source": request.source,
@@ -143,3 +192,21 @@ async def retrieve_all_processed_audio_history(
 ):
     use_case = RetrieveProcessedAudioHistoryUseCase(db)
     return use_case.execute(limit=limit, offset=offset)
+
+
+@router.delete(
+    "/{diarization_id}",
+    responses={
+        404: {"description": "Not Found"},
+    },
+)
+async def delete_diarization_record(
+        diarization_id: str, db: Annotated[Session, Depends(get_db)]
+):
+    from src.infrastructure.repositories.sql.diarization_repository import DiarizationRepository
+
+    repo = DiarizationRepository(db)
+    deleted = repo.delete(diarization_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Diarization record not found")
+    return {"status": "success", "message": "Diarization record deleted"}

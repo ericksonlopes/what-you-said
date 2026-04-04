@@ -146,11 +146,11 @@ function UnifiedSettings({ settings }: { readonly settings: any }) {
           />
           <DetailedEnvCard 
             title={t('settings.labels.embedding_model')} 
-            value={settings?.model?.name?.split('/').pop() || "n/a"} 
+            value={settings?.model?.name?.split('/').pop() || t('common.status.na')} 
             description={t('settings.labels.model_desc')}
             details={[
-              { label: t('settings.labels.model_path'), value: settings?.model?.name || 'n/a' },
-              { label: t('sources.table.status'), value: "Loaded" }
+              { label: t('settings.labels.model_path'), value: settings?.model?.name || t('common.status.na') },
+              { label: t('sources.table.status'), value: t('common.status.loaded') }
             ]}
             icon={Box} 
             color="text-emerald-400" 
@@ -160,17 +160,17 @@ function UnifiedSettings({ settings }: { readonly settings: any }) {
           />
           <DetailedEnvCard 
             title={t('settings.labels.store_type')} 
-            value={settings?.vector?.store_type?.toUpperCase() || "n/a"} 
+            value={settings?.vector?.store_type?.toUpperCase() || t('common.status.na')} 
             description={t('settings.labels.production_ready')}
             details={
               settings?.vector?.store_type === 'qdrant' ? [
-                { label: t('settings.labels.host'), value: settings?.vector?.qdrant_host || 'n/a' },
-                { label: t('settings.labels.port'), value: settings?.vector?.qdrant_port?.toString() || 'n/a' },
-                { label: t('settings.labels.collection'), value: settings?.vector?.qdrant_collection || 'n/a' }
+                { label: t('settings.labels.host'), value: settings?.vector?.qdrant_host || t('common.status.na') },
+                { label: t('settings.labels.port'), value: settings?.vector?.qdrant_port?.toString() || t('common.status.na') },
+                { label: t('settings.labels.collection'), value: settings?.vector?.qdrant_collection || t('common.status.na') }
               ] : [
-                { label: t('settings.labels.host'), value: settings?.vector?.weaviate_host || 'n/a' },
-                { label: t('settings.labels.port'), value: settings?.vector?.weaviate_port?.toString() || 'n/a' },
-                { label: t('settings.labels.collection'), value: settings?.vector?.weaviate_collection || 'n/a' }
+                { label: t('settings.labels.host'), value: settings?.vector?.weaviate_host || t('common.status.na') },
+                { label: t('settings.labels.port'), value: settings?.vector?.weaviate_port?.toString() || t('common.status.na') },
+                { label: t('settings.labels.collection'), value: settings?.vector?.weaviate_collection || t('common.status.na') }
               ]
             }
             icon={Database} 
@@ -181,11 +181,11 @@ function UnifiedSettings({ settings }: { readonly settings: any }) {
           />
           <DetailedEnvCard 
             title={t('settings.labels.sql_desc')} 
-            value={settings?.sql?.type || "n/a"} 
+            value={settings?.sql?.type || t('common.status.na')} 
             description={t('settings.labels.sql_desc')}
             details={[
-              { label: t('settings.labels.database'), value: settings?.sql?.database || 'n/a' },
-              { label: t('settings.labels.type'), value: settings?.sql?.type || 'n/a' }
+              { label: t('settings.labels.database'), value: settings?.sql?.database || t('common.status.na') },
+              { label: t('settings.labels.type'), value: settings?.sql?.type || t('common.status.na') }
             ]}
             icon={Server} 
             color="text-amber-400" 
@@ -195,11 +195,11 @@ function UnifiedSettings({ settings }: { readonly settings: any }) {
           />
           <DetailedEnvCard 
             title="Redis" 
-            value={settings?.redis?.host || "n/a"} 
+            value={settings?.redis?.host || t('common.status.na')} 
             description={t('settings.labels.redis_desc')}
             details={[
-              { label: t('settings.labels.host'), value: settings?.redis?.host || 'n/a' },
-              { label: t('settings.labels.port'), value: settings?.redis?.port?.toString() || 'n/a' },
+              { label: t('settings.labels.host'), value: settings?.redis?.host || t('common.status.na') },
+              { label: t('settings.labels.port'), value: settings?.redis?.port?.toString() || t('common.status.na') },
               { label: "DB", value: settings?.redis?.db?.toString() || '0' }
             ]}
             icon={Activity} 
@@ -306,7 +306,7 @@ function DetailedEnvCard({
               {status === 'success' && (
                 <>
                   <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                  <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-medium">Online {latency !== null && `(${latency}ms)`}</span>
+                  <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-medium">{t('common.status.online')} {latency !== null && `(${latency}ms)`}</span>
                 </>
               )}
               {status === 'error' && (
@@ -314,7 +314,7 @@ function DetailedEnvCard({
                   <span title={errorMsg || ''}>
                     <XCircle className="w-3 h-3 text-red-400" />
                   </span>
-                  <span className="text-[10px] text-red-400 uppercase tracking-wider font-medium">Offline</span>
+                  <span className="text-[10px] text-red-400 uppercase tracking-wider font-medium">{t('common.status.offline')}</span>
                 </>
               )}
             </div>
