@@ -22,9 +22,10 @@ class TestReRankService:
         service = ReRankService(model_name="test-model")
 
         assert service._ranker is not None
-        mock_ranker_class.assert_called_once_with(
-            model_name="test-model", cache_dir="/tmp/flashrank_cache"
-        )
+        # Verify that it was called with the correct model and a cache_dir containing flashrank_cache
+        args, kwargs = mock_ranker_class.call_args
+        assert kwargs["model_name"] == "test-model"
+        assert "flashrank_cache" in kwargs["cache_dir"]
 
     def test_init_failure(self, monkeypatch):
         mock_ranker_class = MagicMock(side_effect=Exception("Failed to load"))

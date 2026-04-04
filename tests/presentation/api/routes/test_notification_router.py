@@ -1,7 +1,6 @@
 import json
-import asyncio
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 from main import app
 from src.presentation.api.dependencies import get_event_bus
@@ -23,10 +22,16 @@ class TestNotificationRouter:
 
         # Configure get_message to return a few messages then trigger an exit
         mock_pubsub.get_message.side_effect = [
-            {"type": "message", "data": json.dumps({"job_id": "1", "status": "processing"})},
-            {"type": "message", "data": json.dumps({"job_id": "1", "status": "completed"})},
+            {
+                "type": "message",
+                "data": json.dumps({"job_id": "1", "status": "processing"}),
+            },
+            {
+                "type": "message",
+                "data": json.dumps({"job_id": "1", "status": "completed"}),
+            },
             # Throw exception to break the loop safely
-            Exception("End of stream")
+            Exception("End of stream"),
         ]
 
         client = TestClient(app)
@@ -41,7 +46,8 @@ class TestNotificationRouter:
                     if line:
                         lines.append(line)
                     count += 1
-                    if count > 10: break
+                    if count > 10:
+                        break
             except Exception:
                 pass
 
