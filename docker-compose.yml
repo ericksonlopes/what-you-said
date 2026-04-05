@@ -56,7 +56,7 @@ services:
       - STORAGE__MINIO_ROOT_PASSWORD=${STORAGE__MINIO_ROOT_PASSWORD:-password}
       - STORAGE__MINIO_BUCKET=${STORAGE__MINIO_BUCKET:-whatyousaid}
       - AUTH__HF_TOKEN=${AUTH__HF_TOKEN:-}
-      - USE_NNPACK=${USE_NNPACK:-0}
+      - NNPACK_DISABLE=${NNPACK_DISABLE:-1}
     shm_size: '2gb'
 
   frontend:
