@@ -605,8 +605,8 @@ export function DiarizationView() {
             
             // Refresh both jobs and sources to show the new content
             refreshJobs();
-            if (typeof (useAppContext() as any).refreshSources === 'function') {
-                (useAppContext() as any).refreshSources();
+            if (typeof refreshSources === 'function') {
+                refreshSources();
             }
         } catch (err) {
             console.error('Error saving transcript:', err);
