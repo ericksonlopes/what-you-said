@@ -49,10 +49,13 @@ interface AppState {
   updateSourceTitle: (id: string, title: string) => Promise<void>;
   modelInfo: ModelInfo | null;
   refreshModelInfo: () => Promise<void>;
+  voices: any[];
+  refreshVoices: () => Promise<void>;
   isAddModalOpen: boolean;
   setIsAddModalOpen: (isOpen: boolean) => void;
   isAddSubjectModalOpen: boolean;
   setIsAddSubjectModalOpen: (isOpen: boolean) => void;
+  lastEvent: Record<string, any> | null;
 }
 
 const AppContext = createContext<AppState | undefined>(undefined);
@@ -79,8 +82,10 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
   const [selectedSourceIdForDb, setSelectedSourceIdForDb] = useState<string | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
+  const [voices, setVoices] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddSubjectModalOpen, setIsAddSubjectModalOpen] = useState(false);
+  const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(null);
   
   // Activity Monitor state
   const [jobPage, setJobPage] = useState(1);
@@ -245,13 +250,24 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     }
   }, [isAuthEnabled, isAuthenticated]);
 
+  const refreshVoices = useCallback(async () => {
+    if (isAuthEnabled && !isAuthenticated) return;
+    try {
+      const data = await api.fetchVoiceProfiles();
+      setVoices(data);
+    } catch (err) {
+      console.error('Error fetching voice profiles:', err);
+    }
+  }, [isAuthEnabled, isAuthenticated]);
+
   // Initial load
   useEffect(() => {
     refreshSubjects();
     refreshSources();
     refreshJobs();
     refreshModelInfo();
-  }, [refreshSubjects, refreshSources, refreshJobs, refreshModelInfo, isAuthEnabled, isAuthenticated]);
+    refreshVoices();
+  }, [refreshSubjects, refreshSources, refreshJobs, refreshModelInfo, refreshVoices, isAuthEnabled, isAuthenticated]);
 
   // Ref to store current filters for use in polling intervals without triggering re-renders
   const jobFiltersRef = React.useRef({ 
@@ -272,17 +288,77 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
 
 
 
-  // Periodic refresh for state (Polling-based updates)
+  // Periodic refresh for state (Global SSE Listener)
   useEffect(() => {
     if (isAuthEnabled && !isAuthenticated) return;
 
-    const interval = setInterval(() => {
+    let eventSource: EventSource | null = null;
+    let retryCount = 0;
+    const maxRetries = 5;
+
+    const connectSSE = () => {
+        if (eventSource) eventSource.close();
+        
+        console.log('[SSE] Connecting to notification stream...');
+        eventSource = new EventSource('/rest/notifications/events');
+
+        eventSource.onopen = () => {
+            console.log('[SSE] Global connection established');
+            retryCount = 0;
+        };
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('[SSE] Received event:', data);
+                setLastEvent(data);
+                
+                // Dispatch refreshes based on event type
+                if (data.type === 'ingestion' || data.type === 'diarization') {
+                    refreshJobs(jobFiltersRef.current);
+                    if (data.status === 'done' || data.status === 'ingested') {
+                        refreshSources();
+                    }
+                } else if (data.type === 'source') {
+                    refreshSources();
+                } else if (data.type === 'subject') {
+                    refreshSubjects();
+                } else if (data.type === 'voice') {
+                    refreshVoices();
+                }
+            } catch (err) {
+                console.error('[SSE] Error parsing event data:', err);
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error('[SSE] EventSource failed:', err);
+            eventSource?.close();
+            
+            if (retryCount < maxRetries) {
+                const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+                console.log(`[SSE] Retrying in ${delay}ms... (Attempt ${retryCount + 1}/${maxRetries})`);
+                setTimeout(connectSSE, delay);
+                retryCount++;
+            } else {
+                console.warn('[SSE] Max retries reached. Polling fallback or manual refresh needed.');
+            }
+        };
+    };
+
+    connectSSE();
+
+    // Still keep a VERY slow safety polling (e.g. 60s) just in case SSE dies silently
+    const safetyInterval = setInterval(() => {
       refreshJobs(jobFiltersRef.current);
       refreshSources();
       refreshSubjects();
-    }, 5000); // 5s polling for all active state
+    }, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+        if (eventSource) eventSource.close();
+        clearInterval(safetyInterval);
+    };
   }, [refreshJobs, refreshSources, refreshSubjects, isAuthEnabled, isAuthenticated]);
 
   // Persist currentView
@@ -422,10 +498,13 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     updateSourceTitle,
     modelInfo,
     refreshModelInfo,
+    voices,
+    refreshVoices,
     isAddModalOpen,
     setIsAddModalOpen,
     isAddSubjectModalOpen,
     setIsAddSubjectModalOpen,
+    lastEvent,
   }), [
     selectedSubjects,
     setSelectedSubjects,
@@ -463,8 +542,13 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     updateSourceTitle,
     modelInfo,
     refreshModelInfo,
+    voices,
+    refreshVoices,
     isAddModalOpen,
+    setIsAddModalOpen,
     isAddSubjectModalOpen,
+    setIsAddSubjectModalOpen,
+    lastEvent,
   ]);
 
   return (

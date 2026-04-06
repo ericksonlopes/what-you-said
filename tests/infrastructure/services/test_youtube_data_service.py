@@ -90,7 +90,7 @@ class TestYoutubeDataService:
                 assert "window_start" in doc.metadata
                 assert "window_end" in doc.metadata
                 assert doc.metadata["video_id"] == "dummy_video_id"
-                assert "token_count" in doc.metadata
+                assert "tokens_count" in doc.metadata
 
     def test_empty_transcript(self, mock_model_loader_service, dummy_yt_extractor):
         with patch.object(logger, "info"), patch.object(logger, "debug"):
@@ -158,7 +158,7 @@ class TestYoutubeDataService:
             assert "window_start" in doc.metadata
             assert "window_end" in doc.metadata
             assert doc.metadata["video_id"] == "dummy_video_id"
-            assert "token_count" in doc.metadata
+            assert "tokens_count" in doc.metadata
 
     def test_tokenize_skips_empty_snippet(
         self, mock_model_loader_service, dummy_yt_extractor

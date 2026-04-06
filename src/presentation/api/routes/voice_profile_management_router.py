@@ -1,7 +1,7 @@
 from typing import Annotated
-import shutil
 import os
 import tempfile
+import anyio
 
 from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form
 
@@ -21,7 +21,9 @@ from src.presentation.api.dependencies import (
     get_train_voice_from_speaker_use_case,
     get_list_voice_audio_files_use_case,
     get_delete_voice_audio_file_use_case,
+    get_event_bus,
 )
+from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.presentation.api.schemas.voice_profile_requests import (
     VoiceProfileRegistrationRequest,
     VoiceProfileTrainingFromSpeakerRequest,
@@ -33,6 +35,7 @@ router = APIRouter()
 @router.post("", responses={400: {"description": "Bad Request"}})
 async def register_new_voice_profile(
     request: VoiceProfileRegistrationRequest,
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
     use_case: Annotated[
         RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)
     ],
@@ -41,6 +44,8 @@ async def register_new_voice_profile(
         voice_id = use_case.execute(
             request.name, request.audio_path, force=request.force
         )
+        # Notify
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "register", "name": request.name})
         return {"status": "success", "voice_id": voice_id, "name": request.name}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -48,6 +53,7 @@ async def register_new_voice_profile(
 
 @router.post("/upload", responses={400: {"description": "Bad Request"}})
 async def upload_and_register_new_voice_profile(
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
     use_case: Annotated[
         RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)
     ],
@@ -61,10 +67,13 @@ async def upload_and_register_new_voice_profile(
     temp_dir = tempfile.mkdtemp()
     temp_path = os.path.join(temp_dir, file.filename)
     try:
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        async with await anyio.open_file(temp_path, "wb") as buffer:
+            while content := await file.read(1024 * 1024):  # 1MB chunks
+                await buffer.write(content)
 
         voice_id = use_case.execute(name, temp_path, force=force)
+        # Notify
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "register", "name": name})
         return {"status": "success", "voice_id": voice_id, "name": name}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -85,6 +94,7 @@ async def upload_and_register_new_voice_profile(
 )
 async def train_voice_profile_from_existing_speaker_segment(
     request: VoiceProfileTrainingFromSpeakerRequest,
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
     use_case: Annotated[
         TrainVoiceProfileFromSpeakerSegmentUseCase,
         Depends(get_train_voice_from_speaker_use_case),
@@ -97,6 +107,8 @@ async def train_voice_profile_from_existing_speaker_segment(
             name=request.name,
             force=request.force,
         )
+        # Notify
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "train", "name": request.name})
         return {"status": "success", "voice_id": voice_id, "name": request.name}
     except ValueError as e:
         raise HTTPException(
@@ -118,12 +130,15 @@ async def list_all_registered_voice_profiles(
 @router.delete("/{name}", responses={404: {"description": "Not Found"}})
 async def delete_existing_voice_profile(
     name: str,
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
     use_case: Annotated[
         DeleteVoiceProfileUseCase, Depends(get_delete_voice_profile_use_case)
     ],
 ):
     try:
         use_case.execute(name)
+        # Notify
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "delete", "name": name})
         return {
             "status": "success",
             "message": f"Voice profile '{name}' successfully removed",
@@ -145,12 +160,15 @@ async def list_voice_audio_files(
 @router.delete("/audios/{s3_key:path}", responses={404: {"description": "Not Found"}})
 async def delete_voice_audio_file(
     s3_key: str,
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
     use_case: Annotated[
         DeleteVoiceAudioFileUseCase, Depends(get_delete_voice_audio_file_use_case)
     ],
 ):
     try:
         use_case.execute(s3_key)
+        # Notify (voice updated)
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "audio_deleted"})
         return {"status": "success", "message": "Audio file deleted"}
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

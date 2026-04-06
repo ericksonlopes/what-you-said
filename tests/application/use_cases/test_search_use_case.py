@@ -47,7 +47,7 @@ def test_search_filters_by_subject_id():
     vec = DummyVectorService()
     uc = SearchUseCase(vector_service=vec, ks_service=None)
 
-    uc.execute(query="hello", top_k=3, subject_id=uuid.uuid4())
+    uc.execute(query="hello", top_k=3, subject_ids=[uuid.uuid4()])
 
     assert vec.last_query == "hello"
     assert vec.last_top_k == 3
@@ -112,9 +112,9 @@ def test_search_both_id_and_name_raises():
     vec = DummyVectorService()
     uc = SearchUseCase(vector_service=vec, ks_service=None)
     with pytest.raises(
-        ValueError, match="Provide only one of subject_id or subject_name"
+        ValueError, match="Provide only one of subject_ids or subject_name"
     ):
-        uc.execute(query="q", subject_id=uuid.uuid4(), subject_name="Alice")
+        uc.execute(query="q", subject_ids=[uuid.uuid4()], subject_name="Alice")
 
 
 def test_search_name_without_ks_service_raises():

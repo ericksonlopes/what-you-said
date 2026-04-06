@@ -20,7 +20,9 @@ class DiarizationRecord(Base):
 
     id = Column(String, primary_key=True, default=_generate_uuid)
     title = Column(String, index=True)
-    subject_id = Column(String, ForeignKey("knowledge_subjects.id"), nullable=True, index=True)
+    subject_id = Column(
+        String, ForeignKey("knowledge_subjects.id"), nullable=True, index=True
+    )
     source_type = Column(String)
     external_source = Column(String)
     language = Column(String)

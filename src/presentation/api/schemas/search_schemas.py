@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -14,7 +14,7 @@ class SearchRequest(BaseModel):
         json_schema_extra={"examples": ["Quem é o palestrante?"]},
     )
     top_k: int = Field(default=5, ge=1, le=50)
-    subject_ids: Optional[List[str]] = None
+    subject_ids: Optional[List[Union[str, UUID]]] = None
     subject_name: Optional[str] = None
     search_mode: SearchMode = Field(
         default=SearchMode.HYBRID,

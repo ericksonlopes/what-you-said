@@ -39,17 +39,17 @@ class TestTextSplitterService:
 
         assert len(docs) == 4
         assert docs[0].page_content == "Hello"
-        assert docs[0].metadata["token_count"] == 5
+        assert docs[0].metadata["tokens_count"] == 5
         assert docs[0].metadata["chunk_index"] == 0
         assert docs[0].metadata["source"] == "test"
 
         assert docs[1].page_content == "lo Wo"
-        assert docs[1].metadata["token_count"] == 5
+        assert docs[1].metadata["tokens_count"] == 5
         assert docs[1].metadata["chunk_index"] == 1
 
         assert docs[2].page_content == "World"
         assert docs[3].page_content == "ld!"
-        assert docs[3].metadata["token_count"] == 3
+        assert docs[3].metadata["tokens_count"] == 3
 
     def test_split_text_empty(self, mock_tokenizer):
         service = TextSplitterService(tokenizer=mock_tokenizer)
@@ -82,4 +82,4 @@ class TestTextSplitterService:
         docs = service.split_text(text="test text")
         assert len(docs) == 1
         # len("test text") is 9. 9 // 4 = 2 tokens estimated.
-        assert docs[0].metadata["token_count"] == 2
+        assert docs[0].metadata["tokens_count"] == 2

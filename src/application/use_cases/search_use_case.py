@@ -34,7 +34,9 @@ class SearchUseCase:
             context={
                 "query": query,
                 "top_k": top_k,
-                "subject_ids": [str(sid) for sid in subject_ids] if subject_ids else None,
+                "subject_ids": [str(sid) for sid in subject_ids]
+                if subject_ids
+                else None,
                 "subject_name": subject_name,
                 "search_mode": str(search_mode),
                 "re_rank": re_rank,

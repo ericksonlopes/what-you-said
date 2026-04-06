@@ -110,7 +110,7 @@ class ChunkChromaRepository(IVectorRepository):
             filter_val = v
             if isinstance(v, UUID):
                 filter_val = str(v)
-            
+
             # If v is a list, use $in operator
             if isinstance(v, list):
                 # Ensure all items in list are strings (Chroma metadata requirement)

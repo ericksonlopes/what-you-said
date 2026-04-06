@@ -216,8 +216,8 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         from langchain_core.documents import Document
 
         docs = [
-            Document(page_content="content1", metadata={"token_count": 10}),
-            Document(page_content="content2", metadata={"token_count": 20}),
+            Document(page_content="content1", metadata={"tokens_count": 10}),
+            Document(page_content="content2", metadata={"tokens_count": 20}),
         ]
         source = MagicMock()
         source.id = uuid.uuid4()
@@ -426,7 +426,7 @@ class TestYoutubeIngestionUseCaseEdgeCases:
             # Use a real Document with real strings
             from langchain_core.documents import Document
 
-            doc = Document(page_content="content", metadata={"token_count": 5})
+            doc = Document(page_content="content", metadata={"tokens_count": 5})
 
             with patch.object(use_case, "_extract_and_split", return_value=[doc]):
                 # Fail at indexing

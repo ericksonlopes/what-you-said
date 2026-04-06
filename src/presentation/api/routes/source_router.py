@@ -9,7 +9,9 @@ from src.presentation.api.dependencies import (
     get_cs_service,
     get_model_loader,
     get_content_source_use_case,
+    get_event_bus,
 )
+from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.presentation.api.schemas.model_schemas import ModelInfoResponse
@@ -32,6 +34,7 @@ def update_source_title(
     id: str,
     update: SourceUpdate,
     cs_service: Annotated[ContentSourceService, Depends(get_cs_service)],
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
 ):
     """Update a content source title."""
     try:
@@ -43,6 +46,15 @@ def update_source_title(
             raise HTTPException(status_code=404, detail="Content source not found")
 
         cs_service.update_title(source_id, update.title)
+        
+        # Notify frontend
+        event_bus.publish("ingestion_status", {
+            "type": "source",
+            "action": "update",
+            "id": str(source_id),
+            "title": update.title
+        })
+
         return {"success": True, "message": f"Source {id} title updated successfully"}
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid UUID format")
@@ -105,6 +117,7 @@ def get_model_info(
 def delete_source(
     id: str,
     use_case: Annotated[ContentSourceUseCase, Depends(get_content_source_use_case)],
+    event_bus: Annotated[IEventBus, Depends(get_event_bus)],
 ):
     """Delete a content source and all its related data (chunks, embeddings)."""
     try:
@@ -114,6 +127,14 @@ def delete_source(
         success = use_case.delete(source_id)
         if not success:
             raise HTTPException(status_code=404, detail="Content source not found")
+        
+        # Notify frontend
+        event_bus.publish("ingestion_status", {
+            "type": "source",
+            "action": "delete",
+            "id": str(source_id)
+        })
+
         return {"success": True, "message": f"Source {id} deleted successfully"}
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid UUID format")

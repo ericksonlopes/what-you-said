@@ -95,11 +95,13 @@ class DiarizationRepository:
         self.db.refresh(record)
         return record
 
-    def get_all(self, limit: int = 10, offset: int = 0, subject_id: str | None = None) -> List[DiarizationRecord]:
+    def get_all(
+        self, limit: int = 10, offset: int = 0, subject_id: str | None = None
+    ) -> List[DiarizationRecord]:
         query = self.db.query(DiarizationRecord)
         if subject_id:
             query = query.filter(DiarizationRecord.subject_id == subject_id)
-        
+
         result = (
             query.order_by(DiarizationRecord.created_at.desc())
             .offset(offset)

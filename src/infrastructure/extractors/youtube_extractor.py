@@ -63,7 +63,9 @@ class YoutubeExtractor(IYoutubeExtractor):
             "retry_sleep_functions": {"http": lambda n: 5 * 2**n},
             # Use multiple clients to avoid "Sign in to confirm you're not a bot"
             # mediaconnect is often more resilient for servers
-            "extractor_args": {"youtube": {"player_client": ["mediaconnect", "web", "mweb", "android"]}},
+            "extractor_args": {
+                "youtube": {"player_client": ["mediaconnect", "web", "mweb", "android"]}
+            },
         }
 
         # Use cookies if provided by user in data/cookies.txt

@@ -30,7 +30,10 @@ export function DiarizationView() {
         subjects,
         addToast, 
         refreshJobs, 
-        refreshSources 
+        refreshSources,
+        voices,
+        refreshVoices,
+        lastEvent 
     } = useAppContext();
 
     // -- STATE --
@@ -49,7 +52,6 @@ export function DiarizationView() {
     // Detail View State
     const [step, setStep] = useState<Step>('idle');
     const [speakers, setSpeakers] = useState<Speaker[]>([]);
-    const [availableVoices, setAvailableVoices] = useState<any[]>([]);
     const [finalSegments, setFinalSegments] = useState<any[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [isRecognizing, setIsRecognizing] = useState(false);
@@ -58,15 +60,6 @@ export function DiarizationView() {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // -- DATA LOADING --
-    const loadAvailableVoices = useCallback(async () => {
-        try {
-            const voices = await api.fetchVoiceProfiles();
-            setAvailableVoices(voices);
-        } catch (err) {
-            console.error('Failed to load voice profiles:', err);
-        }
-    }, []);
-
     const loadJobs = useCallback(async (silent = false) => {
         if (!silent) setIsLoadingJobs(true);
         try {
@@ -86,40 +79,37 @@ export function DiarizationView() {
 
     useEffect(() => {
         loadJobs();
-        loadAvailableVoices();
-    }, [loadJobs, loadAvailableVoices]);
+    }, [loadJobs]);
 
-    // SSE Real-time updates
+    // React to global SSE events from AppContext
     useEffect(() => {
-        const eventSource = new EventSource('/rest/notifications/events');
-        eventSource.onmessage = async (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.type === 'diarization') {
-                    const freshJobs = await loadJobs(true);
-                    if (activeJob && activeJob.id === data.id) {
-                        const updated = freshJobs.find(j => j.id === data.id);
-                        if (updated && updated.status !== activeJob.status) {
-                            // Só re-processa se o status realmente mudou para evitar flicker
-                            if (updated.status === 'ready' || updated.status === 'completed' || updated.status === 'failed') {
-                                handleOpenJob(updated);
-                            } else {
-                                setActiveJob(updated);
-                            }
+        if (!lastEvent) return;
+
+        if (lastEvent.type === 'diarization') {
+            loadJobs(true);
+            
+            // If the updated job is the active one, refresh its details
+            if (activeJob && lastEvent.id === activeJob.id) {
+                loadJobs(true).then(updatedJobs => {
+                    const updated = updatedJobs.find(j => j.id === activeJob.id);
+                    if (updated && updated.status !== activeJob.status) {
+                         if (updated.status === 'ready' || updated.status === 'completed' || updated.status === 'failed') {
+                            handleOpenJob(updated);
+                        } else {
+                            setActiveJob(updated);
                         }
                     }
-                    if (data.status === 'completed') {
-                        addToast(data.message || t('diarization.notifications.identify_success'), 'success');
-                    } else if (data.status === 'failed') {
-                        addToast(data.message || t('diarization.notifications.start_error'), 'error');
-                    }
+                });
+
+                if (lastEvent.status === 'completed') {
+                    addToast(lastEvent.message || t('diarization.notifications.identify_success'), 'success');
+                } else if (lastEvent.status === 'failed') {
+                    addToast(lastEvent.message || t('diarization.notifications.start_error'), 'error');
                 }
-            } catch (err) {
-                console.error('Failed to parse SSE message:', err);
             }
-        };
-        return () => eventSource.close();
-    }, [loadJobs, addToast, activeJob, t]);
+        }
+    }, [lastEvent, loadJobs, activeJob, addToast, t]);
+
 
     // -- HANDLERS --
     const handleOpenJob = (job: DiarizationJob) => {
@@ -369,7 +359,7 @@ export function DiarizationView() {
                                 <div className="w-96 flex-shrink-0">
                                     <SpeakerIdentificationPanel
                                         speakers={speakers}
-                                        availableVoices={availableVoices}
+                                        availableVoices={voices}
                                         isRecognizing={isRecognizing}
                                         onTogglePlay={handleTogglePlay}
                                         onSpeakerChange={handleSpeakerChange}
@@ -466,7 +456,7 @@ export function DiarizationView() {
                 diarizationId={activeJob?.id || ''}
                 onClose={() => setTrainingSpeaker(null)}
                 onTrained={() => {
-                    loadAvailableVoices();
+                    refreshVoices();
                     handleRecognizeSpeakers();
                 }}
             />
@@ -474,5 +464,5 @@ export function DiarizationView() {
     );
 }
 
-// Re-export SmallStatusBadge for backward compatibility if needed, though we extracted it.
-export const SmallStatusBadge = StatusBadge;
+// Re-export StatusBadge as SmallStatusBadge for backward compatibility.
+export { StatusBadge as SmallStatusBadge } from './diarization/StatusBadge';
