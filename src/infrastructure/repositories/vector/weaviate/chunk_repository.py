@@ -130,11 +130,9 @@ class ChunkWeaviateRepository(IVectorRepository):
             weaviate_filters_list = []
             for k, v in filters.items():
                 if k == "id":
-                    if isinstance(v, list):
-                        weaviate_filters_list.append(
-                            Filter.by_id().equal(v[0] if v else None)
-                        )
-                    else:
+                    if isinstance(v, list) and v:
+                        weaviate_filters_list.append(Filter.by_id().equal(v[0]))
+                    elif not isinstance(v, list) and v is not None:
                         weaviate_filters_list.append(Filter.by_id().equal(v))
                 else:
                     if isinstance(v, list):
@@ -291,11 +289,9 @@ class ChunkWeaviateRepository(IVectorRepository):
             weaviate_filters_list = []
             for k, v in filters.items():
                 if k == "id":
-                    if isinstance(v, list):
-                        weaviate_filters_list.append(
-                            Filter.by_id().equal(v[0] if v else None)
-                        )
-                    else:
+                    if isinstance(v, list) and v:
+                        weaviate_filters_list.append(Filter.by_id().equal(v[0]))
+                    elif not isinstance(v, list) and v is not None:
                         weaviate_filters_list.append(Filter.by_id().equal(v))
                 else:
                     if isinstance(v, list):
@@ -363,11 +359,9 @@ class ChunkWeaviateRepository(IVectorRepository):
                     weaviate_filters_list = []
                     for k, v in filters.items():
                         if k == "id":
-                            if isinstance(v, list):
-                                weaviate_filters_list.append(
-                                    Filter.by_id().equal(v[0] if v else None)
-                                )
-                            else:
+                            if isinstance(v, list) and v:
+                                weaviate_filters_list.append(Filter.by_id().equal(v[0]))
+                            elif not isinstance(v, list) and v is not None:
                                 weaviate_filters_list.append(Filter.by_id().equal(v))
                         else:
                             if isinstance(v, list):
