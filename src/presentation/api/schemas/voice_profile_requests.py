@@ -8,7 +8,6 @@ class VoiceProfileRegistrationRequest(BaseModel):
 
     name: str
     audio_path: str
-    force: Optional[bool] = False
 
 
 class VoiceProfileTrainingFromSpeakerRequest(BaseModel):
@@ -17,4 +16,3 @@ class VoiceProfileTrainingFromSpeakerRequest(BaseModel):
     diarization_id: str
     speaker_label: str
     name: str
-    force: Optional[bool] = False

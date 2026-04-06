@@ -277,6 +277,29 @@ class ProcessAudioDiarizationPipelineUseCase:
 
         recognizer = VoiceRecognizer(voice_db, hf_token=hf_token)
         batch = recognizer.identify_dir(recognition_folder)
+
+        # Automatic reinforcement: add matched segments to voice profile
+        reinforced_paths = {}
+        for spk, match in batch.results.items():
+            best_match = match.best_match
+            if best_match:
+                try:
+                    logger.info(
+                        "Auto-reinforcing voice profile '%s' with segment '%s'",
+                        best_match,
+                        spk,
+                    )
+                    _, s3_path = voice_db.add(
+                        name=best_match, audio_path=match.audio_path
+                    )
+                    reinforced_paths[spk] = s3_path
+                except Exception as e:
+                    logger.error(
+                        "Failed to reinforce voice profile '%s' in pipeline: %s",
+                        best_match,
+                        e,
+                    )
+
         return {
             "mapping": batch.mapping,
             "id_mapping": batch.id_mapping,
@@ -285,6 +308,7 @@ class ProcessAudioDiarizationPipelineUseCase:
                     "identified": r.best_match,
                     "voice_id": r.best_match_id,
                     "score": r.best_score,
+                    "reinforced_sample_path": reinforced_paths.get(spk),
                 }
                 for spk, r in batch.results.items()
             },

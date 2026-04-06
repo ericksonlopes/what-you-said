@@ -44,7 +44,7 @@ class VoiceDB:
         embedding = inference(audio_dict)
         return embedding.tolist()
 
-    def add(self, name: str, audio_path: str, force: bool | None = False) -> str:
+    def add(self, name: str, audio_path: str) -> tuple[str, str]:
         if not name or not name.strip():
             raise ValueError("Name required")
 
@@ -100,7 +100,7 @@ class VoiceDB:
                 self.storage.upload_file(audio_path, target_s3_key)
 
                 self.db.commit()
-                return str(existing.id)
+                return str(existing.id), target_s3_key
 
             # Create new voice
             voice_id = str(uuid.uuid4())
@@ -119,7 +119,7 @@ class VoiceDB:
             )
             self.db.add(new_voice)
             self.db.commit()
-            return voice_id
+            return voice_id, target_s3_key
 
         finally:
             if local_temp_file and os.path.exists(local_temp_file):

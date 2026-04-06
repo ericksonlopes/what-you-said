@@ -42,7 +42,7 @@ class TestVoiceDB:
                     self.mock_storage.upload_file.return_value = "voices/test.wav"
 
                     db_service = VoiceDB(sqlite_memory, hf_token="fake")
-                    voice_id = db_service.add("Test User", "local.wav")
+                    voice_id, _ = db_service.add("Test User", "local.wav")
 
                     assert voice_id is not None
                     voices = db_service.voices
@@ -89,7 +89,7 @@ class TestVoiceDB:
                     self.mock_storage.upload_file.return_value = "voices/test.wav"
 
                     db_service = VoiceDB(sqlite_memory, hf_token="fake")
-                    voice_id = db_service.add("S3 User", "s3://bucket/voice.wav")
+                    voice_id, _ = db_service.add("S3 User", "s3://bucket/voice.wav")
 
                     assert voice_id is not None
                     assert self.mock_storage.download_file.called
@@ -109,9 +109,11 @@ class TestVoiceDB:
         db_service = VoiceDB(sqlite_memory, hf_token="fake")
 
         with patch.object(db_service, "_extract_embedding", return_value=[0.3, 0.3]):
-            voice_id = db_service.add("Exists", "local.wav")
+            voice_id, s3_path = db_service.add("Exists", "local.wav")
 
             assert voice_id == "exists-123"
+            assert s3_path.startswith("voices/exists-123/sample_")
+            assert s3_path.endswith(".wav")
             updated = sqlite_memory.get(VoiceRecord, "exists-123")
             assert np.allclose(updated.embedding, [0.2, 0.2])
 

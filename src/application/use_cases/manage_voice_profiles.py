@@ -15,13 +15,14 @@ class RegisterNewVoiceProfileUseCase:
     def __init__(self, db: Session):
         self.db = db
 
-    def execute(self, name: str, audio_path: str, force: bool | None = False) -> str:
+    def execute(self, name: str, audio_path: str) -> str:
         if not name or not name.strip():
             raise ValueError("Name required")
 
         hf_token = settings.auth.hf_token or ""
         voice_db = VoiceDB(db=self.db, hf_token=hf_token)
-        return voice_db.add(name=name, audio_path=audio_path, force=force)
+        voice_id, _ = voice_db.add(name=name, audio_path=audio_path)
+        return voice_id
 
 
 class ListRegisteredVoiceProfilesUseCase:
@@ -99,7 +100,6 @@ class TrainVoiceProfileFromSpeakerSegmentUseCase:
         diarization_id: str,
         speaker_label: str,
         name: str,
-        force: bool | None = False,
     ) -> str:
         record = self.repo.get_by_id(diarization_id)
         if not record:
@@ -124,7 +124,8 @@ class TrainVoiceProfileFromSpeakerSegmentUseCase:
         try:
             hf_token = settings.auth.hf_token or ""
             voice_db = VoiceDB(db=self.db, hf_token=hf_token)
-            return voice_db.add(name=name, audio_path=local_path, force=force)
+            voice_id, _ = voice_db.add(name=name, audio_path=local_path)
+            return voice_id
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)

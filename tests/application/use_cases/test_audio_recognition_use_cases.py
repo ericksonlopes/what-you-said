@@ -103,7 +103,7 @@ class TestAudioRecognitionUseCases:
             "src.application.use_cases.manage_voice_profiles.VoiceDB"
         ) as mock_vdb_cls:
             mock_vdb = mock_vdb_cls.return_value
-            mock_vdb.add.return_value = "v-123"
+            mock_vdb.add.return_value = ("v-123", "voices/v-123/sample.wav")
 
             use_case = RegisterNewVoiceProfileUseCase(sqlite_memory)
             vid = use_case.execute(name="N", audio_path="a")

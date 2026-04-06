@@ -41,9 +41,7 @@ async def register_new_voice_profile(
     ],
 ):
     try:
-        voice_id = use_case.execute(
-            request.name, request.audio_path, force=request.force
-        )
+        voice_id = use_case.execute(request.name, request.audio_path)
         # Notify
         event_bus.publish(
             "ingestion_status",
@@ -62,7 +60,6 @@ async def upload_and_register_new_voice_profile(
     ],
     name: str = Form(...),
     file: UploadFile = File(...),
-    force: bool = Form(False),
 ):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
@@ -74,7 +71,7 @@ async def upload_and_register_new_voice_profile(
             while content := await file.read(1024 * 1024):  # 1MB chunks
                 await buffer.write(content)
 
-        voice_id = use_case.execute(name, temp_path, force=force)
+        voice_id = use_case.execute(name, temp_path)
         # Notify
         event_bus.publish(
             "ingestion_status", {"type": "voice", "action": "register", "name": name}
@@ -110,7 +107,6 @@ async def train_voice_profile_from_existing_speaker_segment(
             diarization_id=request.diarization_id,
             speaker_label=request.speaker_label,
             name=request.name,
-            force=request.force,
         )
         # Notify
         event_bus.publish(
