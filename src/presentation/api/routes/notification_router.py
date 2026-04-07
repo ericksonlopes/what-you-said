@@ -33,9 +33,7 @@ async def events(
 
             try:
                 while not await request.is_disconnected():
-                    message = await loop.run_in_executor(
-                        None, lambda: pubsub.get_message(timeout=1.0)
-                    )
+                    message = await loop.run_in_executor(None, lambda: pubsub.get_message(timeout=1.0))
                     if message and message["type"] == "message":
                         data = json.loads(message["data"])
                         yield {"event": "message", "data": json.dumps(data)}

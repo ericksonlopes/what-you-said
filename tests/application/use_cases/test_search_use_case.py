@@ -29,11 +29,7 @@ class DummyVectorService:
         self.last_search_mode = search_mode
         self.last_re_rank = re_rank
         # return dummy chunks as simple objects (avoid ChunkEntity validation in tests)
-        return [
-            SimpleNamespace(
-                id=uuid.uuid4(), content="a", subject_id=uuid.uuid4(), extra={}
-            )
-        ]
+        return [SimpleNamespace(id=uuid.uuid4(), content="a", subject_id=uuid.uuid4(), extra={})]
 
 
 class DummyKS:
@@ -112,18 +108,14 @@ def test_search_passes_re_rank_to_service():
 def test_search_both_id_and_name_raises():
     vec = DummyVectorService()
     uc = SearchUseCase(vector_service=vec, ks_service=None)
-    with pytest.raises(
-        ValueError, match="Provide only one of subject_ids or subject_name"
-    ):
+    with pytest.raises(ValueError, match="Provide only one of subject_ids or subject_name"):
         uc.execute(query="q", subject_ids=[uuid.uuid4()], subject_name="Alice")
 
 
 def test_search_name_without_ks_service_raises():
     vec = DummyVectorService()
     uc = SearchUseCase(vector_service=vec, ks_service=None)
-    with pytest.raises(
-        ValueError, match="ks_service is required to filter by subject_name"
-    ):
+    with pytest.raises(ValueError, match="ks_service is required to filter by subject_name"):
         uc.execute(query="q", subject_name="Alice")
 
 

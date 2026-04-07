@@ -10,12 +10,8 @@ from src.domain.entities.diarization import DiarizationResult
 
 @pytest.mark.ProcessAudioDiarizationPipeline
 class TestProcessAudioDiarizationPipeline:
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.StorageService"
-    )
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor"
-    )
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.StorageService")
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.AudioDiarizer")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.VoiceDB")
     @patch("os.makedirs")
@@ -36,9 +32,7 @@ class TestProcessAudioDiarizationPipeline:
         # Setup mocks
         mock_extractor = mock_extractor_cls.return_value
         mock_extractor.download_audio.return_value = "/tmp/audio.mp3"
-        mock_extractor.extract_metadata.return_value = MagicMock(
-            title=None, full_title=None
-        )
+        mock_extractor.extract_metadata.return_value = MagicMock(title=None, full_title=None)
 
         mock_diarizer = mock_diarizer_cls.return_value
         mock_diarization_result = MagicMock(spec=DiarizationResult)
@@ -68,12 +62,8 @@ class TestProcessAudioDiarizationPipeline:
         assert mock_extractor.download_audio.called
         assert mock_diarizer.run.called
 
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.StorageService"
-    )
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor"
-    )
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.StorageService")
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.AudioDiarizer")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.VoiceDB")
     @patch("os.makedirs")
@@ -116,12 +106,8 @@ class TestProcessAudioDiarizationPipeline:
             assert result["storage_path"] == "processed/uuid-456/recognition"
         assert mock_storage.download_file.called
 
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.StorageService"
-    )
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor"
-    )
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.StorageService")
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.AudioDiarizer")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.VoiceDB")
     @patch("os.makedirs")
@@ -160,9 +146,7 @@ class TestProcessAudioDiarizationPipeline:
                 "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.update_status"
             ) as mock_update_status,
         ):
-            use_case = ProcessAudioDiarizationPipelineUseCase(
-                sqlite_memory, event_bus=mock_event_bus
-            )
+            use_case = ProcessAudioDiarizationPipelineUseCase(sqlite_memory, event_bus=mock_event_bus)
             use_case.execute(
                 source_type="youtube",
                 source="https://youtube.com/watch?v=test",
@@ -173,12 +157,8 @@ class TestProcessAudioDiarizationPipeline:
             assert mock_event_bus.publish.called
             assert mock_update_status.called
 
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.StorageService"
-    )
-    @patch(
-        "src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor"
-    )
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.StorageService")
+    @patch("src.application.use_cases.process_audio_diarization_pipeline.YoutubeExtractor")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.AudioDiarizer")
     @patch("src.application.use_cases.process_audio_diarization_pipeline.VoiceDB")
     @patch("os.makedirs")

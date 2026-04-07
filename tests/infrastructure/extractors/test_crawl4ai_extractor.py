@@ -18,9 +18,7 @@ class TestCrawl4AIExtractor:
         mock_result.status_code = 200
 
         # Mock AsyncWebCrawler
-        with patch(
-            "src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler"
-        ) as mock_crawler_class:
+        with patch("src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler") as mock_crawler_class:
             mock_crawler = AsyncMock()
             mock_crawler.__aenter__.return_value = mock_crawler
             mock_crawler.arun.return_value = mock_result
@@ -48,9 +46,7 @@ class TestCrawl4AIExtractor:
         mock_result.markdown = "[link](http://link.com)"
         mock_result.metadata = {}
 
-        with patch(
-            "src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler"
-        ) as mock_crawler_class:
+        with patch("src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler") as mock_crawler_class:
             mock_crawler = AsyncMock()
             mock_crawler.__aenter__.return_value = mock_crawler
             mock_crawler.arun.return_value = mock_result
@@ -67,9 +63,7 @@ class TestCrawl4AIExtractor:
         mock_result.success = False
         mock_result.error_message = "Crawl error"
 
-        with patch(
-            "src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler"
-        ) as mock_crawler_class:
+        with patch("src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler") as mock_crawler_class:
             mock_crawler = AsyncMock()
             mock_crawler.__aenter__.return_value = mock_crawler
             mock_crawler.arun.return_value = mock_result
@@ -88,9 +82,7 @@ class TestCrawl4AIExtractor:
         mock_result.markdown = "Filtered Content"
         mock_result.metadata = {}
 
-        with patch(
-            "src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler"
-        ) as mock_crawler_class:
+        with patch("src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler") as mock_crawler_class:
             mock_crawler = AsyncMock()
             mock_crawler.__aenter__.return_value = mock_crawler
             mock_crawler.arun.return_value = mock_result
@@ -124,9 +116,7 @@ class TestCrawl4AIExtractor:
         mock_sub_result.metadata = {"title": "Sub"}
         mock_sub_result.status_code = 200
 
-        with patch(
-            "src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler"
-        ) as mock_crawler_class:
+        with patch("src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler") as mock_crawler_class:
             mock_crawler = AsyncMock()
             mock_crawler.__aenter__.return_value = mock_crawler
             mock_crawler.arun.return_value = mock_result
@@ -151,9 +141,7 @@ class TestCrawl4AIExtractor:
         mock_result.markdown = "Main Page"
         mock_result.links = {"internal": []}
 
-        with patch(
-            "src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler"
-        ) as mock_crawler_class:
+        with patch("src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler") as mock_crawler_class:
             mock_crawler = AsyncMock()
             mock_crawler.__aenter__.return_value = mock_crawler
             mock_crawler.arun.return_value = mock_result
@@ -168,9 +156,7 @@ class TestCrawl4AIExtractor:
     async def test_error_handling(self):
         url = "https://invalid-url"
 
-        with patch(
-            "src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler"
-        ) as mock_crawler_class:
+        with patch("src.infrastructure.extractors.crawl4ai_extractor.AsyncWebCrawler") as mock_crawler_class:
             mock_crawler = AsyncMock()
             mock_crawler.__aenter__.return_value = mock_crawler
             mock_crawler.arun.side_effect = Exception("Crawl failed")

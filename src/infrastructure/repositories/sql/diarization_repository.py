@@ -30,9 +30,7 @@ class DiarizationRepository:
             language=language,
             status=DiarizationStatus.PENDING.value,
             model_size=model_size,
-            subject_id=UUID(subject_id)
-            if subject_id and isinstance(subject_id, str)
-            else subject_id,
+            subject_id=UUID(subject_id) if subject_id and isinstance(subject_id, str) else subject_id,
         )
         self.db.add(record)
         self.db.commit()
@@ -129,37 +127,22 @@ class DiarizationRepository:
             parsed_id = UUID(subject_id) if isinstance(subject_id, str) else subject_id
             query = query.filter(DiarizationRecord.subject_id == parsed_id)
 
-        result = (
-            query.order_by(DiarizationRecord.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        result = query.order_by(DiarizationRecord.created_at.desc()).offset(offset).limit(limit).all()
         return cast(List[DiarizationRecord], cast(object, result))
 
     def get_by_id(self, diarization_id: str) -> Optional[DiarizationRecord]:
-        result = (
-            self.db.query(DiarizationRecord)
-            .filter(DiarizationRecord.id == diarization_id)
-            .first()
-        )
+        result = self.db.query(DiarizationRecord).filter(DiarizationRecord.id == diarization_id).first()
         return cast(Optional[DiarizationRecord], result)
 
     def delete(self, diarization_id: str) -> bool:
-        record = (
-            self.db.query(DiarizationRecord)
-            .filter(DiarizationRecord.id == diarization_id)
-            .first()
-        )
+        record = self.db.query(DiarizationRecord).filter(DiarizationRecord.id == diarization_id).first()
         if not record:
             return False
         self.db.delete(record)
         self.db.commit()
         return True
 
-    def update_recognition_results(
-        self, diarization_id: str, recognition_results: dict
-    ) -> Optional[DiarizationRecord]:
+    def update_recognition_results(self, diarization_id: str, recognition_results: dict) -> Optional[DiarizationRecord]:
         record = self.get_by_id(diarization_id)
         if not record:
             return None
@@ -168,9 +151,7 @@ class DiarizationRepository:
         self.db.refresh(record)
         return record
 
-    def reset_for_reprocessing(
-        self, diarization_id: str
-    ) -> Optional[DiarizationRecord]:
+    def reset_for_reprocessing(self, diarization_id: str) -> Optional[DiarizationRecord]:
         """Resets the record for a new diarization run."""
         record = self.get_by_id(diarization_id)
         if not record:

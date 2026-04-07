@@ -13,9 +13,7 @@ from src.infrastructure.repositories.sql.ingestion_job_repository import (
 class IngestionJobService:
     """Service layer for ingestion jobs."""
 
-    def __init__(
-        self, repository: IngestionJobSQLRepository, logger: Optional[Logger] = None
-    ) -> None:
+    def __init__(self, repository: IngestionJobSQLRepository, logger: Optional[Logger] = None) -> None:
         self._repo = repository
         self._logger = logger or Logger()
 
@@ -97,15 +95,11 @@ class IngestionJobService:
             return None
         return IngestionJobMapper.model_to_entity(model)
 
-    def list_by_content_source(
-        self, content_source_id: UUID
-    ) -> List[IngestionJobEntity]:
+    def list_by_content_source(self, content_source_id: UUID) -> List[IngestionJobEntity]:
         models = self._repo.list_by_content_source(content_source_id)
         return IngestionJobMapper.model_list_to_entities(models)
 
-    def list_recent_jobs(
-        self, limit: int = 50, offset: int = 0
-    ) -> List[IngestionJobEntity]:
+    def list_recent_jobs(self, limit: int = 50, offset: int = 0) -> List[IngestionJobEntity]:
         """List recent ingestion jobs, ordered by creation date."""
         models = self._repo.list_recent_jobs(limit=limit, offset=offset)
         return IngestionJobMapper.model_list_to_entities(models)
@@ -118,9 +112,7 @@ class IngestionJobService:
         search: Optional[str] = None,
     ) -> dict:
         """List jobs with pagination and filters. Returns {'jobs': [...], 'total': int, 'stats': {...}}"""
-        models = self._repo.list_jobs(
-            limit=limit, offset=offset, status=status, search=search
-        )
+        models = self._repo.list_jobs(limit=limit, offset=offset, status=status, search=search)
         total = self._repo.count_jobs(status=status, search=search)
         stats = self._repo.get_status_counts(search=search)
 
@@ -134,15 +126,9 @@ class IngestionJobService:
         self, subject_id: UUID, limit: int = 50, offset: int = 0
     ) -> List[IngestionJobEntity]:
         """List recent ingestion jobs for a specific subject."""
-        models = self._repo.list_recent_jobs_by_subject(
-            subject_id, limit=limit, offset=offset
-        )
+        models = self._repo.list_recent_jobs_by_subject(subject_id, limit=limit, offset=offset)
         return IngestionJobMapper.model_list_to_entities(models)
 
-    def mark_previous_jobs_as_reprocessed(
-        self, content_source_id: UUID, current_job_id: UUID
-    ) -> int:
+    def mark_previous_jobs_as_reprocessed(self, content_source_id: UUID, current_job_id: UUID) -> int:
         """Mark previous jobs as reprocessed."""
-        return self._repo.mark_previous_jobs_as_reprocessed(
-            content_source_id, current_job_id
-        )
+        return self._repo.mark_previous_jobs_as_reprocessed(content_source_id, current_job_id)

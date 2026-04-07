@@ -58,20 +58,14 @@ class TextSplitterService:
 
                 # 2. Decode back to text
                 try:
-                    chunk_text = self.tokenizer.decode(
-                        chunk_ids, skip_special_tokens=True
-                    )
+                    chunk_text = self.tokenizer.decode(chunk_ids, skip_special_tokens=True)
                 except Exception:
                     chunk_text = self.tokenizer.decode(chunk_ids)
 
                 chunk_metadata = (metadata or {}).copy()
-                chunk_metadata.update(
-                    {"tokens_count": len(chunk_ids), "chunk_index": chunk_index}
-                )
+                chunk_metadata.update({"tokens_count": len(chunk_ids), "chunk_index": chunk_index})
 
-                documents.append(
-                    Document(page_content=chunk_text, metadata=chunk_metadata)
-                )
+                documents.append(Document(page_content=chunk_text, metadata=chunk_metadata))
 
                 i += step
                 chunk_index += 1
@@ -102,8 +96,6 @@ class TextSplitterService:
                         "is_fallback": True,
                     }
                 )
-                documents.append(
-                    Document(page_content=content, metadata=chunk_metadata)
-                )
+                documents.append(Document(page_content=content, metadata=chunk_metadata))
 
         return documents

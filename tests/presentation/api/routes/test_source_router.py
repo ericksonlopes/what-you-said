@@ -80,9 +80,7 @@ def test_get_model_info_success(mock_model_loader):
 
 def test_get_model_info_error(mock_model_loader):
     # To trigger the router's internal try-except block, we mock an attribute access error.
-    type(mock_model_loader).model_name = property(
-        lambda x: exec('raise(Exception("attr fail"))')
-    )
+    type(mock_model_loader).model_name = property(lambda x: exec('raise(Exception("attr fail"))'))
 
     response = client.get("/rest/sources/model")
     assert response.status_code == 500

@@ -35,9 +35,7 @@ class TestSubjectRouter:
             icon="icon",
         )
 
-        response = client.post(
-            "/rest/subjects", json={"name": "test", "description": "desc"}
-        )
+        response = client.post("/rest/subjects", json={"name": "test", "description": "desc"})
 
         assert response.status_code == 201
         mock_ks_service.create_subject.assert_called_once()

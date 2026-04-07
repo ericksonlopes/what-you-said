@@ -219,9 +219,7 @@ class TestChunkIndexSQLRepository:
 
     def test_delete_by_content_source_error(self, sqlite_memory):
         repo = ChunkIndexSQLRepository()
-        with patch(
-            "sqlalchemy.orm.Session.commit", side_effect=Exception("Commit Error")
-        ):
+        with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Commit Error")):
             with pytest.raises(Exception, match="Commit Error"):
                 repo.delete_by_content_source(uuid4())
 
@@ -253,9 +251,7 @@ class TestChunkIndexSQLRepository:
                 }
             ]
         )
-        with patch(
-            "sqlalchemy.orm.Session.commit", side_effect=Exception("Delete Error")
-        ):
+        with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Delete Error")):
             with pytest.raises(Exception, match="Delete Error"):
                 repo.delete_chunk(cid)
 
@@ -275,8 +271,6 @@ class TestChunkIndexSQLRepository:
                 }
             ]
         )
-        with patch(
-            "sqlalchemy.orm.Session.commit", side_effect=Exception("Update Error")
-        ):
+        with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Update Error")):
             with pytest.raises(Exception, match="Update Error"):
                 repo.update_chunk(cid, "new")

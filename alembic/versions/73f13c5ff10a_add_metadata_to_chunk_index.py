@@ -39,9 +39,7 @@ def upgrade() -> None:
         # Check for FK
         fks = insp.get_foreign_keys("chunk_index")
         has_fk = any(
-            fk["referred_table"] == "knowledge_subjects"
-            and "subject_id" in fk["constrained_columns"]
-            for fk in fks
+            fk["referred_table"] == "knowledge_subjects" and "subject_id" in fk["constrained_columns"] for fk in fks
         )
         if not has_fk:
             batch_op.create_foreign_key(

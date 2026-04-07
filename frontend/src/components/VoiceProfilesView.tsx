@@ -14,7 +14,10 @@ import {
   Plus,
   Search,
   Play,
-  Square
+  Square,
+  Loader2,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../store/AppContext';
@@ -29,13 +32,49 @@ interface AudioFile {
   path: string;
 }
 
+type VoiceProfileStatus = 'ready' | 'processing' | 'failed';
+
 interface VoiceProfile {
   id: string;
   name: string;
   audios_path: string;
   samples_count: number;
   created_at: string;
+  status?: VoiceProfileStatus;
+  status_message?: string | null;
 }
+
+const StatusBadge: React.FC<{ status?: VoiceProfileStatus; message?: string | null }> = ({ status, message }) => {
+  const { t } = useTranslation();
+  const s = status || 'ready';
+  const config: Record<VoiceProfileStatus, { icon: React.ReactNode; cls: string; label: string }> = {
+    processing: {
+      icon: <Loader2 className="w-3 h-3 animate-spin" />,
+      cls: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
+      label: t('voices.status.processing'),
+    },
+    ready: {
+      icon: <CheckCircle2 className="w-3 h-3" />,
+      cls: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400',
+      label: t('voices.status.ready'),
+    },
+    failed: {
+      icon: <XCircle className="w-3 h-3" />,
+      cls: 'bg-rose-500/10 border-rose-500/30 text-rose-400',
+      label: t('voices.status.failed'),
+    },
+  };
+  const c = config[s];
+  return (
+    <div
+      title={message || undefined}
+      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest ${c.cls}`}
+    >
+      {c.icon}
+      <span>{c.label}</span>
+    </div>
+  );
+};
 
 // --- Sub-components ---
 
@@ -72,9 +111,11 @@ const VoiceCard = ({
         </button>
       </div>
 
-      <h3 className="text-lg font-bold text-white mb-1 truncate group-hover:text-emerald-400 transition-colors">
+      <h3 className="text-lg font-bold text-white mb-2 truncate group-hover:text-emerald-400 transition-colors">
         {profile.name}
       </h3>
+
+      <StatusBadge status={profile.status} message={profile.status_message} />
 
       <div className="flex flex-col gap-2.5 mt-4">
         <div className="flex items-center gap-2 text-zinc-500 text-xs font-medium">
@@ -287,7 +328,7 @@ const VoiceDetailsModal = ({
 
 export function VoiceProfilesView() {
   const { t } = useTranslation();
-  const { addToast, selectedSubjects } = useAppContext();
+  const { addToast, selectedSubjects, lastEvent } = useAppContext();
   const [voices, setVoices] = useState<VoiceProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -312,6 +353,14 @@ export function VoiceProfilesView() {
   useEffect(() => {
     fetchVoices();
   }, [fetchVoices]);
+
+  // Refetch whenever a voice-scoped SSE event arrives (train_started,
+  // train_progress, train, train_failed) so the status badge updates live.
+  useEffect(() => {
+    if (lastEvent && (lastEvent as any).type === 'voice') {
+      fetchVoices();
+    }
+  }, [lastEvent, fetchVoices]);
 
   const handleDeleteProfile = useCallback(async (name: string) => {
     try {

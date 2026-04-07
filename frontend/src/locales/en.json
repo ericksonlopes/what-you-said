@@ -607,6 +607,7 @@
       "new_name": "New Name...",
       "train_voice": "Train this voice",
       "reinforce_voice": "Reinforce this voice",
+      "processing_voice": "Training voice...",
       "match_pct": "{{count}}% match",
       "save_btn": "Save & Index"
     },
@@ -712,7 +713,10 @@
       "delete_file_error": "Failed to delete audio sample"
     },
     "status": {
-      "samples": "{{count}} audio files"
+      "samples": "{{count}} audio files",
+      "processing": "Training",
+      "ready": "Ready",
+      "failed": "Failed"
     },
     "card": {
       "created_at": "Created"

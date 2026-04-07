@@ -38,9 +38,7 @@ class TestChunkWeaviateRepository:
 
     @pytest.fixture
     def repo(self, mock_client, mock_emb):
-        with patch(
-            "src.infrastructure.repositories.vector.weaviate.weaviate_vector.WeaviateVector"
-        ):
+        with patch("src.infrastructure.repositories.vector.weaviate.weaviate_vector.WeaviateVector"):
             return ChunkWeaviateRepository(mock_client, mock_emb, "TestCollection")
 
     def create_mock_weaviate_obj(self, content="text", score=0.9):

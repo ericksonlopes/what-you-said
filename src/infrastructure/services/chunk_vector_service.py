@@ -84,9 +84,7 @@ class ChunkVectorService:
 
     def delete(self, filters: Optional[Any]) -> int:
         """Delete documents from the vector store based on provided filters."""
-        logger.debug(
-            "Deleting documents from vector store", context={"filters": str(filters)}
-        )
+        logger.debug("Deleting documents from vector store", context={"filters": str(filters)})
         return self._repository.delete(filters=filters)
 
     def delete_by_id(self, chunk_id: UUID) -> int:

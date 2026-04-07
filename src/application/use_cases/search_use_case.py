@@ -33,9 +33,7 @@ class SearchUseCase:
             context={
                 "query": query,
                 "top_k": top_k,
-                "subject_ids": [str(sid) for sid in subject_ids]
-                if subject_ids
-                else None,
+                "subject_ids": [str(sid) for sid in subject_ids] if subject_ids else None,
                 "subject_name": subject_name,
                 "search_mode": str(search_mode),
                 "re_rank": re_rank,
@@ -49,9 +47,7 @@ class SearchUseCase:
         filters: Optional[Any] = None
         # Resolve subject_name to ID if provided
         if subject_name:
-            logger.debug(
-                "Resolving subject name", context={"subject_name": subject_name}
-            )
+            logger.debug("Resolving subject name", context={"subject_name": subject_name})
             if not self.ks_service:
                 raise ValueError("ks_service is required to filter by subject_name")
             subject = self.ks_service.get_by_name(subject_name)
@@ -100,9 +96,7 @@ class SearchUseCase:
                     if subject_cache[sid]:
                         res.extra["subject_name"] = subject_cache[sid]
 
-        logger.info(
-            "Search completed", context={"query": query, "results_count": len(results)}
-        )
+        logger.info("Search completed", context={"query": query, "results_count": len(results)})
 
         return SearchChunksResult(
             query=query,

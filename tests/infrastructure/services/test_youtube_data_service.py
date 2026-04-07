@@ -42,28 +42,18 @@ def dummy_transcript():
 def mock_model_loader_service():
     mock = MagicMock()
     mock.model.tokenizer = MagicMock()
-    mock.model.tokenizer.encode.side_effect = lambda txt, add_special_tokens=False: [
-        ord(c) for c in txt
-    ]
-    mock.model.tokenizer.decode.side_effect = lambda ids, skip_special_tokens=True: (
-        "".join(chr(i) for i in ids)
-    )
+    mock.model.tokenizer.encode.side_effect = lambda txt, add_special_tokens=False: [ord(c) for c in txt]
+    mock.model.tokenizer.decode.side_effect = lambda ids, skip_special_tokens=True: "".join(chr(i) for i in ids)
     return mock
 
 
 @pytest.mark.YoutubeDataProcessService
 class TestYoutubeDataService:
-    def test_split_by_time(
-        self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor
-    ):
+    def test_split_by_time(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "info"), patch.object(logger, "debug"):
-            splitter = YoutubeDataProcessService(
-                mock_model_loader_service, dummy_yt_extractor
-            )
-            docs = splitter.split_transcript(
-                mode="time", time_window_size=30, time_overlap=5
-            )
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
+            docs = splitter.split_transcript(mode="time", time_window_size=30, time_overlap=5)
             assert isinstance(docs, list)
             assert all(isinstance(doc, Document) for doc in docs)
             assert len(docs) > 0
@@ -72,17 +62,11 @@ class TestYoutubeDataService:
                 assert "window_end" in doc.metadata
                 assert doc.metadata["video_id"] == "dummy_video_id"
 
-    def test_split_by_tokens(
-        self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor
-    ):
+    def test_split_by_tokens(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "info"), patch.object(logger, "debug"):
-            splitter = YoutubeDataProcessService(
-                mock_model_loader_service, dummy_yt_extractor
-            )
-            docs = splitter.split_transcript(
-                mode="tokens", tokens_per_chunk=10, tokens_overlap=2
-            )
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
+            docs = splitter.split_transcript(mode="tokens", tokens_per_chunk=10, tokens_overlap=2)
             assert isinstance(docs, list)
             assert all(isinstance(doc, Document) for doc in docs)
             assert len(docs) > 0
@@ -94,47 +78,29 @@ class TestYoutubeDataService:
 
     def test_empty_transcript(self, mock_model_loader_service, dummy_yt_extractor):
         with patch.object(logger, "info"), patch.object(logger, "debug"):
-            splitter = YoutubeDataProcessService(
-                mock_model_loader_service, dummy_yt_extractor
-            )
-            docs = splitter.split_transcript(
-                mode="time", time_window_size=30, time_overlap=5
-            )
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
+            docs = splitter.split_transcript(mode="time", time_window_size=30, time_overlap=5)
             assert docs == []
 
-    def test_invalid_overlap(
-        self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor
-    ):
+    def test_invalid_overlap(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "error"):
-            splitter = YoutubeDataProcessService(
-                mock_model_loader_service, dummy_yt_extractor
-            )
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             with pytest.raises(ValueError):
-                splitter.split_transcript(
-                    mode="time", time_window_size=30, time_overlap=40
-                )
+                splitter.split_transcript(mode="time", time_window_size=30, time_overlap=40)
             with pytest.raises(ValueError):
-                splitter.split_transcript(
-                    mode="tokens", tokens_per_chunk=5, tokens_overlap=10
-                )
+                splitter.split_transcript(mode="tokens", tokens_per_chunk=5, tokens_overlap=10)
 
     def test_no_tokenizer(self, dummy_transcript, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "error"):
             mock_model_loader_service = MagicMock()
             mock_model_loader_service.model.tokenizer = None
-            splitter = YoutubeDataProcessService(
-                mock_model_loader_service, dummy_yt_extractor
-            )
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             with pytest.raises(RuntimeError):
-                splitter.split_transcript(
-                    mode="tokens", tokens_per_chunk=10, tokens_overlap=2
-                )
+                splitter.split_transcript(mode="tokens", tokens_per_chunk=10, tokens_overlap=2)
 
-    def test_encode_typeerror_fallback(
-        self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor
-    ):
+    def test_encode_typeerror_fallback(self, dummy_transcript, mock_model_loader_service, dummy_yt_extractor):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
 
         def encode_side_effect(txt, add_special_tokens=None):
@@ -142,15 +108,9 @@ class TestYoutubeDataService:
                 raise TypeError("unexpected argument")
             return [ord(c) for c in txt]
 
-        mock_model_loader_service.model.tokenizer.encode.side_effect = (
-            encode_side_effect
-        )
-        splitter = YoutubeDataProcessService(
-            mock_model_loader_service, dummy_yt_extractor
-        )
-        docs = splitter.split_transcript(
-            mode="tokens", tokens_per_chunk=10, tokens_overlap=2
-        )
+        mock_model_loader_service.model.tokenizer.encode.side_effect = encode_side_effect
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
+        docs = splitter.split_transcript(mode="tokens", tokens_per_chunk=10, tokens_overlap=2)
         assert isinstance(docs, list)
         assert all(isinstance(doc, Document) for doc in docs)
         assert len(docs) > 0
@@ -160,32 +120,20 @@ class TestYoutubeDataService:
             assert doc.metadata["video_id"] == "dummy_video_id"
             assert "tokens_count" in doc.metadata
 
-    def test_tokenize_skips_empty_snippet(
-        self, mock_model_loader_service, dummy_yt_extractor
-    ):
+    def test_tokenize_skips_empty_snippet(self, mock_model_loader_service, dummy_yt_extractor):
         class EmptySnippet:
             text = ""
             start = 0
             duration = 0
 
         transcript = [EmptySnippet()]
-        splitter = YoutubeDataProcessService(
-            mock_model_loader_service, dummy_yt_extractor
-        )
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         with patch.object(logger, "debug") as mock_debug:
-            splitter._tokenize_transcript(
-                transcript, mock_model_loader_service.model.tokenizer, {}
-            )
-            mock_debug.assert_any_call(
-                "Skipping empty snippet", context={"snippet_index": 0}
-            )
+            splitter._tokenize_transcript(transcript, mock_model_loader_service.model.tokenizer, {})
+            mock_debug.assert_any_call("Skipping empty snippet", context={"snippet_index": 0})
 
-    def test_decode_typeerror_and_attributeerror(
-        self, mock_model_loader_service, dummy_yt_extractor
-    ):
-        splitter = YoutubeDataProcessService(
-            mock_model_loader_service, dummy_yt_extractor
-        )
+    def test_decode_typeerror_and_attributeerror(self, mock_model_loader_service, dummy_yt_extractor):
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         chunk_ids = [65, 66]
         transcript = [DummySnippet("A", 0, 1)]
 
@@ -208,9 +156,7 @@ class TestYoutubeDataService:
         def decode_attributeerror(ids, *args, **kwargs):
             raise AttributeError("no decode")
 
-        mock_model_loader_service.model.tokenizer.decode.side_effect = (
-            decode_attributeerror
-        )
+        mock_model_loader_service.model.tokenizer.decode.side_effect = decode_attributeerror
         docs = splitter._create_token_chunks(
             chunk_ids,
             [{"start": 0, "end": 1, "snippet_index": 0}] * len(chunk_ids),
@@ -221,31 +167,21 @@ class TestYoutubeDataService:
         )
         assert docs[0].page_content == str(chunk_ids)
 
-    def test_create_token_chunks_empty_meta(
-        self, mock_model_loader_service, dummy_yt_extractor
-    ):
+    def test_create_token_chunks_empty_meta(self, mock_model_loader_service, dummy_yt_extractor):
         import math
 
-        splitter = YoutubeDataProcessService(
-            mock_model_loader_service, dummy_yt_extractor
-        )
+        splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
         token_ids = [65, 66]
         token_meta = []
         transcript = [DummySnippet("A", 0, 1)]
-        docs = splitter._create_token_chunks(
-            token_ids, token_meta, len(token_ids), len(token_ids), transcript, {}
-        )
+        docs = splitter._create_token_chunks(token_ids, token_meta, len(token_ids), len(token_ids), transcript, {})
         assert math.isclose(docs[0].metadata["window_start"], 0.0)
         assert math.isclose(docs[0].metadata["window_end"], 0.0)
 
-    def test_unknown_mode_error(
-        self, mock_model_loader_service, dummy_yt_extractor, dummy_transcript
-    ):
+    def test_unknown_mode_error(self, mock_model_loader_service, dummy_yt_extractor, dummy_transcript):
         dummy_yt_extractor.extract_transcript.return_value = dummy_transcript
         with patch.object(logger, "error") as mock_error:
-            splitter = YoutubeDataProcessService(
-                mock_model_loader_service, dummy_yt_extractor
-            )
+            splitter = YoutubeDataProcessService(mock_model_loader_service, dummy_yt_extractor)
             with pytest.raises(ValueError) as exc:
                 splitter.split_transcript(mode="unknown_mode", tokens_per_chunk=10)  # type: ignore
             assert "Unknown splitting mode" in str(exc.value)

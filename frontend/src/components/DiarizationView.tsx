@@ -96,7 +96,13 @@ export function DiarizationView() {
                 loadJobs(true).then(updatedJobs => {
                     const updated = updatedJobs.find(j => j.id === activeJob.id);
                     if (updated && updated.status !== activeJob.status) {
-                         if (updated.status === 'awaiting_verification' || updated.status === 'completed' || updated.status === 'failed') {
+                         // If user is already in identification/result, don't reset the
+                         // local speakers state on transient status changes (e.g. voice
+                         // training flipping the job to TRAINING → COMPLETED). Only
+                         // open/reset the job when we were still waiting on the initial
+                         // diarization run.
+                         const inIdentification = step === 'identification' || step === 'result';
+                         if (!inIdentification && (updated.status === 'awaiting_verification' || updated.status === 'completed' || updated.status === 'failed')) {
                             handleOpenJob(updated);
                         } else {
                             setActiveJob(updated);
@@ -111,7 +117,18 @@ export function DiarizationView() {
                 }
             }
         }
-    }, [lastEvent, loadJobs, activeJob, addToast, t]);
+
+        // Voice training finished in background → clear per-speaker processing flag
+        if (lastEvent.type === 'voice' && lastEvent.action === 'train' && lastEvent.name) {
+            const finishedName = lastEvent.name as string;
+            setSpeakers(prev => prev.map(s =>
+                s.trainingStatus === 'processing' && s.assigned === finishedName
+                    ? { ...s, trainingStatus: undefined, confidence: Math.max(s.confidence, 95) }
+                    : s
+            ));
+            refreshVoices();
+        }
+    }, [lastEvent, loadJobs, activeJob, addToast, t, step, refreshVoices]);
 
 
     // -- HANDLERS --
@@ -497,9 +514,19 @@ export function DiarizationView() {
                 speaker={trainingSpeaker}
                 diarizationId={activeJob?.id || ''}
                 onClose={() => setTrainingSpeaker(null)}
-                onTrained={() => {
-                    refreshVoices();
-                    handleRecognizeSpeakers();
+                onTrained={(name) => {
+                    // Mark this speaker as "processing" and optimistically assign the
+                    // new name so the UI reflects the in-flight training job. The
+                    // button will switch to "Reinforce" once the backend publishes
+                    // the voice/train completion event.
+                    const targetId = trainingSpeaker?.id;
+                    if (targetId) {
+                        setSpeakers(prev => prev.map(s =>
+                            s.id === targetId
+                                ? { ...s, assigned: name, trainingStatus: 'processing' }
+                                : s
+                        ));
+                    }
                 }}
             />
         </div>

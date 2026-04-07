@@ -60,15 +60,11 @@ class TestChunkIndexService:
 
     def test_list_by_content_source(self, service, mock_repo):
         sid = uuid4()
-        mock_repo.list_by_content_source.return_value = [
-            self.create_mock_model(content_source_id=sid)
-        ]
+        mock_repo.list_by_content_source.return_value = [self.create_mock_model(content_source_id=sid)]
         result = service.list_by_content_source(sid, limit=5, offset=0)
         assert len(result) == 1
         assert result[0].content_source_id == sid
-        mock_repo.list_by_content_source.assert_called_once_with(
-            content_source_id=sid, limit=5, offset=0
-        )
+        mock_repo.list_by_content_source.assert_called_once_with(content_source_id=sid, limit=5, offset=0)
 
     def test_count_by_content_source(self, service, mock_repo):
         sid = uuid4()
@@ -80,17 +76,13 @@ class TestChunkIndexService:
         sid = uuid4()
         mock_repo.delete_by_content_source.return_value = 10
         assert service.delete_by_content_source(sid) == 10
-        mock_repo.delete_by_content_source.assert_called_once_with(
-            content_source_id=sid
-        )
+        mock_repo.delete_by_content_source.assert_called_once_with(content_source_id=sid)
 
     def test_search(self, service, mock_repo):
         mock_repo.search.return_value = [self.create_mock_model()]
         result = service.search("query", top_k=3, filters={"a": "b"})
         assert len(result) == 1
-        mock_repo.search.assert_called_once_with(
-            query="query", top_k=3, filters={"a": "b"}
-        )
+        mock_repo.search.assert_called_once_with(query="query", top_k=3, filters={"a": "b"})
 
     def test_get_by_id(self, service, mock_repo):
         cid = uuid4()
@@ -104,13 +96,9 @@ class TestChunkIndexService:
     def test_list_chunks(self, service, mock_repo):
         sid = uuid4()
         mock_repo.list_chunks.return_value = [self.create_mock_model()]
-        result = service.list_chunks(
-            limit=10, offset=5, source_id=sid, search_query="q"
-        )
+        result = service.list_chunks(limit=10, offset=5, source_id=sid, search_query="q")
         assert len(result) == 1
-        mock_repo.list_chunks.assert_called_once_with(
-            limit=10, offset=5, source_id=sid, search_query="q"
-        )
+        mock_repo.list_chunks.assert_called_once_with(limit=10, offset=5, source_id=sid, search_query="q")
 
     def test_delete_chunk(self, service, mock_repo):
         cid = uuid4()

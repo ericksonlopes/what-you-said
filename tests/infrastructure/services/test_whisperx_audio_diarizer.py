@@ -10,13 +10,9 @@ from src.infrastructure.services.whisperx_audio_diarizer import AudioDiarizer
 class TestAudioDiarizer:
     @pytest.fixture(autouse=True)
     def mock_deps(self):
-        with patch(
-            "src.infrastructure.services.whisperx_audio_diarizer.model_loader"
-        ) as ml:
+        with patch("src.infrastructure.services.whisperx_audio_diarizer.model_loader") as ml:
             self.mock_model_loader = ml
-            with patch(
-                "src.infrastructure.services.whisperx_audio_diarizer.whisperx"
-            ) as wx:
+            with patch("src.infrastructure.services.whisperx_audio_diarizer.whisperx") as wx:
                 self.whisperx = wx
                 yield
 

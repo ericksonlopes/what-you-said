@@ -16,9 +16,7 @@ class StorageService:
         if not endpoint.startswith("http"):
             endpoint = f"http://{endpoint}"
 
-        logger.info(
-            "Connecting to MinIO at %s (bucket=%s)", endpoint, storage_cfg.minio_bucket
-        )
+        logger.info("Connecting to MinIO at %s (bucket=%s)", endpoint, storage_cfg.minio_bucket)
         self.s3 = boto3.client(
             "s3",
             endpoint_url=endpoint,
@@ -86,12 +84,8 @@ class StorageService:
         for page in paginator.paginate(Bucket=self.bucket, Prefix=s3_prefix):
             if "Contents" in page:
                 delete_list = [{"Key": obj["Key"]} for obj in page["Contents"]]
-                self.s3.delete_objects(
-                    Bucket=self.bucket, Delete={"Objects": delete_list}
-                )
-                logger.info(
-                    "Deleted %d objects with prefix %s", len(delete_list), s3_prefix
-                )
+                self.s3.delete_objects(Bucket=self.bucket, Delete={"Objects": delete_list})
+                logger.info("Deleted %d objects with prefix %s", len(delete_list), s3_prefix)
 
     def list_files(self, prefix: str = "", extension: str | None = None) -> list[dict]:
         paginator = self.s3.get_paginator("list_objects_v2")

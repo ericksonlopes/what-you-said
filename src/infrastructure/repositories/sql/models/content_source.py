@@ -37,9 +37,7 @@ class ContentSourceModel(Base):
     language = Column(Text, nullable=True)
     embedding_model = Column(Text, nullable=True)
     status = Column(Text, nullable=False, server_default=text("'active'"))
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

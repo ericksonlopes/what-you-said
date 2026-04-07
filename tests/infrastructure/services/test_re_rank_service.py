@@ -19,9 +19,7 @@ from src.infrastructure.services.re_rank_service import ReRankService  # noqa: E
 class TestReRankService:
     def test_init_success(self, monkeypatch):
         mock_ranker_class = MagicMock()
-        monkeypatch.setattr(
-            "src.infrastructure.services.re_rank_service.Ranker", mock_ranker_class
-        )
+        monkeypatch.setattr("src.infrastructure.services.re_rank_service.Ranker", mock_ranker_class)
 
         service = ReRankService(model_name="test-model")
 
@@ -33,9 +31,7 @@ class TestReRankService:
 
     def test_init_failure(self, monkeypatch):
         mock_ranker_class = MagicMock(side_effect=Exception("Failed to load"))
-        monkeypatch.setattr(
-            "src.infrastructure.services.re_rank_service.Ranker", mock_ranker_class
-        )
+        monkeypatch.setattr("src.infrastructure.services.re_rank_service.Ranker", mock_ranker_class)
 
         service = ReRankService()
 

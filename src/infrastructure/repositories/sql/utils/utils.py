@@ -6,9 +6,7 @@ from src.config.logger import Logger
 logger = Logger()
 
 
-def ensure_uuid(
-    val: Any, error_msg: str = "Invalid UUID string provided"
-) -> Optional[UUID]:
+def ensure_uuid(val: Any, error_msg: str = "Invalid UUID string provided") -> Optional[UUID]:
     """Ensures that the provided value is a UUID object or attempt to convert it if it's a string.
 
     Args:

@@ -16,15 +16,10 @@ class TestYoutubeExtractorDownload:
         mock_instance.prepare_filename.return_value = "temp_audio/Test Audio.webm"
 
         extractor = YoutubeExtractor()
-        result = extractor.download_audio(
-            "https://www.youtube.com/watch?v=dummy", output_dir="temp_audio"
-        )
+        result = extractor.download_audio("https://www.youtube.com/watch?v=dummy", output_dir="temp_audio")
 
         # In the code, it changes extension to .mp3 using Path.with_suffix
-        assert (
-            result == "temp_audio\\Test Audio.mp3"
-            or result == "temp_audio/Test Audio.mp3"
-        )
+        assert result == "temp_audio\\Test Audio.mp3" or result == "temp_audio/Test Audio.mp3"
         assert mock_instance.extract_info.called
         assert mock_makedirs.called
 

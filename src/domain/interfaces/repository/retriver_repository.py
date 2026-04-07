@@ -31,9 +31,7 @@ class IVectorRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def list_chunks(
-        self, filters: Optional[Any], limit: int = 1000
-    ) -> List[ChunkModel]:
+    def list_chunks(self, filters: Optional[Any], limit: int = 1000) -> List[ChunkModel]:
         """List chunks matching query and filters without vector search."""
         raise NotImplementedError
 

@@ -18,9 +18,7 @@ def patch_settings(monkeypatch):
 
 @pytest.fixture
 def logger():
-    log_format = (
-        "{asctime} [{levelname}] {filename}:{lineno} {class}.{funcName} - {message}"
-    )
+    log_format = "{asctime} [{levelname}] {filename}:{lineno} {class}.{funcName} - {message}"
     return StdLogger(log_format, name="test")
 
 

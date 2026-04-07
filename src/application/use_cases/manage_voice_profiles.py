@@ -5,7 +5,6 @@ from typing import cast
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
-from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
@@ -43,9 +42,7 @@ class ListRegisteredVoiceProfilesUseCase:
             samples_count = 0
             if r.audios_path:
                 with suppress(Exception):
-                    files = storage.list_files(
-                        prefix=cast(str, r.audios_path), extension=".wav"
-                    )
+                    files = storage.list_files(prefix=cast(str, r.audios_path), extension=".wav")
                     samples_count = len(files)
 
             result.append(
@@ -55,6 +52,8 @@ class ListRegisteredVoiceProfilesUseCase:
                     "audios_path": r.audios_path,
                     "created_at": r.created_at.isoformat() if r.created_at else None,
                     "samples_count": samples_count,
+                    "status": r.status or "ready",
+                    "status_message": r.status_message,
                 }
             )
         return result
@@ -110,29 +109,25 @@ class TrainVoiceProfileFromSpeakerSegmentUseCase:
         if not record.storage_path:
             raise ValueError("No storage path found for this diarization.")
 
-        # Ensure we update status if we have an event bus (background context)
+        # Voice training is orthogonal to the diarization lifecycle — do NOT
+        # mutate the diarization record's status here. Only emit voice-scoped
+        # events so the UI can track progress per-speaker.
         if self.event_bus:
-            self.repo.update_status(
-                diarization_id,
-                DiarizationStatus.TRAINING.value,
-                status_message=f"Treinando voz: {name}",
-            )
             self.event_bus.publish(
                 "ingestion_status",
                 {
-                    "type": "diarization",
-                    "id": diarization_id,
-                    "status": DiarizationStatus.TRAINING.value,
-                    "message": f"Treinando perfil de voz '{name}'...",
+                    "type": "voice",
+                    "action": "train_progress",
+                    "name": name,
+                    "diarization_id": diarization_id,
+                    "speaker_label": speaker_label,
                 },
             )
 
         s3_key = f"{record.storage_path}/{speaker_label}.wav"
 
         audio_cfg = settings.audio
-        local_path = os.path.join(
-            audio_cfg.temp_download_dir, f"train_{diarization_id}_{speaker_label}.wav"
-        )
+        local_path = os.path.join(audio_cfg.temp_download_dir, f"train_{diarization_id}_{speaker_label}.wav")
         os.makedirs(audio_cfg.temp_download_dir, exist_ok=True)
 
         try:
@@ -143,43 +138,30 @@ class TrainVoiceProfileFromSpeakerSegmentUseCase:
             voice_id, _ = voice_db.add(name=name, audio_path=local_path)
 
             if self.event_bus:
-                self.repo.update_status(
-                    diarization_id,
-                    DiarizationStatus.COMPLETED.value,
-                    status_message=f"Voz '{name}' treinada com sucesso",
-                )
                 self.event_bus.publish(
                     "ingestion_status",
                     {
-                        "type": "diarization",
-                        "id": diarization_id,
-                        "status": DiarizationStatus.COMPLETED.value,
-                        "message": f"Perfil de voz '{name}' registrado!",
+                        "type": "voice",
+                        "action": "train",
+                        "name": name,
+                        "diarization_id": diarization_id,
+                        "speaker_label": speaker_label,
                     },
-                )
-                # Also notify specifically about the voice
-                self.event_bus.publish(
-                    "ingestion_status",
-                    {"type": "voice", "action": "train", "name": name},
                 )
 
             return voice_id
 
         except Exception as e:
             if self.event_bus:
-                self.repo.update_status(
-                    diarization_id,
-                    DiarizationStatus.FAILED.value,
-                    error_message=str(e),
-                    status_message="Falha no treinamento de voz",
-                )
                 self.event_bus.publish(
                     "ingestion_status",
                     {
-                        "type": "diarization",
-                        "id": diarization_id,
-                        "status": DiarizationStatus.FAILED.value,
-                        "message": f"Erro no treinamento: {str(e)}",
+                        "type": "voice",
+                        "action": "train_failed",
+                        "name": name,
+                        "diarization_id": diarization_id,
+                        "speaker_label": speaker_label,
+                        "error": str(e),
                     },
                 )
             raise

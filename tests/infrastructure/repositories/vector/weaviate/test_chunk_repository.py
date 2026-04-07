@@ -25,9 +25,7 @@ class TestChunkWeaviateRepository:
 
     @pytest.fixture
     def repo(self, mock_weaviate_client, mock_embedding_service):
-        with patch(
-            "src.infrastructure.repositories.vector.weaviate.weaviate_vector.WeaviateVector"
-        ):
+        with patch("src.infrastructure.repositories.vector.weaviate.weaviate_vector.WeaviateVector"):
             return ChunkWeaviateRepository(
                 weaviate_client=mock_weaviate_client,
                 embedding_service=mock_embedding_service,
@@ -85,9 +83,7 @@ class TestChunkWeaviateRepository:
             subject_id=uuid4(),
             embedding_model="model",
         )
-        repo.vector_store.__enter__.return_value.add_texts.side_effect = Exception(
-            "Weaviate error"
-        )
+        repo.vector_store.__enter__.return_value.add_texts.side_effect = Exception("Weaviate error")
 
         with pytest.raises(Exception, match="Weaviate error"):
             repo.create_documents([doc])

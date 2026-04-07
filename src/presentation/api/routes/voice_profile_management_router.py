@@ -14,7 +14,6 @@ from src.application.use_cases.manage_voice_profiles import (
     RegisterNewVoiceProfileUseCase,
 )
 from src.application.workers import run_voice_training_worker
-from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
 from src.infrastructure.repositories.sql.diarization_repository import (
@@ -43,9 +42,7 @@ router = APIRouter()
 async def register_new_voice_profile(
     request: VoiceProfileRegistrationRequest,
     event_bus: Annotated[IEventBus, Depends(get_event_bus)],
-    use_case: Annotated[
-        RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)
-    ],
+    use_case: Annotated[RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)],
 ):
     try:
         voice_id = use_case.execute(request.name, request.audio_path)
@@ -62,17 +59,17 @@ async def register_new_voice_profile(
 @router.post("/upload", responses={400: {"description": "Bad Request"}})
 async def upload_and_register_new_voice_profile(
     event_bus: Annotated[IEventBus, Depends(get_event_bus)],
-    use_case: Annotated[
-        RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)
-    ],
+    use_case: Annotated[RegisterNewVoiceProfileUseCase, Depends(get_register_voice_profile_use_case)],
     name: str = Form(...),
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
 ):
-    if not file.filename:
+    if not file or not file.filename or not file.filename.strip():
         raise HTTPException(status_code=400, detail="No filename provided")
 
     temp_dir = tempfile.mkdtemp()
-    temp_path = os.path.join(temp_dir, file.filename)
+    # Sanitize the filename to avoid path traversal or restricted character issues
+    filename = os.path.basename(file.filename)
+    temp_path = os.path.join(temp_dir, filename)
     try:
         async with await anyio.open_file(temp_path, "wb") as buffer:
             while content := await file.read(1024 * 1024):  # 1MB chunks
@@ -80,9 +77,7 @@ async def upload_and_register_new_voice_profile(
 
         voice_id = use_case.execute(name, temp_path)
         # Notify
-        event_bus.publish(
-            "ingestion_status", {"type": "voice", "action": "register", "name": name}
-        )
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "register", "name": name})
         return {"status": "success", "voice_id": voice_id, "name": name}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -113,29 +108,23 @@ async def train_voice_profile_from_existing_speaker_segment(
         # 1. Verification
         record = repo.get_by_id(request.diarization_id)
         if not record:
-            raise HTTPException(
-                status_code=404, detail=f"Diarization not found: {request.diarization_id}"
-            )
+            raise HTTPException(status_code=404, detail=f"Diarization not found: {request.diarization_id}")
 
-        # 2. Update status to TRAINING immediately
-        repo.update_status(
-            request.diarization_id,
-            DiarizationStatus.TRAINING.value,
-            status_message=f"Preparando treinamento de voz: {request.name}",
-        )
-
-        # 3. Notify frontend
+        # 2. Notify frontend (voice-scoped — do NOT touch the diarization record's
+        # status, since voice training is orthogonal to the diarization lifecycle
+        # and mutating the record's status corrupts its real state on reload)
         event_bus.publish(
             "ingestion_status",
             {
-                "type": "diarization",
-                "id": request.diarization_id,
-                "status": DiarizationStatus.TRAINING.value,
-                "message": f"Iniciando treinamento de voz '{request.name}'...",
+                "type": "voice",
+                "action": "train_started",
+                "name": request.name,
+                "diarization_id": request.diarization_id,
+                "speaker_label": request.speaker_label,
             },
         )
 
-        # 4. Enqueue background task
+        # 3. Enqueue background task
         cmd = TrainVoiceCommand(
             diarization_id=request.diarization_id,
             speaker_label=request.speaker_label,
@@ -161,9 +150,7 @@ async def train_voice_profile_from_existing_speaker_segment(
 
 @router.get("")
 async def list_all_registered_voice_profiles(
-    use_case: Annotated[
-        ListRegisteredVoiceProfilesUseCase, Depends(get_list_voice_profiles_use_case)
-    ],
+    use_case: Annotated[ListRegisteredVoiceProfilesUseCase, Depends(get_list_voice_profiles_use_case)],
 ):
     return use_case.execute()
 
@@ -172,16 +159,12 @@ async def list_all_registered_voice_profiles(
 async def delete_existing_voice_profile(
     name: str,
     event_bus: Annotated[IEventBus, Depends(get_event_bus)],
-    use_case: Annotated[
-        DeleteVoiceProfileUseCase, Depends(get_delete_voice_profile_use_case)
-    ],
+    use_case: Annotated[DeleteVoiceProfileUseCase, Depends(get_delete_voice_profile_use_case)],
 ):
     try:
         use_case.execute(name)
         # Notify
-        event_bus.publish(
-            "ingestion_status", {"type": "voice", "action": "delete", "name": name}
-        )
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "delete", "name": name})
         return {
             "status": "success",
             "message": f"Voice profile '{name}' successfully removed",
@@ -193,9 +176,7 @@ async def delete_existing_voice_profile(
 @router.get("/{voice_id}/audios")
 async def list_voice_audio_files(
     voice_id: str,
-    use_case: Annotated[
-        ListVoiceAudioFilesUseCase, Depends(get_list_voice_audio_files_use_case)
-    ],
+    use_case: Annotated[ListVoiceAudioFilesUseCase, Depends(get_list_voice_audio_files_use_case)],
 ):
     return use_case.execute(voice_id)
 
@@ -204,16 +185,12 @@ async def list_voice_audio_files(
 async def delete_voice_audio_file(
     s3_key: str,
     event_bus: Annotated[IEventBus, Depends(get_event_bus)],
-    use_case: Annotated[
-        DeleteVoiceAudioFileUseCase, Depends(get_delete_voice_audio_file_use_case)
-    ],
+    use_case: Annotated[DeleteVoiceAudioFileUseCase, Depends(get_delete_voice_audio_file_use_case)],
 ):
     try:
         use_case.execute(s3_key)
         # Notify (voice updated)
-        event_bus.publish(
-            "ingestion_status", {"type": "voice", "action": "audio_deleted"}
-        )
+        event_bus.publish("ingestion_status", {"type": "voice", "action": "audio_deleted"})
         return {"status": "success", "message": "Audio file deleted"}
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))

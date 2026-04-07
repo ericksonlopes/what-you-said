@@ -82,9 +82,7 @@ class ModelLoaderService(IModelLoaderService):
         with self._lock:
             if key not in ModelLoaderService._models:
                 logger.info("Loading Alignment model: %s", language_code)
-                ModelLoaderService._models[key] = whisperx.load_align_model(
-                    language_code=language_code, device=device
-                )
+                ModelLoaderService._models[key] = whisperx.load_align_model(language_code=language_code, device=device)
             return ModelLoaderService._models[key]
 
     def get_diarization_pipeline(self, hf_token: str, device: str):
@@ -106,14 +104,10 @@ class ModelLoaderService(IModelLoaderService):
         with self._lock:
             if key not in ModelLoaderService._models:
                 logger.info("Loading Pyannote Voice Identification model")
-                model = Model.from_pretrained(
-                    "pyannote/wespeaker-voxceleb-resnet34-LM", use_auth_token=hf_token
-                )
+                model = Model.from_pretrained("pyannote/wespeaker-voxceleb-resnet34-LM", use_auth_token=hf_token)
                 if model is None:
                     raise RuntimeError("Failed to load Pyannote Model")
-                ModelLoaderService._models[key] = Inference(
-                    model, window="whole", device=torch.device(device)
-                )
+                ModelLoaderService._models[key] = Inference(model, window="whole", device=torch.device(device))
             return ModelLoaderService._models[key]
 
     def clear_cache(self):

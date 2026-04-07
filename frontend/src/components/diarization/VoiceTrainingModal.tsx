@@ -11,7 +11,7 @@ interface VoiceTrainingModalProps {
     readonly speaker: Speaker | null;
     readonly diarizationId: string;
     readonly onClose: () => void;
-    readonly onTrained: () => void;
+    readonly onTrained: (name: string) => void;
 }
 
 export const VoiceTrainingModal: React.FC<VoiceTrainingModalProps> = ({ isOpen, speaker, diarizationId, onClose, onTrained }) => {
@@ -75,7 +75,7 @@ export const VoiceTrainingModal: React.FC<VoiceTrainingModalProps> = ({ isOpen, 
                 : t('diarization.notifications.train_success', { name });
 
             addToast(successMsg, 'success');
-            onTrained();
+            onTrained(name);
             onClose();
         } catch (err: any) {
             console.error('Failed to train voice:', err);

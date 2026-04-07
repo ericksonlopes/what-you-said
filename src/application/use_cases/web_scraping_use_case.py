@@ -84,11 +84,7 @@ class WebScrapingUseCase:
             # 1. Create or retrieve Ingestion Job
             if cmd.ingestion_job_id:
                 try:
-                    jid = (
-                        UUID(cmd.ingestion_job_id)
-                        if isinstance(cmd.ingestion_job_id, str)
-                        else cmd.ingestion_job_id
-                    )
+                    jid = UUID(cmd.ingestion_job_id) if isinstance(cmd.ingestion_job_id, str) else cmd.ingestion_job_id
                     ingestion = self.ingestion_service.get_by_id(jid)
                 except Exception as e:
                     logger.warning(
@@ -161,9 +157,7 @@ class WebScrapingUseCase:
                 )
             else:
                 # Update title and metadata if it exists
-                self.cs_service.update_processing_status(
-                    source.id, ContentSourceStatus.PROCESSING
-                )
+                self.cs_service.update_processing_status(source.id, ContentSourceStatus.PROCESSING)
 
                 # --- REPROCESSING CLEANUP ---
                 if source and source.id and getattr(cmd, "reprocess", False):
@@ -206,8 +200,7 @@ class WebScrapingUseCase:
 
             tokenizer = (
                 self.model_loader_service.model.tokenizer
-                if hasattr(self.model_loader_service, "model")
-                and hasattr(self.model_loader_service.model, "tokenizer")
+                if hasattr(self.model_loader_service, "model") and hasattr(self.model_loader_service.model, "tokenizer")
                 else None
             )
 
@@ -233,9 +226,7 @@ class WebScrapingUseCase:
                 split_docs = langchain_splitter.split_documents([full_doc])
 
             # 5. Build and Persist Chunks
-            chunks = self._build_chunk_entities(
-                split_docs, source, subject, cmd, ingestion.id
-            )
+            chunks = self._build_chunk_entities(split_docs, source, subject, cmd, ingestion.id)
             self.chunk_service.create_chunks(chunks)
 
             # 6. Index in Vector Store
@@ -259,9 +250,7 @@ class WebScrapingUseCase:
                 chunks_count=len(chunks),
             )
 
-            total_tokens = sum(
-                c.tokens_count for c in chunks if c.tokens_count is not None
-            )
+            total_tokens = sum(c.tokens_count for c in chunks if c.tokens_count is not None)
             dims = getattr(self.model_loader_service, "dimensions", 0)
 
             self.cs_service.finish_ingestion(
@@ -320,9 +309,7 @@ class WebScrapingUseCase:
     def _resolve_subject(self, cmd: IngestWebCommand):
         if cmd.subject_id:
             subject = self.ks_service.get_subject_by_id(
-                UUID(cmd.subject_id)
-                if isinstance(cmd.subject_id, str)
-                else cmd.subject_id
+                UUID(cmd.subject_id) if isinstance(cmd.subject_id, str) else cmd.subject_id
             )
             if not subject:
                 raise ValueError(f"Subject not found: {cmd.subject_id}")
@@ -345,18 +332,14 @@ class WebScrapingUseCase:
         list_chunks: List[ChunkEntity] = []
 
         tokenizer = None
-        if hasattr(self.model_loader_service, "model") and hasattr(
-            self.model_loader_service.model, "tokenizer"
-        ):
+        if hasattr(self.model_loader_service, "model") and hasattr(self.model_loader_service.model, "tokenizer"):
             tokenizer = self.model_loader_service.model.tokenizer
 
         for i, doc in enumerate(docs):
             tokens_count = None
             if tokenizer:
                 try:
-                    tokens = tokenizer.encode(
-                        doc.page_content, add_special_tokens=False
-                    )
+                    tokens = tokenizer.encode(doc.page_content, add_special_tokens=False)
                     tokens_count = len(tokens)
                 except Exception:
                     tokens_count = len(doc.page_content) // 4

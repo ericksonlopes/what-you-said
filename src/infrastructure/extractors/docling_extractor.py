@@ -25,9 +25,7 @@ class DoclingExtractor:
         pipeline_options.do_ocr = do_ocr
 
         if settings.app.device == "cpu":
-            pipeline_options.accelerator_options.num_threads = (
-                settings.docling.cpu_num_threads
-            )
+            pipeline_options.accelerator_options.num_threads = settings.docling.cpu_num_threads
         return pipeline_options
 
     def __init__(self):
@@ -86,9 +84,7 @@ class DoclingExtractor:
             return [doc]
 
         except Exception as e:
-            logger.error(
-                f"Error extracting with Docling: {e}", context={"file_path": file_path}
-            )
+            logger.error(f"Error extracting with Docling: {e}", context={"file_path": file_path})
             raise ValueError(f"Failed to extract content from {file_path}: {str(e)}")
 
     def _convert_document(self, file_path: str, do_ocr: bool) -> Any:
@@ -142,32 +138,20 @@ class DoclingExtractor:
     def _get_document_stats(self, document: Any) -> dict:
         return {
             "num_pages": len(document.pages) if hasattr(document, "pages") else 0,
-            "num_pictures": len(document.pictures)
-            if hasattr(document, "pictures")
-            else 0,
+            "num_pictures": len(document.pictures) if hasattr(document, "pictures") else 0,
             "num_tables": len(document.tables) if hasattr(document, "tables") else 0,
             "num_groups": len(document.groups) if hasattr(document, "groups") else 0,
             "texts_count": len(document.texts) if hasattr(document, "texts") else 0,
-            "key_value_items_count": len(document.key_value_items)
-            if hasattr(document, "key_value_items")
-            else 0,
-            "form_items_count": len(document.form_items)
-            if hasattr(document, "form_items")
-            else 0,
-            "field_items_count": len(document.field_items)
-            if hasattr(document, "field_items")
-            else 0,
+            "key_value_items_count": len(document.key_value_items) if hasattr(document, "key_value_items") else 0,
+            "form_items_count": len(document.form_items) if hasattr(document, "form_items") else 0,
+            "field_items_count": len(document.field_items) if hasattr(document, "field_items") else 0,
         }
 
     def _enrich_with_doc_meta(self, result: Any, metadata: dict) -> None:
         doc_meta = None
         if hasattr(result.document, "meta"):
             doc_meta = result.document.meta
-        elif (
-            hasattr(result, "input")
-            and hasattr(result.input, "document")
-            and hasattr(result.input.document, "meta")
-        ):
+        elif hasattr(result, "input") and hasattr(result.input, "document") and hasattr(result.input.document, "meta"):
             doc_meta = result.input.document.meta
 
         if doc_meta:

@@ -43,9 +43,7 @@ class ChunkWeaviateRepository(IVectorRepository):
         )
 
     def create_documents(self, documents: List[ChunkModel]) -> List[str]:
-        logger.debug(
-            "Creating documents in Weaviate", context={"num_documents": len(documents)}
-        )
+        logger.debug("Creating documents in Weaviate", context={"num_documents": len(documents)})
 
         try:
             texts = [doc.content for doc in documents]
@@ -87,17 +85,13 @@ class ChunkWeaviateRepository(IVectorRepository):
                 raise ValueError("All 'ids' must be strings.")
 
             with self.vector_store as vector_store:
-                created_ids = vector_store.add_texts(
-                    texts=texts, metadatas=meta_datas, ids=ids
-                )
+                created_ids = vector_store.add_texts(texts=texts, metadatas=meta_datas, ids=ids)
 
             logger.debug(
                 "Created documents in Weaviate",
                 context={
                     "num_documents": len(documents),
-                    "created_ids_count": len(created_ids)
-                    if created_ids is not None
-                    else 0,
+                    "created_ids_count": len(created_ids) if created_ids is not None else 0,
                 },
             )
 
@@ -136,9 +130,7 @@ class ChunkWeaviateRepository(IVectorRepository):
                         weaviate_filters_list.append(Filter.by_id().equal(v))
                 else:
                     if isinstance(v, list):
-                        weaviate_filters_list.append(
-                            Filter.by_property(k).contains_any(v)
-                        )
+                        weaviate_filters_list.append(Filter.by_property(k).contains_any(v))
                     else:
                         weaviate_filters_list.append(Filter.by_property(k).equal(v))
 
@@ -167,19 +159,13 @@ class ChunkWeaviateRepository(IVectorRepository):
             else:
                 return self._semantic_search(query, top_kn, weaviate_filters)
         except Exception as e:
-            logger.error(
-                "Error retrieving documents", context={"query": query, "error": str(e)}
-            )
+            logger.error("Error retrieving documents", context={"query": query, "error": str(e)})
             raise
 
-    def _semantic_search(
-        self, query: str, top_kn: int, weaviate_filters: Optional[Any]
-    ) -> List[ChunkModel]:
+    def _semantic_search(self, query: str, top_kn: int, weaviate_filters: Optional[Any]) -> List[ChunkModel]:
         """Standard semantic (vector) search via LangChain WeaviateVectorStore."""
         with self.vector_store as vector_store:
-            docs_with_scores = vector_store.similarity_search_with_score(
-                query, k=top_kn, filters=weaviate_filters
-            )
+            docs_with_scores = vector_store.similarity_search_with_score(query, k=top_kn, filters=weaviate_filters)
 
             mapper = ChunkMapper()
             all_models: List[ChunkModel] = []
@@ -231,9 +217,7 @@ class ChunkWeaviateRepository(IVectorRepository):
             chunks.append(chunk_model)
         return chunks
 
-    def _bm25_search(
-        self, query: str, top_kn: int, weaviate_filters: Optional[Any]
-    ) -> List[ChunkModel]:
+    def _bm25_search(self, query: str, top_kn: int, weaviate_filters: Optional[Any]) -> List[ChunkModel]:
         """Native Weaviate BM25 keyword search."""
         with self._weaviate_client as client:
             collection = client.collections.get(self._collection_name)
@@ -253,9 +237,7 @@ class ChunkWeaviateRepository(IVectorRepository):
         )
         return models
 
-    def _hybrid_search(
-        self, query: str, top_kn: int, weaviate_filters: Optional[Any]
-    ) -> List[ChunkModel]:
+    def _hybrid_search(self, query: str, top_kn: int, weaviate_filters: Optional[Any]) -> List[ChunkModel]:
         """Native Weaviate Hybrid search (vector + BM25, alpha=0.5)."""
         # Generate query vector since Weaviate collection has no automatic vectorizer
         query_vector = self._embedding_service.embed_query(query)
@@ -295,9 +277,7 @@ class ChunkWeaviateRepository(IVectorRepository):
                         weaviate_filters_list.append(Filter.by_id().equal(v))
                 else:
                     if isinstance(v, list):
-                        weaviate_filters_list.append(
-                            Filter.by_property(k).contains_any(v)
-                        )
+                        weaviate_filters_list.append(Filter.by_property(k).contains_any(v))
                     else:
                         weaviate_filters_list.append(Filter.by_property(k).equal(v))
 
@@ -311,9 +291,7 @@ class ChunkWeaviateRepository(IVectorRepository):
             # Weaviate v4 requires a valid Filter object for delete_many
             # To delete all, we can use a filter that matches everything (not recommended for production without care)
             # For now, let's just log and return 0 if no filter is provided to avoid accidental mass deletion
-            logger.warning(
-                "Delete called without filters in Weaviate, skipping for safety."
-            )
+            logger.warning("Delete called without filters in Weaviate, skipping for safety.")
             return 0
 
         logger.debug("Deleting documents", context={"filters": weaviate_filters})
@@ -336,9 +314,7 @@ class ChunkWeaviateRepository(IVectorRepository):
             )
             raise
 
-    def list_chunks(
-        self, filters: Optional[Any], limit: int = 1000
-    ) -> List[ChunkModel]:
+    def list_chunks(self, filters: Optional[Any], limit: int = 1000) -> List[ChunkModel]:
         logger.debug("Listing chunks", context={"filters": filters, "limit": limit})
 
         try:
@@ -365,13 +341,9 @@ class ChunkWeaviateRepository(IVectorRepository):
                                 weaviate_filters_list.append(Filter.by_id().equal(v))
                         else:
                             if isinstance(v, list):
-                                weaviate_filters_list.append(
-                                    Filter.by_property(k).contains_any(v)
-                                )
+                                weaviate_filters_list.append(Filter.by_property(k).contains_any(v))
                             else:
-                                weaviate_filters_list.append(
-                                    Filter.by_property(k).equal(v)
-                                )
+                                weaviate_filters_list.append(Filter.by_property(k).equal(v))
 
                     if weaviate_filters_list:
                         if len(weaviate_filters_list) == 1:
@@ -379,16 +351,12 @@ class ChunkWeaviateRepository(IVectorRepository):
                         else:
                             weaviate_filters = Filter.all_of(weaviate_filters_list)
 
-                response = collection.query.fetch_objects(
-                    filters=weaviate_filters, limit=limit, include_vector=True
-                )
+                response = collection.query.fetch_objects(filters=weaviate_filters, limit=limit, include_vector=True)
 
                 chunks = []
                 for obj in response.objects:
                     if not hasattr(obj, "uuid"):
-                        logger.warning(
-                            "Object missing 'uuid' attribute", context={"object": obj}
-                        )
+                        logger.warning("Object missing 'uuid' attribute", context={"object": obj})
                         continue
 
                     properties = obj.properties
@@ -401,9 +369,7 @@ class ChunkWeaviateRepository(IVectorRepository):
                     chunks.append(chunk_model)
 
                 # Sort by index if present
-                chunks.sort(
-                    key=lambda x: x.index if x.index is not None else float("inf")
-                )
+                chunks.sort(key=lambda x: x.index if x.index is not None else float("inf"))
 
                 logger.debug(
                     "Listed chunks",
@@ -412,9 +378,7 @@ class ChunkWeaviateRepository(IVectorRepository):
                 return chunks
 
         except Exception as e:
-            logger.error(
-                "Error listing chunks", context={"filters": filters, "error": str(e)}
-            )
+            logger.error("Error listing chunks", context={"filters": filters, "error": str(e)})
             raise
 
     def is_ready(self) -> bool:

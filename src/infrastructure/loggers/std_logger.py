@@ -11,9 +11,7 @@ from src.config.settings import settings
 from src.domain.interfaces.logger.logger import ILogger
 
 # Global context for logging via contextvars
-_global_log_context: ContextVar[Dict[str, Any]] = ContextVar(
-    "global_log_context", default={}
-)
+_global_log_context: ContextVar[Dict[str, Any]] = ContextVar("global_log_context", default={})
 
 
 def set_global_context(context: Dict[str, Any]) -> None:
@@ -130,9 +128,7 @@ class StdLogger(ILogger):
         asctime = datetime.now().strftime("%Y-%m-%d %H:%M:%S,%f")[:-3]
         filename = os.path.basename(frame_best.filename)
         # Caminho relativo ao diretório do projeto
-        project_root = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../../../..")
-        )
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
         filepath_abs = os.path.abspath(frame_best.filename)
         filepath_rel = os.path.relpath(filepath_abs, project_root).replace("\\", "/")
         lineno = frame_best.lineno
@@ -232,33 +228,23 @@ class StdLogger(ILogger):
         if log_method:
             log_method(formatted_message)
 
-    def info(
-        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
-    ) -> None:
+    def info(self, message: str, context: dict[str, Any] | None = None, *args, **kwargs) -> None:
         """Log at INFO level."""
         self._log("INFO", message, context, *args, **kwargs)
 
-    def debug(
-        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
-    ) -> None:
+    def debug(self, message: str, context: dict[str, Any] | None = None, *args, **kwargs) -> None:
         """Log at DEBUG level."""
         self._log("DEBUG", message, context, *args, **kwargs)
 
-    def warning(
-        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
-    ) -> None:
+    def warning(self, message: str, context: dict[str, Any] | None = None, *args, **kwargs) -> None:
         """Log at WARNING level."""
         self._log("WARNING", message, context, *args, **kwargs)
 
-    def error(
-        self, error: Any, context: dict[str, Any] | None = None, *args, **kwargs
-    ) -> None:
+    def error(self, error: Any, context: dict[str, Any] | None = None, *args, **kwargs) -> None:
         """Log at ERROR level with optional exception/context support."""
         self._log("ERROR", str(error), context, *args, **kwargs)
 
-    def critical(
-        self, message: str, context: dict[str, Any] | None = None, *args, **kwargs
-    ) -> None:
+    def critical(self, message: str, context: dict[str, Any] | None = None, *args, **kwargs) -> None:
         """Log at CRITICAL level."""
         self._log("CRITICAL", message, context, *args, **kwargs)
 

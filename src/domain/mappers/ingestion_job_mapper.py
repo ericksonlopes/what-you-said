@@ -35,9 +35,7 @@ class IngestionJobMapper:
 
         return IngestionJobEntity(
             id=cast(UUID, getattr(model, "id")),
-            content_source_id=cast(
-                Optional[UUID], getattr(model, "content_source_id", None)
-            ),
+            content_source_id=cast(Optional[UUID], getattr(model, "content_source_id", None)),
             started_at=cast(datetime, getattr(model, "started_at")),
             created_at=cast(datetime, getattr(model, "created_at")),
             finished_at=cast(Optional[datetime], getattr(model, "finished_at", None)),
@@ -49,15 +47,9 @@ class IngestionJobMapper:
             ingestion_type=cast(Optional[str], getattr(model, "ingestion_type", None)),
             source_title=source_title,
             chunks_count=cast(Optional[int], getattr(model, "chunks_count", None)),
-            embedding_model=cast(
-                Optional[str], getattr(model, "embedding_model", None)
-            ),
-            pipeline_version=cast(
-                Optional[str], getattr(model, "pipeline_version", None)
-            ),
-            external_source=cast(
-                Optional[str], getattr(model, "external_source", None)
-            ),
+            embedding_model=cast(Optional[str], getattr(model, "embedding_model", None)),
+            pipeline_version=cast(Optional[str], getattr(model, "pipeline_version", None)),
+            external_source=cast(Optional[str], getattr(model, "external_source", None)),
             subject_id=cast(Optional[UUID], subject_id),
         )
 
@@ -66,8 +58,6 @@ class IngestionJobMapper:
         models: List[IngestionJobModel],
     ) -> List[IngestionJobEntity]:
         temp = [
-            IngestionJobMapper.model_to_entity(o)
-            for o in models
-            if o is not None and isinstance(o, IngestionJobModel)
+            IngestionJobMapper.model_to_entity(o) for o in models if o is not None and isinstance(o, IngestionJobModel)
         ]
         return [r for r in temp if r is not None]

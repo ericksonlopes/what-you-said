@@ -63,9 +63,7 @@ class TestDiarizationIngestionUseCase:
         db.commit()
 
         subject_id = uuid4()
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=subject_id
-        )
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=subject_id)
 
         job_mock = MagicMock(id=uuid4())
         use_case_deps["ingestion_service"].create_job.return_value = job_mock
@@ -75,9 +73,7 @@ class TestDiarizationIngestionUseCase:
         use_case_deps["cs_service"].create_source.return_value = MagicMock(id=source_id)
         use_case_deps["vector_service"].index_documents.return_value = ["vec1"]
 
-        cmd = IngestDiarizationCommand(
-            diarization_id=diarization_id, subject_id=subject_id
-        )
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=subject_id)
 
         result = use_case.execute(cmd)
 
@@ -108,9 +104,7 @@ class TestDiarizationIngestionUseCase:
         db.commit()
 
         use_case_deps["ks_service"].get_subject_by_id.return_value = None
-        cmd = IngestDiarizationCommand(
-            diarization_id=diarization_id, subject_id=uuid4()
-        )
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
 
         with pytest.raises(ValueError, match="Subject not found"):
             use_case.execute(cmd)
@@ -132,16 +126,10 @@ class TestDiarizationIngestionUseCase:
         db.commit()
 
         subject_id = uuid4()
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=subject_id
-        )
-        use_case_deps["cs_service"].get_by_source_info.return_value = MagicMock(
-            id=uuid4()
-        )
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=subject_id)
+        use_case_deps["cs_service"].get_by_source_info.return_value = MagicMock(id=uuid4())
 
-        cmd = IngestDiarizationCommand(
-            diarization_id=diarization_id, subject_id=subject_id, reprocess=True
-        )
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=subject_id, reprocess=True)
 
         use_case.execute(cmd)
         assert use_case_deps["chunk_service"].delete_by_content_source.called
@@ -163,13 +151,9 @@ class TestDiarizationIngestionUseCase:
         db.add(record)
         db.commit()
 
-        use_case_deps["ks_service"].get_subject_by_id.side_effect = Exception(
-            "Service error"
-        )
+        use_case_deps["ks_service"].get_subject_by_id.side_effect = Exception("Service error")
 
-        cmd = IngestDiarizationCommand(
-            diarization_id=diarization_id, subject_id=uuid4()
-        )
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
 
         with pytest.raises(Exception, match="Service error"):
             use_case.execute(cmd)
@@ -190,28 +174,20 @@ class TestDiarizationIngestionUseCase:
         db.add(record)
         db.commit()
 
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=uuid4()
-        )
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
         job_mock = MagicMock(id=uuid4())
         use_case_deps["ingestion_service"].create_job.return_value = job_mock
         # Fail at _get_or_create_source
-        use_case_deps["cs_service"].get_by_source_info.side_effect = Exception(
-            "Late error"
-        )
+        use_case_deps["cs_service"].get_by_source_info.side_effect = Exception("Late error")
 
-        cmd = IngestDiarizationCommand(
-            diarization_id=diarization_id, subject_id=uuid4()
-        )
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
 
         with pytest.raises(Exception, match="Late error"):
             use_case.execute(cmd)
 
         use_case_deps["ingestion_service"].update_job.assert_any_call(
             job_id=job_mock.id,
-            status=pytest.importorskip(
-                "src.domain.entities.enums.ingestion_job_status_enum"
-            ).IngestionJobStatus.FAILED,
+            status=pytest.importorskip("src.domain.entities.enums.ingestion_job_status_enum").IngestionJobStatus.FAILED,
             error_message="Late error",
         )
 
@@ -223,12 +199,7 @@ class TestDiarizationIngestionUseCase:
         record.source_metadata = None
 
         st, es = use_case._resolve_source_info(record)
-        assert (
-            st
-            == pytest.importorskip(
-                "src.domain.entities.enums.source_type_enum_entity"
-            ).SourceType.AUDIO
-        )
+        assert st == pytest.importorskip("src.domain.entities.enums.source_type_enum_entity").SourceType.AUDIO
         assert es == "s3://path"
 
     def test_format_transcript_long_audio(self, use_case_deps):
@@ -250,13 +221,9 @@ class TestDiarizationIngestionUseCase:
         )
         db.add(record)
         db.commit()
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=uuid4()
-        )
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
 
-        cmd = IngestDiarizationCommand(
-            diarization_id=diarization_id, subject_id=uuid4()
-        )
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4())
         with pytest.raises(ValueError, match="No segments found"):
             use_case.execute(cmd)
 
@@ -264,9 +231,7 @@ class TestDiarizationIngestionUseCase:
         use_case = DiarizationIngestionUseCase(**use_case_deps)
 
         # Test 1: Invalid source_type -> OTHER
-        record = MagicMock(
-            source_type="garbage", external_source="url", source_metadata=None
-        )
+        record = MagicMock(source_type="garbage", external_source="url", source_metadata=None)
         st, es = use_case._resolve_source_info(record)
         assert st == SourceType.OTHER
 
@@ -285,9 +250,7 @@ class TestDiarizationIngestionUseCase:
 
         record = MagicMock(source_metadata={"meta": "data"})
         mock_splitter = MagicMock()
-        mock_splitter.split_documents.return_value = [
-            Document(page_content="c", metadata={})
-        ]
+        mock_splitter.split_documents.return_value = [Document(page_content="c", metadata={})]
         monkeypatch.setattr(
             "langchain_text_splitters.RecursiveCharacterTextSplitter",
             lambda **kwargs: mock_splitter,
@@ -321,14 +284,10 @@ class TestDiarizationIngestionUseCase:
         job_id = uuid4()
         mock_job = MagicMock(id=job_id)
         use_case_deps["ingestion_service"].get_by_id.return_value = mock_job
-        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=uuid4()
-        )
+        use_case_deps["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid4())
         use_case_deps["cs_service"].create_source.return_value = MagicMock(id=uuid4())
 
-        cmd = IngestDiarizationCommand(
-            diarization_id=diarization_id, subject_id=uuid4(), ingestion_job_id=job_id
-        )
+        cmd = IngestDiarizationCommand(diarization_id=diarization_id, subject_id=uuid4(), ingestion_job_id=job_id)
         result = use_case.execute(cmd)
         assert result["job_id"] == job_id
         use_case_deps["ingestion_service"].get_by_id.assert_called_with(job_id)

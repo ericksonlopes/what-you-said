@@ -36,13 +36,9 @@ class TestAuthUseCase:
         assert len(state) > 0
 
     @pytest.mark.asyncio
-    async def test_handle_google_callback_new_user(
-        self, use_case, mock_repo, mock_service
-    ):
+    async def test_handle_google_callback_new_user(self, use_case, mock_repo, mock_service):
         # 1. Mock token exchange
-        mock_service.exchange_code_for_token = AsyncMock(
-            return_value={"access_token": "abc"}
-        )
+        mock_service.exchange_code_for_token = AsyncMock(return_value={"access_token": "abc"})
 
         # 2. Mock user info
         mock_service.get_google_user_info = AsyncMock(
@@ -68,20 +64,14 @@ class TestAuthUseCase:
         mock_repo.create.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_handle_google_callback_invalid_state(
-        self, use_case, mock_repo, mock_service
-    ):
+    async def test_handle_google_callback_invalid_state(self, use_case, mock_repo, mock_service):
         with pytest.raises(InvalidStateError, match="Invalid authentication state"):
             await use_case.handle_google_callback("test_code", "received", "expected")
 
     @pytest.mark.asyncio
-    async def test_handle_google_callback_existing_user(
-        self, use_case, mock_repo, mock_service
-    ):
+    async def test_handle_google_callback_existing_user(self, use_case, mock_repo, mock_service):
         # 1. Mock token exchange
-        mock_service.exchange_code_for_token = AsyncMock(
-            return_value={"access_token": "abc"}
-        )
+        mock_service.exchange_code_for_token = AsyncMock(return_value={"access_token": "abc"})
 
         # 2. Mock user info
         mock_service.get_google_user_info = AsyncMock(
@@ -89,9 +79,7 @@ class TestAuthUseCase:
         )
 
         # 3. Mock repository (found -> update login)
-        existing_user = User(
-            id="u2", email="existing@example.com", full_name="Existing User"
-        )
+        existing_user = User(id="u2", email="existing@example.com", full_name="Existing User")
         mock_repo.get_by_email.return_value = existing_user
         mock_repo.update_last_login.return_value = existing_user
 
@@ -121,23 +109,15 @@ class TestAuthUseCase:
 
     @pytest.mark.asyncio
     async def test_handle_google_callback_missing_info(self, use_case, mock_service):
-        mock_service.exchange_code_for_token = AsyncMock(
-            return_value={"access_token": "abc"}
-        )
+        mock_service.exchange_code_for_token = AsyncMock(return_value={"access_token": "abc"})
         mock_service.get_google_user_info = AsyncMock(return_value={"email": "e@e.c"})
         with pytest.raises(GoogleAuthError, match="Google user info missing"):
             await use_case.handle_google_callback("code", "s", "s")
 
     @pytest.mark.asyncio
-    async def test_handle_google_callback_user_not_created(
-        self, use_case, mock_repo, mock_service
-    ):
-        mock_service.exchange_code_for_token = AsyncMock(
-            return_value={"access_token": "abc"}
-        )
-        mock_service.get_google_user_info = AsyncMock(
-            return_value={"email": "e@e.c", "name": "N"}
-        )
+    async def test_handle_google_callback_user_not_created(self, use_case, mock_repo, mock_service):
+        mock_service.exchange_code_for_token = AsyncMock(return_value={"access_token": "abc"})
+        mock_service.get_google_user_info = AsyncMock(return_value={"email": "e@e.c", "name": "N"})
         mock_repo.get_by_email.return_value = None
         mock_repo.create.return_value = None
         with pytest.raises(UserNotCreatedError, match="Failed to create or retrieve"):

@@ -16,9 +16,7 @@ from src.infrastructure.repositories.sql.knowledge_subject_repository import (
 class TestKnowledgeSubjectSQLRepository:
     def test_create_subject_success(self, sqlite_memory):
         repo = KnowledgeSubjectSQLRepository()
-        sid = repo.create_subject(
-            name="Test", external_ref="ref", description="desc", icon="icon"
-        )
+        sid = repo.create_subject(name="Test", external_ref="ref", description="desc", icon="icon")
         assert sid is not None
 
         ks = repo.get_by_id(sid)

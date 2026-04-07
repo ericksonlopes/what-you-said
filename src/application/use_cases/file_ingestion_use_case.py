@@ -71,9 +71,7 @@ class FileIngestionUseCase:
             external_source = cmd.external_source or cmd.file_name
 
             ingestion = self._get_or_create_job(cmd, source_type, external_source)
-            self._notify_status(
-                cmd, "processing", job_id=ingestion.id, step="extracting"
-            )
+            self._notify_status(cmd, "processing", job_id=ingestion.id, step="extracting")
 
             # 1. Extraction
             source_path = cmd.file_url or cmd.file_path
@@ -84,9 +82,7 @@ class FileIngestionUseCase:
             source_type = self._refine_source_type(docs, source_type)
 
             # 2. Source Management
-            source = self._get_or_create_source(
-                subject, source_type, external_source, docs[0].metadata, cmd
-            )
+            source = self._get_or_create_source(subject, source_type, external_source, docs[0].metadata, cmd)
             if cmd.reprocess:
                 self._handle_reprocessing(source, ingestion)
 
@@ -159,9 +155,7 @@ class FileIngestionUseCase:
             raise ValueError(f"No content extracted from {cmd.file_name}")
         return docs
 
-    def _refine_source_type(
-        self, docs: List[Document], current: SourceType
-    ) -> SourceType:
+    def _refine_source_type(self, docs: List[Document], current: SourceType) -> SourceType:
         docling_detected = docs[0].metadata.get("docling_source_type")
         extracted_ext = docs[0].metadata.get("source_type")
 
@@ -172,19 +166,14 @@ class FileIngestionUseCase:
                 refined = SourceType(ext.lower())
                 if refined == SourceType.OTHER:
                     continue
-                if (
-                    current in [SourceType.YOUTUBE, SourceType.WEB]
-                    and refined == SourceType.TXT
-                ):
+                if current in [SourceType.YOUTUBE, SourceType.WEB] and refined == SourceType.TXT:
                     continue
                 return refined
             except ValueError:
                 continue
         return current
 
-    def _get_or_create_job(
-        self, cmd: IngestFileCommand, source_type: SourceType, external_source: str
-    ) -> Any:
+    def _get_or_create_job(self, cmd: IngestFileCommand, source_type: SourceType, external_source: str) -> Any:
         if cmd.ingestion_job_id:
             job = self.ingestion_service.get_by_id(cmd.ingestion_job_id)
             if job:
@@ -208,9 +197,7 @@ class FileIngestionUseCase:
         metadata: dict,
         cmd: IngestFileCommand,
     ) -> Any:
-        source = self.cs_service.get_by_source_info(
-            source_type, external_source, cmd.subject_id
-        )
+        source = self.cs_service.get_by_source_info(source_type, external_source, cmd.subject_id)
         final_meta = {**metadata, **(cmd.source_metadata or {})}
 
         if not source:
@@ -224,9 +211,7 @@ class FileIngestionUseCase:
                 source_metadata=final_meta,
             )
 
-        self.cs_service.update_processing_status(
-            source.id, ContentSourceStatus.PROCESSING
-        )
+        self.cs_service.update_processing_status(source.id, ContentSourceStatus.PROCESSING)
         return source
 
     def _process_chunks(
@@ -246,9 +231,7 @@ class FileIngestionUseCase:
 
         if tokenizer:
             splitter = TextSplitterService(tokenizer=tokenizer)
-            split_docs = splitter.split_text(
-                full_text, cmd.tokens_per_chunk, cmd.tokens_overlap, docs[0].metadata
-            )
+            split_docs = splitter.split_text(full_text, cmd.tokens_per_chunk, cmd.tokens_overlap, docs[0].metadata)
         else:
             from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -256,9 +239,7 @@ class FileIngestionUseCase:
                 chunk_size=cmd.tokens_per_chunk * 4,
                 chunk_overlap=cmd.tokens_overlap * 4,
             )
-            split_docs = ls.split_documents(
-                [Document(page_content=full_text, metadata=docs[0].metadata)]
-            )
+            split_docs = ls.split_documents([Document(page_content=full_text, metadata=docs[0].metadata)])
 
         chunks = self._build_chunk_entities(split_docs, source, subject, cmd, job_id)
         self.chunk_service.create_chunks(chunks)
@@ -301,25 +282,13 @@ class FileIngestionUseCase:
         logger.error(e, context={"action": "file_ingestion_execute"})
         if ingestion:
             msg = str(e).lower()
-            status = (
-                IngestionJobStatus.CANCELLED
-                if ("404" in msg or "not found" in msg)
-                else IngestionJobStatus.FAILED
-            )
-            self.ingestion_service.update_job(
-                ingestion.id, status, error_message=str(e)
-            )
+            status = IngestionJobStatus.CANCELLED if ("404" in msg or "not found" in msg) else IngestionJobStatus.FAILED
+            self.ingestion_service.update_job(ingestion.id, status, error_message=str(e))
         if source:
-            self.cs_service.update_processing_status(
-                source.id, ContentSourceStatus.FAILED
-            )
+            self.cs_service.update_processing_status(source.id, ContentSourceStatus.FAILED)
 
     def _cleanup(self, cmd: IngestFileCommand):
-        if (
-            cmd.delete_after_ingestion
-            and cmd.file_path
-            and os.path.exists(cmd.file_path)
-        ):
+        if cmd.delete_after_ingestion and cmd.file_path and os.path.exists(cmd.file_path):
             parent = os.path.dirname(cmd.file_path)
             if any(t in parent.lower() for t in ["tmp", "temp"]):
                 shutil.rmtree(parent, ignore_errors=True)
@@ -345,9 +314,7 @@ class FileIngestionUseCase:
                 pass
 
         ext = cmd.file_name.split(".")[-1].lower() if "." in cmd.file_name else ""
-        if cmd.external_source and any(
-            d in cmd.external_source for d in ["youtube.com", "youtu.be"]
-        ):
+        if cmd.external_source and any(d in cmd.external_source for d in ["youtube.com", "youtu.be"]):
             return SourceType.YOUTUBE
 
         mapping = {
@@ -383,9 +350,7 @@ class FileIngestionUseCase:
             t_count = 0
             if tokenizer:
                 try:
-                    t_count = len(
-                        tokenizer.encode(doc.page_content, add_special_tokens=False)
-                    )
+                    t_count = len(tokenizer.encode(doc.page_content, add_special_tokens=False))
                 except Exception:
                     t_count = len(doc.page_content) // 4
             else:

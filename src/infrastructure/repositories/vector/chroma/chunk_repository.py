@@ -51,9 +51,7 @@ class ChunkChromaRepository(IVectorRepository):
             self._chroma_client = None
 
     def create_documents(self, documents: List[ChunkModel]) -> List[str]:
-        logger.debug(
-            "Creating documents in ChromaDB", context={"num_documents": len(documents)}
-        )
+        logger.debug("Creating documents in ChromaDB", context={"num_documents": len(documents)})
 
         try:
             if not self._vector_store:
@@ -172,16 +170,12 @@ class ChunkChromaRepository(IVectorRepository):
             )
             return []
 
-    def _semantic_search(
-        self, query: str, top_kn: int, chroma_filter: Optional[Dict]
-    ) -> List[ChunkModel]:
+    def _semantic_search(self, query: str, top_kn: int, chroma_filter: Optional[Dict]) -> List[ChunkModel]:
         """Standard Chroma vector similarity search."""
         if not self._vector_store:
             return []
 
-        docs_with_scores = self._vector_store.similarity_search_with_score(
-            query, k=top_kn, filter=chroma_filter
-        )
+        docs_with_scores = self._vector_store.similarity_search_with_score(query, k=top_kn, filter=chroma_filter)
 
         mapper = ChunkMapper()
         models: List[ChunkModel] = []
@@ -201,9 +195,7 @@ class ChunkChromaRepository(IVectorRepository):
         collection = self._chroma_client.get_collection(self._collection_name)
 
         # Get all documents matching the filter (or all if no filter)
-        results = collection.get(
-            where=chroma_filter, include=["documents", "metadatas"]
-        )
+        results = collection.get(where=chroma_filter, include=["documents", "metadatas"])
 
         from langchain_core.documents import Document
 
@@ -221,9 +213,7 @@ class ChunkChromaRepository(IVectorRepository):
             )
         return docs
 
-    def _bm25_search(
-        self, query: str, top_kn: int, chroma_filter: Optional[Dict]
-    ) -> List[ChunkModel]:
+    def _bm25_search(self, query: str, top_kn: int, chroma_filter: Optional[Dict]) -> List[ChunkModel]:
         """BM25 keyword search over Chroma docs using rank_bm25."""
         try:
             from rank_bm25 import BM25Okapi
@@ -264,9 +254,7 @@ class ChunkChromaRepository(IVectorRepository):
 
         return models
 
-    def _hybrid_search(
-        self, query: str, top_kn: int, chroma_filter: Optional[Dict]
-    ) -> List[ChunkModel]:
+    def _hybrid_search(self, query: str, top_kn: int, chroma_filter: Optional[Dict]) -> List[ChunkModel]:
         """Custom Hybrid search using Reciprocal Rank Fusion (RRF)."""
         fetch_k = max(top_kn * 3, 20)
 
@@ -295,9 +283,7 @@ class ChunkChromaRepository(IVectorRepository):
             rrf_scores[doc_id] = score
 
         # Sort by RRF score
-        sorted_ids = sorted(
-            rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True
-        )
+        sorted_ids = sorted(rrf_scores.keys(), key=lambda x: rrf_scores[x], reverse=True)
 
         final_results = []
         for doc_id in sorted_ids[:top_kn]:
@@ -323,9 +309,7 @@ class ChunkChromaRepository(IVectorRepository):
         try:
             chroma_filter = self._build_chroma_filter(filters)
             if not chroma_filter:
-                logger.warning(
-                    "Delete called without filters in Chroma, skipping for safety."
-                )
+                logger.warning("Delete called without filters in Chroma, skipping for safety.")
                 return 0
 
             collection = self._chroma_client.get_collection(self._collection_name)
@@ -346,9 +330,7 @@ class ChunkChromaRepository(IVectorRepository):
             )
             return 0
 
-    def list_chunks(
-        self, filters: Optional[Any], limit: int = 1000
-    ) -> List[ChunkModel]:
+    def list_chunks(self, filters: Optional[Any], limit: int = 1000) -> List[ChunkModel]:
         if not self._chroma_client:
             return []
 
@@ -356,9 +338,7 @@ class ChunkChromaRepository(IVectorRepository):
             chroma_filter = self._build_chroma_filter(filters)
 
             collection = self._chroma_client.get_collection(self._collection_name)
-            results = collection.get(
-                where=chroma_filter, limit=limit, include=["documents", "metadatas"]
-            )
+            results = collection.get(where=chroma_filter, limit=limit, include=["documents", "metadatas"])
 
             mapper = ChunkMapper()
             models = []

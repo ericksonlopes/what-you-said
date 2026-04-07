@@ -23,9 +23,7 @@ class YoutubeDataProcessService:
     Se não houver tokenizer, faz fallback para tiktoken.
     """
 
-    def __init__(
-        self, model_loader_service: IModelLoaderService, yt_extractor: YoutubeExtractor
-    ):
+    def __init__(self, model_loader_service: IModelLoaderService, yt_extractor: YoutubeExtractor):
         self.model_loader_service: IModelLoaderService = model_loader_service
         self.yt_extractor = yt_extractor
 
@@ -58,14 +56,10 @@ class YoutubeDataProcessService:
             return documents
 
         if mode == "time" or not tokens_per_chunk:
-            return self._split_by_time(
-                transcript, time_window_size, time_overlap, context
-            )
+            return self._split_by_time(transcript, time_window_size, time_overlap, context)
 
         if mode == "tokens":
-            return self._split_by_tokens(
-                transcript, tokens_per_chunk, tokens_overlap, context
-            )
+            return self._split_by_tokens(transcript, tokens_per_chunk, tokens_overlap, context)
 
         logger.error("Unknown splitting mode.", context={**context, "mode": mode})
         raise ValueError(f"Unknown splitting mode: {mode}")
@@ -93,11 +87,7 @@ class YoutubeDataProcessService:
         for i in range(windows):
             start = i * step
             end = start + window_size
-            window_text = [
-                self._get_text(snippet)
-                for snippet in transcript
-                if start <= self._get_start(snippet) < end
-            ]
+            window_text = [self._get_text(snippet) for snippet in transcript if start <= self._get_start(snippet) < end]
 
             if window_text:
                 doc_context = {
@@ -108,11 +98,7 @@ class YoutubeDataProcessService:
                     "window_text_length": len(window_text),
                 }
                 logger.debug("Creating document for time window", context=doc_context)
-                documents.append(
-                    self._create_document(
-                        window_text, start, end, self._get_video_id(transcript)
-                    )
-                )
+                documents.append(self._create_document(window_text, start, end, self._get_video_id(transcript)))
 
         logger.debug(
             "Transcript split into windows",
@@ -129,9 +115,7 @@ class YoutubeDataProcessService:
     ) -> List[Document]:
         step = tokens_per_chunk - token_overlap
         if step <= 0:
-            logger.error(
-                "token_overlap must be smaller than tokens_per_chunk", context=context
-            )
+            logger.error("token_overlap must be smaller than tokens_per_chunk", context=context)
             raise ValueError("token_overlap must be smaller than tokens_per_chunk")
 
         tokenizer = getattr(self.model_loader_service.model, "tokenizer", None)
@@ -141,12 +125,8 @@ class YoutubeDataProcessService:
                 "No tokenizer available in the models. Please configure a tokenizer in model_loader_service.models."
             )
 
-        token_ids, token_meta = self._tokenize_transcript(
-            transcript, tokenizer, context
-        )
-        documents = self._create_token_chunks(
-            token_ids, token_meta, tokens_per_chunk, step, transcript, context
-        )
+        token_ids, token_meta = self._tokenize_transcript(transcript, tokenizer, context)
+        documents = self._create_token_chunks(token_ids, token_meta, tokens_per_chunk, step, transcript, context)
         logger.debug(
             "Transcript split into token windows",
             context={**context, "token_windows_created": len(documents)},
@@ -176,9 +156,7 @@ class YoutubeDataProcessService:
             end_time = start_time + (duration or 0.0)
 
             if not text:
-                logger.debug(
-                    "Skipping empty snippet", context={**context, "snippet_index": idx}
-                )
+                logger.debug("Skipping empty snippet", context={**context, "snippet_index": idx})
                 continue
 
             ids = _encode(text)
@@ -188,12 +166,8 @@ class YoutubeDataProcessService:
             )
             for t_id in ids:
                 token_ids.append(t_id)
-                token_meta.append(
-                    {"start": start_time, "end": end_time, "snippet_index": idx}
-                )
-        logger.debug(
-            "Tokenization complete", context={**context, "total_tokens": len(token_ids)}
-        )
+                token_meta.append({"start": start_time, "end": end_time, "snippet_index": idx})
+        logger.debug("Tokenization complete", context={**context, "total_tokens": len(token_ids)})
         return token_ids, token_meta
 
     def _create_token_chunks(
@@ -211,9 +185,7 @@ class YoutubeDataProcessService:
 
         def _decode(_ids: list):
             try:
-                return self.model_loader_service.model.tokenizer.decode(
-                    _ids, skip_special_tokens=True
-                )
+                return self.model_loader_service.model.tokenizer.decode(_ids, skip_special_tokens=True)
             except TypeError:
                 return self.model_loader_service.model.tokenizer.decode(_ids)
             except AttributeError:

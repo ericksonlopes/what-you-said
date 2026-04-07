@@ -29,14 +29,10 @@ async def test_web_scraping_use_case_execute_success(mock_dependencies):
     # Setup
     use_case = WebScrapingUseCase(**mock_dependencies, vector_store_type="weaviate")
 
-    cmd = IngestWebCommand(
-        url="https://example.com", subject_id=str(uuid.uuid4()), language="en"
-    )
+    cmd = IngestWebCommand(url="https://example.com", subject_id=str(uuid.uuid4()), language="en")
 
     # Mock behavior
-    mock_dependencies["ks_service"].get_subject_by_id.return_value = MagicMock(
-        id=uuid.uuid4()
-    )
+    mock_dependencies["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid.uuid4())
     mock_dependencies["extractor"].extract.return_value = [
         Document(page_content="Scraped content", metadata={"title": "Test"})
     ]
@@ -72,9 +68,7 @@ async def test_web_scraping_use_case_extraction_failure(mock_dependencies):
 
     cmd = IngestWebCommand(url="https://fail.com", subject_id=str(uuid.uuid4()))
 
-    mock_dependencies["ks_service"].get_subject_by_id.return_value = MagicMock(
-        id=uuid.uuid4()
-    )
+    mock_dependencies["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid.uuid4())
     mock_dependencies["extractor"].extract.side_effect = Exception("Scraping error")
 
     job_mock = MagicMock(id=uuid.uuid4())

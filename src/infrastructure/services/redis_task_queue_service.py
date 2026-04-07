@@ -52,16 +52,12 @@ class RedisTaskQueueService(ITaskQueue):
 
     def start(self):
         if self._workers:
-            logger.warning(
-                "RedisTaskQueueService already started.", context={"where": "start"}
-            )
+            logger.warning("RedisTaskQueueService already started.", context={"where": "start"})
             return
 
         self._should_stop = False
         for i in range(self._num_workers):
-            t = threading.Thread(
-                target=self._worker_loop, name=f"RedisTaskWorker-{i}", daemon=True
-            )
+            t = threading.Thread(target=self._worker_loop, name=f"RedisTaskWorker-{i}", daemon=True)
             t.start()
             self._workers.append(t)
         logger.info(
@@ -123,9 +119,7 @@ class RedisTaskQueueService(ITaskQueue):
         try:
             # Fetch raw JSON payloads from the list
             # Redis list is LPUSH (front is index 0)
-            raw_tasks = cast(
-                list[bytes], self._redis.lrange(self._queue_name, 0, limit - 1)
-            )
+            raw_tasks = cast(list[bytes], self._redis.lrange(self._queue_name, 0, limit - 1))
             tasks = []
             for payload in raw_tasks:
                 try:

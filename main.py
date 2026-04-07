@@ -73,9 +73,7 @@ async def lifespan(app: FastAPI):
             },
         )
 
-        app.state.model_loader = ModelLoaderService(
-            model_name=_settings.model_embedding.name
-        )
+        app.state.model_loader = ModelLoaderService(model_name=_settings.model_embedding.name)
         logger.info("Embedding model pre-loaded successfully.")
 
         # Load Re-rank Model
@@ -102,9 +100,7 @@ async def lifespan(app: FastAPI):
         register_task("run_youtube_ingestion_worker", run_youtube_ingestion_worker)
         register_task("run_web_ingestion_worker", run_web_ingestion_worker)
         register_task("run_audio_diarization_worker", run_audio_diarization_worker)
-        register_task(
-            "run_diarization_ingestion_worker", run_diarization_ingestion_worker
-        )
+        register_task("run_diarization_ingestion_worker", run_diarization_ingestion_worker)
         register_task("run_youtube_dispatcher_worker", run_youtube_dispatcher_worker)
         register_task(
             "run_audio_diarization_dispatcher_worker",
@@ -181,9 +177,7 @@ app.include_router(
     tags=["Sources"],
     dependencies=secured_deps,
 )
-app.include_router(
-    job_router.router, prefix="/rest/jobs", tags=["Jobs"], dependencies=secured_deps
-)
+app.include_router(job_router.router, prefix="/rest/jobs", tags=["Jobs"], dependencies=secured_deps)
 app.include_router(
     settings_router.router,
     prefix="/rest/settings",

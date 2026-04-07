@@ -31,9 +31,7 @@ def test_delete_source_success(use_case, mock_services):
 
     assert success is True
     mock_services["cs_service"].get_by_id.assert_called_once_with(source_id)
-    mock_services["chunk_service"].delete_by_content_source.assert_called_once_with(
-        source_id
-    )
+    mock_services["chunk_service"].delete_by_content_source.assert_called_once_with(source_id)
     mock_services["vector_repo"].delete.assert_called_once()
     mock_services["cs_service"].delete_source.assert_called_once_with(source_id)
 
@@ -52,9 +50,7 @@ def test_delete_source_not_found(use_case, mock_services):
 def test_delete_source_exception(use_case, mock_services):
     source_id = uuid.uuid4()
     mock_services["cs_service"].get_by_id.return_value = MagicMock(id=source_id)
-    mock_services["chunk_service"].delete_by_content_source.side_effect = Exception(
-        "DB error"
-    )
+    mock_services["chunk_service"].delete_by_content_source.side_effect = Exception("DB error")
 
     with pytest.raises(Exception, match="DB error"):
         use_case.delete(source_id)

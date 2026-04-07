@@ -8,15 +8,11 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 from src.config.validators import docker_host_fallback, docker_host_fallback_optional
 from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
 
-warnings.filterwarnings(
-    "ignore", message='.*has conflict with protected namespace "model_".*'
-)
+warnings.filterwarnings("ignore", message='.*has conflict with protected namespace "model_".*')
 
 
 class SQLConfig(BaseModel):
-    type: Optional[str] = Field(
-        default=None, description="SQL database connection type"
-    )
+    type: Optional[str] = Field(default=None, description="SQL database connection type")
     host: Optional[str] = Field(default=None, description="SQL database host")
     port: Optional[str] = Field(default=None, description="SQL database port")
     user: Optional[str] = Field(default=None, description="SQL database username")
@@ -31,9 +27,7 @@ class SQLConfig(BaseModel):
     @field_validator("host", mode="after")
     @classmethod
     def _fallback_host(cls, v: Optional[str]) -> Optional[str]:
-        return docker_host_fallback_optional(
-            v, {"postgres", "mysql", "mariadb", "mssql", "db"}
-        )
+        return docker_host_fallback_optional(v, {"postgres", "mysql", "mariadb", "mssql", "db"})
 
     @property
     def url(self) -> str:
@@ -68,16 +62,10 @@ class VectorConfig(BaseSettings):
         description="Path to store vector index files (for Chroma and FAISS)",
     )
 
-    weaviate_host: str = Field(
-        default="localhost", description="WeaviateConfig host URL"
-    )
+    weaviate_host: str = Field(default="localhost", description="WeaviateConfig host URL")
     weaviate_port: int = Field(default=8081, description="WeaviateConfig port")
-    weaviate_api_key: Optional[str] = Field(
-        default=None, description="WeaviateConfig API key for authentication"
-    )
-    weaviate_grpc_port: int = Field(
-        default=50051, description="WeaviateConfig gRPC port for local connections"
-    )
+    weaviate_api_key: Optional[str] = Field(default=None, description="WeaviateConfig API key for authentication")
+    weaviate_grpc_port: int = Field(default=50051, description="WeaviateConfig gRPC port for local connections")
 
     chroma_host: str = Field(default="localhost", description="ChromaDB host URL")
     chroma_port: int = Field(default=8000, description="ChromaDB port")
@@ -106,8 +94,7 @@ class VectorConfig(BaseSettings):
 class App(BaseSettings):
     env: str = Field(
         default="development",
-        description="Application environment (e.g., 'development', 'production', "
-        "'testing')",
+        description="Application environment (e.g., 'development', 'production', 'testing')",
     )
     port: int = Field(default=5000, description="Application port")
 
@@ -153,9 +140,7 @@ class App(BaseSettings):
             "ERROR": logging.ERROR,
             "CRITICAL": logging.CRITICAL,
         }
-        return {
-            level_map[level] for level in self.list_log_levels if level in level_map
-        }
+        return {level_map[level] for level in self.list_log_levels if level in level_map}
 
 
 class ModelRerank(BaseSettings):
@@ -193,33 +178,21 @@ class RedisConfig(BaseSettings):
 
 class YoutubeConfig(BaseSettings):
     # Throttling configurations
-    throttle_batch_size: int = Field(
-        default=2, description="Number of videos to process before waiting"
-    )
-    throttle_wait_seconds: int = Field(
-        default=65, description="Seconds to wait between batches"
-    )
+    throttle_batch_size: int = Field(default=2, description="Number of videos to process before waiting")
+    throttle_wait_seconds: int = Field(default=65, description="Seconds to wait between batches")
 
     # Proxy configurations
-    proxy_enabled: bool = Field(
-        default=False, description="Enable or disable proxy usage for YouTube"
-    )
+    proxy_enabled: bool = Field(default=False, description="Enable or disable proxy usage for YouTube")
     proxy_url: Optional[str] = Field(
         default=None,
         description="Generic proxy URL (e.g. http://user:pass@host:port)",
     )
-    webshare_username: Optional[str] = Field(
-        default=None, description="Webshare.io username for optimized proxy"
-    )
-    webshare_password: Optional[str] = Field(
-        default=None, description="Webshare.io password for optimized proxy"
-    )
+    webshare_username: Optional[str] = Field(default=None, description="Webshare.io username for optimized proxy")
+    webshare_password: Optional[str] = Field(default=None, description="Webshare.io password for optimized proxy")
 
 
 class StorageConfig(BaseSettings):
-    minio_url: str = Field(
-        default="http://localhost:9000", description="MinIO/S3 endpoint URL"
-    )
+    minio_url: str = Field(default="http://localhost:9000", description="MinIO/S3 endpoint URL")
     minio_root_user: str = Field(default="root", description="MinIO access key")
     minio_root_password: str = Field(default="password", description="MinIO secret key")
     minio_bucket: str = Field(default="whatyousaid", description="MinIO bucket name")
@@ -251,18 +224,10 @@ class AudioConfig(BaseSettings):
 
 
 class AuthConfig(BaseSettings):
-    hf_token: Optional[str] = Field(
-        default=None, description="HuggingFace token for pyannote/whisper models"
-    )
-    enable_google: bool = Field(
-        default=False, description="Enable Google SSO authentication"
-    )
-    google_client_id: Optional[str] = Field(
-        default=None, description="Google OAuth2 Client ID"
-    )
-    google_client_secret: Optional[str] = Field(
-        default=None, description="Google OAuth2 Client Secret"
-    )
+    hf_token: Optional[str] = Field(default=None, description="HuggingFace token for pyannote/whisper models")
+    enable_google: bool = Field(default=False, description="Enable Google SSO authentication")
+    google_client_id: Optional[str] = Field(default=None, description="Google OAuth2 Client ID")
+    google_client_secret: Optional[str] = Field(default=None, description="Google OAuth2 Client Secret")
     redirect_uri: str = Field(
         default="http://localhost:5000/rest/auth/google/callback",
         description="Google OAuth2 Redirect URI",
@@ -286,12 +251,9 @@ class AuthConfig(BaseSettings):
             env = os.getenv("APP__ENV", "development")
             if env == "production":
                 raise ValueError(
-                    "JWT secret must be changed from default in production. "
-                    "Set AUTH__JWT_SECRET environment variable."
+                    "JWT secret must be changed from default in production. Set AUTH__JWT_SECRET environment variable."
                 )
-            logging.getLogger(__name__).warning(
-                "Using default JWT secret — change AUTH__JWT_SECRET for production."
-            )
+            logging.getLogger(__name__).warning("Using default JWT secret — change AUTH__JWT_SECRET for production.")
         return v
 
 
@@ -304,33 +266,15 @@ class Settings(BaseSettings):
         protected_namespaces=(),
     )
     app: App = Field(default_factory=App, description="Application settings")
-    sql: SQLConfig = Field(
-        default_factory=SQLConfig, description="SQL database settings"
-    )
-    vector: VectorConfig = Field(
-        default_factory=VectorConfig, description="Vector store settings"
-    )
-    model_embedding: ModelEmbedding = Field(
-        default_factory=ModelEmbedding, description="Model embedding settings"
-    )
-    model_rerank: ModelRerank = Field(
-        default_factory=ModelRerank, description="Model rerank settings"
-    )
-    docling: DoclingConfig = Field(
-        default_factory=DoclingConfig, description="Docling settings"
-    )
-    redis: RedisConfig = Field(
-        default_factory=RedisConfig, description="Redis settings"
-    )
-    youtube: YoutubeConfig = Field(
-        default_factory=YoutubeConfig, description="YouTube ingestion settings"
-    )
-    auth: AuthConfig = Field(
-        default_factory=AuthConfig, description="Authentication settings"
-    )
-    storage: StorageConfig = Field(
-        default_factory=StorageConfig, description="MinIO/S3 storage settings"
-    )
+    sql: SQLConfig = Field(default_factory=SQLConfig, description="SQL database settings")
+    vector: VectorConfig = Field(default_factory=VectorConfig, description="Vector store settings")
+    model_embedding: ModelEmbedding = Field(default_factory=ModelEmbedding, description="Model embedding settings")
+    model_rerank: ModelRerank = Field(default_factory=ModelRerank, description="Model rerank settings")
+    docling: DoclingConfig = Field(default_factory=DoclingConfig, description="Docling settings")
+    redis: RedisConfig = Field(default_factory=RedisConfig, description="Redis settings")
+    youtube: YoutubeConfig = Field(default_factory=YoutubeConfig, description="YouTube ingestion settings")
+    auth: AuthConfig = Field(default_factory=AuthConfig, description="Authentication settings")
+    storage: StorageConfig = Field(default_factory=StorageConfig, description="MinIO/S3 storage settings")
     audio: AudioConfig = Field(
         default_factory=AudioConfig,
         description="Audio diarization/recognition settings",

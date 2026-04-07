@@ -21,9 +21,7 @@ class VoiceRecognizer:
         self._device = get_best_device()
 
     def _get_inference(self):
-        return model_loader.get_voice_inference(
-            hf_token=self.hf_token, device=self._device
-        )
+        return model_loader.get_voice_inference(hf_token=self.hf_token, device=self._device)
 
     def _compare(self, embedding: np.ndarray) -> list[tuple[str, float, str]]:
         scores = []

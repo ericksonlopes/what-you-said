@@ -25,9 +25,7 @@ router = APIRouter()
 def get_current_settings(settings: Annotated[Settings, Depends(get_settings)]):
     """Return current application settings (sanitized)"""
     return SettingsResponse(
-        app=AppSettingsSchema(
-            env=settings.app.env, log_levels=", ".join(settings.app.list_log_levels)
-        ),
+        app=AppSettingsSchema(env=settings.app.env, log_levels=", ".join(settings.app.list_log_levels)),
         vector=VectorSettingsSchema(
             store_type=settings.vector.store_type.value,
             weaviate_host=settings.vector.weaviate_host,
@@ -69,9 +67,7 @@ def check_component_health(
     try:
         if component == "api":
             latency = int((time.time() - start_time) * 1000)
-            return HealthCheckResponse(
-                status="success", latency_ms=latency, message="API is responding"
-            )
+            return HealthCheckResponse(status="success", latency_ms=latency, message="API is responding")
 
         elif component == "sql":
             with Connector() as session:
@@ -110,9 +106,7 @@ def check_component_health(
                     message="Vector store is ready",
                 )
             else:
-                return HealthCheckResponse(
-                    status="error", message="Vector store is not ready"
-                )
+                return HealthCheckResponse(status="error", message="Vector store is not ready")
 
         elif component == "model":
             # For now, we just assume it's okay if it loaded correctly at startup
@@ -125,9 +119,7 @@ def check_component_health(
             )
 
         else:
-            raise HTTPException(
-                status_code=400, detail=f"Unknown component: {component}"
-            )
+            raise HTTPException(status_code=400, detail=f"Unknown component: {component}")
 
     except Exception as e:
         return HealthCheckResponse(status="error", message=str(e))

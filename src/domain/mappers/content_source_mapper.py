@@ -25,21 +25,15 @@ class ContentSourceMapper:
             created_at=cast(datetime, getattr(model, "created_at")),
             ingested_at=cast(Optional[datetime], getattr(model, "ingested_at", None)),
             processing_status=cast(str, getattr(model, "processing_status", "pending")),
-            embedding_model=cast(
-                Optional[str], getattr(model, "embedding_model", None)
-            ),
+            embedding_model=cast(Optional[str], getattr(model, "embedding_model", None)),
             dimensions=cast(Optional[int], getattr(model, "dimensions", None)),
             total_tokens=cast(Optional[int], getattr(model, "total_tokens", None)),
-            max_tokens_per_chunk=cast(
-                Optional[int], getattr(model, "max_tokens_per_chunk", None)
-            ),
+            max_tokens_per_chunk=cast(Optional[int], getattr(model, "max_tokens_per_chunk", None)),
             status=cast(str, getattr(model, "status", "active")),
             chunks=cast(int, getattr(model, "chunks", 0)),
             status_message=cast(Optional[str], getattr(model, "status_message", None)),
             error_message=cast(Optional[str], getattr(model, "error_message", None)),
-            source_metadata=cast(
-                Optional[dict], getattr(model, "source_metadata", None)
-            ),
+            source_metadata=cast(Optional[dict], getattr(model, "source_metadata", None)),
         )
 
     @staticmethod

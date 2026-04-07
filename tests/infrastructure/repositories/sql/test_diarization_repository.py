@@ -16,9 +16,7 @@ class TestDiarizationRepository:
 
     def test_save_new_and_update(self, sqlite_memory):
         repo = DiarizationRepository(sqlite_memory)
-        result = DiarizationResult(
-            segments=[Segment(start=0, end=1, text="t", speaker="S1")], language="en"
-        )
+        result = DiarizationResult(segments=[Segment(start=0, end=1, text="t", speaker="S1")], language="en")
 
         # Save new
         record = repo.save(result, "T1", "upload", "f1", "/folder")
@@ -27,9 +25,7 @@ class TestDiarizationRepository:
 
         # Update existing
         result2 = DiarizationResult(segments=[], language="fr")
-        updated = repo.save(
-            result2, "T2", "upload", "f1", "/folder2", diarization_id=record.id
-        )
+        updated = repo.save(result2, "T2", "upload", "f1", "/folder2", diarization_id=record.id)
         assert updated.id == record.id
         assert updated.name == "T2"
         assert updated.language == "fr"

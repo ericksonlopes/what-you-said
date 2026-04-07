@@ -35,11 +35,7 @@ class YoutubeTranscriptNotFoundException(YoutubeException):
         available_languages: Optional[list[str]] = None,
     ):
         lang_str = f" in language '{language}'" if language else ""
-        avail_str = (
-            f" Available languages: {', '.join(available_languages)}."
-            if available_languages
-            else ""
-        )
+        avail_str = f" Available languages: {', '.join(available_languages)}." if available_languages else ""
         message = f"Transcript not found for video {video_id}{lang_str}.{avail_str}"
         super().__init__(message, video_id=video_id)
         self.available_languages = available_languages
@@ -57,10 +53,7 @@ class YoutubeNetworkException(YoutubeException):
     """Raised when there is a network-related error (DNS, connection)."""
 
     def __init__(self, video_id: str, error_msg: str):
-        message = (
-            f"Network error while accessing video {video_id}. "
-            f"Please check your connection. Details: {error_msg}"
-        )
+        message = f"Network error while accessing video {video_id}. Please check your connection. Details: {error_msg}"
         super().__init__(message, video_id=video_id)
 
 

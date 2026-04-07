@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
+from src.infrastructure.repositories.sql.models.voice_record import VoiceRecord
 from src.infrastructure.services.voice_profile_service import VoiceDB
 
 
@@ -12,9 +13,7 @@ class TestVoiceDB:
     def mock_infra(self):
         # Stub StorageService and Os logic globally for this class to prevent ANY footprint
         with (
-            patch(
-                "src.infrastructure.services.voice_profile_service.StorageService"
-            ) as mock_cls,
+            patch("src.infrastructure.services.voice_profile_service.StorageService") as mock_cls,
             patch("os.path.exists", return_value=True),
             patch("os.path.isdir", return_value=True),
             patch("os.makedirs"),
@@ -30,9 +29,7 @@ class TestVoiceDB:
             "src.infrastructure.services.voice_profile_service.get_best_device",
             return_value="cpu",
         ):
-            with patch(
-                "src.infrastructure.services.voice_profile_service.VoiceDB._get_inference"
-            ) as mock_inf_getter:
+            with patch("src.infrastructure.services.voice_profile_service.VoiceDB._get_inference") as mock_inf_getter:
                 mock_inf = MagicMock()
                 mock_inf_getter.return_value = mock_inf
                 mock_inf.return_value = MagicMock(tolist=lambda: [0.1, 0.2])
@@ -47,6 +44,12 @@ class TestVoiceDB:
                     voice_id, _ = db_service.add("Test User", "local.wav")
 
                     assert voice_id is not None
+                    
+                    # Verify status was updated to ready
+                    record = sqlite_memory.get(VoiceRecord, voice_id)
+                    assert record.status == "ready"
+                    assert record.status_message is None
+                    
                     voices = db_service.voices
                     assert "Test User" in voices
 
@@ -62,9 +65,7 @@ class TestVoiceDB:
         sqlite_memory.add(v)
         sqlite_memory.commit()
 
-        self.mock_storage.list_files.return_value = [
-            {"key": "voices/1/reference_1.wav"}
-        ]
+        self.mock_storage.list_files.return_value = [{"key": "voices/1/reference_1.wav"}]
 
         db_service = VoiceDB(sqlite_memory, hf_token="fake")
         db_service.remove("Test")
@@ -76,9 +77,7 @@ class TestVoiceDB:
             "src.infrastructure.services.voice_profile_service.get_best_device",
             return_value="cpu",
         ):
-            with patch(
-                "src.infrastructure.services.voice_profile_service.VoiceDB._get_inference"
-            ) as mock_inf_getter:
+            with patch("src.infrastructure.services.voice_profile_service.VoiceDB._get_inference") as mock_inf_getter:
                 mock_inf = MagicMock()
                 mock_inf_getter.return_value = mock_inf
                 mock_inf.return_value = MagicMock(tolist=lambda: [0.1, 0.2])
@@ -149,3 +148,69 @@ class TestVoiceDB:
         db_service = VoiceDB(sqlite_memory, hf_token="fake")
         with pytest.raises(KeyError, match="not found"):
             db_service.remove("NonExistent")
+
+    def test_add_voice_s3_download_failure(self, sqlite_memory):
+        self.mock_storage.download_file.side_effect = Exception("S3 Error")
+        db_service = VoiceDB(sqlite_memory, hf_token="fake")
+
+        with pytest.raises(ValueError, match="Failed to download from S3"):
+            db_service.add("S3 User", "s3://bucket/voice.wav")
+
+        # After failure, it should NOT have created a successful record
+        # but let's check if it created a fixed "failed" record if we implement it that way.
+        # Currently, if it fails at download, it doesn't even create the record yet in the DB.
+        # Wait, the record is created AFTER the S3 check block. 
+        # So no record should exist in DB yet.
+        assert sqlite_memory.query(VoiceRecord).count() == 0
+
+    def test_add_voice_embedding_extraction_failure(self, sqlite_memory):
+        db_service = VoiceDB(sqlite_memory, hf_token="fake")
+        
+        # Fail during embedding extraction
+        with patch.object(db_service, "_extract_embedding", side_effect=Exception("Model Error")):
+            with pytest.raises(Exception, match="Model Error"):
+                db_service.add("Failed User", "local.wav")
+
+            # Verify it marked as failed
+            record = sqlite_memory.query(VoiceRecord).filter(VoiceRecord.name == "Failed User").first()
+            assert record is not None
+            assert record.status == "failed"
+            assert "Model Error" in record.status_message
+
+    def test_list_audio_files(self, sqlite_memory):
+        v = VoiceRecord(id="v1", name="V1", embedding=[0.1], audios_path="voices/v1/", status="ready")
+        sqlite_memory.add(v)
+        sqlite_memory.commit()
+
+        self.mock_storage.list_files.return_value = [{"key": "f1.wav"}, {"key": "f2.wav"}]
+        
+        db_service = VoiceDB(sqlite_memory, hf_token="fake")
+        files = db_service.list_audio_files("v1")
+        
+        assert len(files) == 2
+        self.mock_storage.list_files.assert_called_once_with(prefix="voices/v1/", extension=".wav")
+
+    def test_delete_audio_file(self, sqlite_memory):
+        db_service = VoiceDB(sqlite_memory, hf_token="fake")
+        db_service.delete_audio_file("some/key.wav")
+        self.mock_storage.delete_file.assert_called_once_with("some/key.wav")
+
+    def test_list_voices_and_len(self, sqlite_memory):
+        v1 = VoiceRecord(id="v1", name="Ready", embedding=[0.1], status="ready")
+        v2 = VoiceRecord(id="v2", name="Processing", embedding=[], status="processing")
+        sqlite_memory.add_all([v1, v2])
+        sqlite_memory.commit()
+
+        db_service = VoiceDB(sqlite_memory, hf_token="fake")
+        
+        # list_voices should only show ready ones
+        voice_list = db_service.list_voices()
+        assert "Ready" in voice_list
+        assert "Processing" not in voice_list
+        
+        # len should only show ready ones
+        assert len(db_service) == 1
+        
+        # .voices property should only show ready ones
+        assert "Ready" in db_service.voices
+        assert "Processing" not in db_service.voices

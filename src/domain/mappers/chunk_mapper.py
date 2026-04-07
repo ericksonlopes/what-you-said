@@ -38,10 +38,7 @@ class ChunkMapper:
             # try to normalize enum names like 'YOUTUBE' to their values
             with suppress(Exception):
                 data["source_type"] = SourceType[source].value
-            if (
-                not isinstance(data.get("source_type"), str)
-                or data["source_type"] == source
-            ):
+            if not isinstance(data.get("source_type"), str) or data["source_type"] == source:
                 with suppress(Exception):
                     data["source_type"] = SourceType(source).value
         return ChunkModel(**data)
@@ -69,9 +66,7 @@ class ChunkMapper:
         """
         metadata = dict(getattr(document, "metadata", {}) or {})
         # prefer page_content, fall back to content
-        content = getattr(document, "page_content", None) or getattr(
-            document, "content", None
-        )
+        content = getattr(document, "page_content", None) or getattr(document, "content", None)
         data = metadata.copy()
         if content is not None:
             data["content"] = content

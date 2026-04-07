@@ -606,6 +606,7 @@
       "new_name": "Novo Nome...",
       "train_voice": "Treinar esta voz",
       "reinforce_voice": "Reforçar esta voz",
+      "processing_voice": "Treinando voz...",
       "match_pct": "{{count}}% de match",
       "save_btn": "Salvar e Indexar"
     },
@@ -711,7 +712,10 @@
       "delete_file_error": "Falha ao excluir amostra de áudio"
     },
     "status": {
-      "samples": "{{count}} arquivos de áudio"
+      "samples": "{{count}} arquivos de áudio",
+      "processing": "Treinando",
+      "ready": "Pronto",
+      "failed": "Falhou"
     },
     "card": {
       "created_at": "Criado em"

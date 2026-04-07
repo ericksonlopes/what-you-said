@@ -49,9 +49,7 @@ def upgrade() -> None:
         sa.Column("language", sa.Text(), nullable=True),
         sa.Column("embedding_model", sa.Text(), nullable=True),
         sa.Column("dimensions", sa.Integer(), nullable=True),
-        sa.Column(
-            "status", sa.Text(), server_default=sa.text("'active'"), nullable=False
-        ),
+        sa.Column("status", sa.Text(), server_default=sa.text("'active'"), nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -103,9 +101,7 @@ def upgrade() -> None:
         sa.Column("chunk_id", sa.Text(), nullable=False),
         sa.Column("chars", sa.Integer(), server_default=sa.text("0"), nullable=False),
         sa.Column("language", sa.Text(), nullable=True),
-        sa.Column(
-            "version_number", sa.Integer(), server_default=sa.text("1"), nullable=False
-        ),
+        sa.Column("version_number", sa.Integer(), server_default=sa.text("1"), nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -118,9 +114,7 @@ def upgrade() -> None:
             initially="IMMEDIATE",
             deferrable=True,
         ),
-        sa.ForeignKeyConstraint(
-            ["job_id"], ["ingestion_jobs.id"], initially="IMMEDIATE", deferrable=True
-        ),
+        sa.ForeignKeyConstraint(["job_id"], ["ingestion_jobs.id"], initially="IMMEDIATE", deferrable=True),
         sa.PrimaryKeyConstraint("id"),
         if_not_exists=True,
     )

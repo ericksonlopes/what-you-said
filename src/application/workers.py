@@ -74,9 +74,7 @@ def run_file_ingestion_worker(cmd: IngestFileCommand):
 
         use_case.execute(cmd)
     except Exception as e:
-        logger.error(
-            f"Worker Error: Failed to execute file ingestion: {e}", exc_info=True
-        )
+        logger.error(f"Worker Error: Failed to execute file ingestion: {e}", exc_info=True)
     finally:
         clear_global_context()
 
@@ -123,9 +121,7 @@ def run_youtube_ingestion_worker(cmd: IngestYoutubeCommand):
 
         use_case.execute(cmd)
     except Exception as e:
-        logger.error(
-            f"Worker Error: Failed to execute YouTube ingestion: {e}", exc_info=True
-        )
+        logger.error(f"Worker Error: Failed to execute YouTube ingestion: {e}", exc_info=True)
     finally:
         clear_global_context()
 
@@ -135,9 +131,7 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
 
     Resolves the list of URLs and enqueues individual workers for each video.
     """
-    set_global_context(
-        {"correlation_id": _get_correlation_id(cmd, "worker-youtube-dispatcher")}
-    )
+    set_global_context({"correlation_id": _get_correlation_id(cmd, "worker-youtube-dispatcher")})
 
     if isinstance(cmd, dict):
         cmd = IngestYoutubeCommand(**cmd)
@@ -157,9 +151,7 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
         video_list = []
         if cmd.data_type == YoutubeDataType.PLAYLIST:
             # We need to resolve the playlist entries
-            playlist_url = cmd.video_url or (
-                cmd.video_urls[0] if cmd.video_urls else None
-            )
+            playlist_url = cmd.video_url or (cmd.video_urls[0] if cmd.video_urls else None)
             if not playlist_url:
                 logger.warning("No URL provided for playlist dispatcher")
                 return
@@ -168,9 +160,7 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
             video_list = extractor.extract_playlist_videos(playlist_url)
         elif cmd.data_type == YoutubeDataType.CHANNEL:
             # Resolve the channel entries
-            channel_url = cmd.video_url or (
-                cmd.video_urls[0] if cmd.video_urls else None
-            )
+            channel_url = cmd.video_url or (cmd.video_urls[0] if cmd.video_urls else None)
             if not channel_url:
                 logger.warning("No URL provided for channel dispatcher")
                 return
@@ -182,14 +172,10 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
             video_list = [v for v in cmd.video_urls if v]
 
         if not video_list:
-            logger.warning(
-                f"YouTube Dispatcher resolved 0 videos for type {cmd.data_type}."
-            )
+            logger.warning(f"YouTube Dispatcher resolved 0 videos for type {cmd.data_type}.")
             return
 
-        logger.info(
-            f"YouTube Dispatcher resolved {len(video_list)} videos. Enqueueing individual tasks..."
-        )
+        logger.info(f"YouTube Dispatcher resolved {len(video_list)} videos. Enqueueing individual tasks...")
 
         # 2. Enqueue each video as a separate task
         for url in video_list:
@@ -212,14 +198,10 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
                 run_youtube_ingestion_worker,
                 single_cmd,
                 task_title=f"YouTube: {url}",
-                metadata={"parent_dispatcher_job": str(cmd.ingestion_job_id)}
-                if cmd.ingestion_job_id
-                else {},
+                metadata={"parent_dispatcher_job": str(cmd.ingestion_job_id)} if cmd.ingestion_job_id else {},
             )
 
-        logger.info(
-            f"Successfully dispatched {len(video_list)} YouTube ingestion tasks."
-        )
+        logger.info(f"Successfully dispatched {len(video_list)} YouTube ingestion tasks.")
 
     except Exception as e:
         logger.error(f"YouTube Dispatcher Worker Error: {e}", exc_info=True)
@@ -229,9 +211,7 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
 
 def run_diarization_ingestion_worker(cmd: IngestDiarizationCommand):
     """Background worker function for direct diarization ingestion."""
-    set_global_context(
-        {"correlation_id": _get_correlation_id(cmd, "worker-diarization")}
-    )
+    set_global_context({"correlation_id": _get_correlation_id(cmd, "worker-diarization")})
 
     app = _get_app()
     if not app:
@@ -280,9 +260,7 @@ def run_diarization_ingestion_worker(cmd: IngestDiarizationCommand):
         finally:
             db.close()
     except Exception as e:
-        logger.error(
-            f"Worker Error: Failed to execute diarization ingestion: {e}", exc_info=True
-        )
+        logger.error(f"Worker Error: Failed to execute diarization ingestion: {e}", exc_info=True)
     finally:
         clear_global_context()
 
@@ -337,9 +315,7 @@ def run_web_ingestion_worker(cmd: Any):
 
             await use_case.execute(cmd)
         except Exception as e:
-            logging.getLogger(__name__).error(
-                f"Worker Error: Failed to execute Web Scraping: {e}", exc_info=True
-            )
+            logging.getLogger(__name__).error(f"Worker Error: Failed to execute Web Scraping: {e}", exc_info=True)
         finally:
             clear_global_context()
 
@@ -370,9 +346,7 @@ def _audio_diarization_subprocess(cmd_dict: dict):
 
     diarization_id = cmd_dict.get("diarization_id")
     try:
-        use_case = ProcessAudioDiarizationPipelineUseCase(
-            db, event_bus=event_bus, cs_service=cs_service
-        )
+        use_case = ProcessAudioDiarizationPipelineUseCase(db, event_bus=event_bus, cs_service=cs_service)
         use_case.execute(
             source_type=cmd_dict["source_type"],
             source=cmd_dict["source"],
@@ -439,12 +413,7 @@ def run_audio_diarization_dispatcher_worker(cmd: ProcessAudioCommand):
         repo = DiarizationRepository(db)
 
         # Detect YouTube Channel vs Playlist
-        is_channel = (
-            "/channel/" in cmd.source
-            or "/c/" in cmd.source
-            or "/user/" in cmd.source
-            or "@" in cmd.source
-        )
+        is_channel = "/channel/" in cmd.source or "/c/" in cmd.source or "/user/" in cmd.source or "@" in cmd.source
 
         logger.info(
             "Resolving %s URLs for diarization: %s",
@@ -478,13 +447,9 @@ def run_audio_diarization_dispatcher_worker(cmd: ProcessAudioCommand):
             )
 
             if (
-                existing
-                and existing.status
-                != "failed"  # DiarizationStatus is not imported here as Enum yet
+                existing and existing.status != "failed"  # DiarizationStatus is not imported here as Enum yet
             ):
-                logger.info(
-                    "Skipping duplicate video for diarization dispatcher: %s", url
-                )
+                logger.info("Skipping duplicate video for diarization dispatcher: %s", url)
                 continue
 
             # 1. Create a pending record
@@ -549,9 +514,7 @@ def run_audio_diarization_worker(cmd: ProcessAudioCommand):
         process.join()
 
         if process.exitcode != 0:
-            logger.error(
-                "Audio diarization subprocess exited with code %d", process.exitcode
-            )
+            logger.error("Audio diarization subprocess exited with code %d", process.exitcode)
             if cmd.diarization_id:
                 from src.infrastructure.repositories.sql.connector import (
                     Session as DBSessionFactory,
@@ -592,19 +555,18 @@ def run_audio_diarization_worker(cmd: ProcessAudioCommand):
         else:
             logger.info("Audio diarization subprocess completed successfully")
     except Exception as e:
-        logger.error(
-            f"Worker Error: Failed to execute audio diarization: {e}", exc_info=True
-        )
+        logger.error(f"Worker Error: Failed to execute audio diarization: {e}", exc_info=True)
     finally:
         clear_global_context()
 
 
 def run_voice_training_worker(cmd: TrainVoiceCommand):
     """Background worker function for voice profile training from speaker segment."""
-    set_global_context({"correlation_id": f"worker-voice-train-{cmd.name}"})
-
+    # Redis-serialized payloads arrive as dicts — convert BEFORE touching fields.
     if isinstance(cmd, dict):
         cmd = TrainVoiceCommand(**cmd)
+
+    set_global_context({"correlation_id": f"worker-voice-train-{cmd.name}"})
 
     app = _get_app()
     if not app:
@@ -621,9 +583,7 @@ def run_voice_training_worker(cmd: TrainVoiceCommand):
         ctx = resolve_ingestion_context(app)
         db = DBSession()
         try:
-            use_case = TrainVoiceProfileFromSpeakerSegmentUseCase(
-                db, event_bus=ctx.event_bus
-            )
+            use_case = TrainVoiceProfileFromSpeakerSegmentUseCase(db, event_bus=ctx.event_bus)
             use_case.execute(
                 diarization_id=cmd.diarization_id,
                 speaker_label=cmd.speaker_label,
@@ -632,8 +592,6 @@ def run_voice_training_worker(cmd: TrainVoiceCommand):
         finally:
             db.close()
     except Exception as e:
-        logger.error(
-            f"Worker Error: Failed to execute voice training: {e}", exc_info=True
-        )
+        logger.error(f"Worker Error: Failed to execute voice training: {e}", exc_info=True)
     finally:
         clear_global_context()

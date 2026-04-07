@@ -5,9 +5,7 @@ from qdrant_client import QdrantClient
 
 from src.config.logger import Logger
 
-warnings.filterwarnings(
-    "ignore", message="Api key is used with an insecure connection."
-)
+warnings.filterwarnings("ignore", message="Api key is used with an insecure connection.")
 
 logger = Logger()
 

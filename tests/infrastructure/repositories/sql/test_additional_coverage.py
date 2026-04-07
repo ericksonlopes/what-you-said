@@ -34,9 +34,7 @@ def test_more_sql_paths():
     chunk_repo = ChunkIndexSQLRepository()
 
     # create a subject and exercise get_by_external_ref, list, get_by_name
-    ks_id = ks_repo.create_subject(
-        name="KS_extra", external_ref="external-extra", description="d"
-    )
+    ks_id = ks_repo.create_subject(name="KS_extra", external_ref="external-extra", description="d")
     found_by_ext = ks_repo.get_by_external_ref("external-extra")
     assert found_by_ext is not None
 
@@ -65,9 +63,7 @@ def test_more_sql_paths():
         title="t",
         language="en",
     )
-    by_source = cs_repo.get_by_source_info(
-        source_type=SourceType.YOUTUBE.value, external_source="v_extra"
-    )
+    by_source = cs_repo.get_by_source_info(source_type=SourceType.YOUTUBE.value, external_source="v_extra")
     assert isinstance(by_source, list) and len(by_source) >= 1
 
     by_subject = cs_repo.list_by_subject(ks_id2)
@@ -80,16 +76,12 @@ def test_more_sql_paths():
     cs_repo.finish_ingestion(UUID(int=0), embedding_model="m", dimensions=1, chunks=1)
 
     # create ingestion job and list_by_content_source
-    job_id = job_repo.create_job(
-        content_source_id=cs_id, status=IngestionJobStatus.STARTED.value
-    )
+    job_id = job_repo.create_job(content_source_id=cs_id, status=IngestionJobStatus.STARTED.value)
     jobs = job_repo.list_by_content_source(cs_id)
     assert isinstance(jobs, list)
 
     # update non-existent job to hit not-found branch
-    job_repo.update_job(
-        UUID(int=0), status=IngestionJobStatus.FAILED.value, error_message="err"
-    )
+    job_repo.update_job(UUID(int=0), status=IngestionJobStatus.FAILED.value, error_message="err")
 
     # chunk_index: create and search with filters
     chunk_id = uuid4()

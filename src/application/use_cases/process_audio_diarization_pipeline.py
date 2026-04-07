@@ -44,13 +44,9 @@ class ProcessAudioDiarizationPipelineUseCase:
         self.storage = StorageService()
         logger.info("Storage connection established, bucket=%s", self.storage.bucket)
 
-    def _notify(
-        self, diarization_id: str | None, status: str, message: str | None = None
-    ):
+    def _notify(self, diarization_id: str | None, status: str, message: str | None = None):
         if diarization_id:
-            self.repo.update_status(
-                diarization_id, status, status_message=message or ""
-            )
+            self.repo.update_status(diarization_id, status, status_message=message or "")
         if self.event_bus and diarization_id:
             self.event_bus.publish(
                 "ingestion_status",
@@ -117,14 +113,10 @@ class ProcessAudioDiarizationPipelineUseCase:
             # 2. Prepare folders and workspace
             display_name = self._resolve_display_name(audio_raw_path, yt_metadata)
             recognition_folder = os.path.join(video_folder, "recognition")
-            audio_path = self._prepare_local_workspace(
-                audio_raw_path, video_folder, process_id
-            )
+            audio_path = self._prepare_local_workspace(audio_raw_path, video_folder, process_id)
 
             # 3. Diarization
-            diarizer = AudioDiarizer(
-                hf_token=hf_token, model_size=model_size or "large-v2"
-            )
+            diarizer = AudioDiarizer(hf_token=hf_token, model_size=model_size or "large-v2")
             diarization_result = self._run_diarization(
                 diarizer,
                 audio_path,
@@ -154,9 +146,7 @@ class ProcessAudioDiarizationPipelineUseCase:
 
             recognition_data = {}
             if recognize_voices:
-                recognition_data = self._identify_voices(
-                    recognition_folder, hf_token, diarization_id
-                )
+                recognition_data = self._identify_voices(recognition_folder, hf_token, diarization_id)
                 if recognition_data:
                     db_record.recognition_results = cast(Any, recognition_data)
                     self.db.commit()
@@ -181,9 +171,7 @@ class ProcessAudioDiarizationPipelineUseCase:
         finally:
             self._cleanup_local_files(video_folder, audio_path)
 
-    def _resolve_display_name(
-        self, audio_raw_path: str, yt_metadata: Optional[Any]
-    ) -> str:
+    def _resolve_display_name(self, audio_raw_path: str, yt_metadata: Optional[Any]) -> str:
         original_title = Path(audio_raw_path).stem
         if yt_metadata and hasattr(yt_metadata, "title") and yt_metadata.title:
             return yt_metadata.title
@@ -247,9 +235,7 @@ class ProcessAudioDiarizationPipelineUseCase:
                 )
                 from src.domain.entities.enums.source_type_enum_entity import SourceType
 
-                cs_source_type = (
-                    SourceType.YOUTUBE if source_type == "youtube" else SourceType.AUDIO
-                )
+                cs_source_type = SourceType.YOUTUBE if source_type == "youtube" else SourceType.AUDIO
                 subject_id = getattr(db_record, "subject_id", None)
 
                 # Check if source already exists to avoid duplication
@@ -276,9 +262,7 @@ class ProcessAudioDiarizationPipelineUseCase:
                         status_message="Aguardando revisão dos falantes",
                     )
                     # Merge metadata
-                    self.cs_service.update_metadata(
-                        content_source_id=existing_source.id, metadata=source_metadata
-                    )
+                    self.cs_service.update_metadata(content_source_id=existing_source.id, metadata=source_metadata)
                 else:
                     self.cs_service.create_source(
                         subject_id=subject_id,
@@ -318,14 +302,10 @@ class ProcessAudioDiarizationPipelineUseCase:
             if not video_id:
                 raise ValueError(f"Invalid YouTube source: {source}")
 
-            yt_extractor = YoutubeExtractor(
-                video_id=video_id, language=language or "pt"
-            )
+            yt_extractor = YoutubeExtractor(video_id=video_id, language=language or "pt")
             # Use the full URL for downloading to be safe
             download_url = f"https://www.youtube.com/watch?v={video_id}"
-            audio_path = yt_extractor.download_audio(
-                download_url, output_dir=settings.audio.temp_download_dir
-            )
+            audio_path = yt_extractor.download_audio(download_url, output_dir=settings.audio.temp_download_dir)
             if not audio_path:
                 raise RuntimeError("YouTube download failed")
 
@@ -339,23 +319,17 @@ class ProcessAudioDiarizationPipelineUseCase:
 
         if source_type == "upload":
             s3_key = unquote(source.replace(f"s3://{self.storage.bucket}/", ""))
-            local_path = os.path.join(
-                settings.audio.temp_download_dir, f"{process_id}_{Path(s3_key).name}"
-            )
+            local_path = os.path.join(settings.audio.temp_download_dir, f"{process_id}_{Path(s3_key).name}")
             os.makedirs(settings.audio.temp_download_dir, exist_ok=True)
             self.storage.download_file(s3_key, local_path)
             return local_path, source, None
 
         raise ValueError(f"Unsupported source type: {source_type}")
 
-    def _prepare_local_workspace(
-        self, audio_path: str, video_folder: str, process_id: str
-    ) -> str:
+    def _prepare_local_workspace(self, audio_path: str, video_folder: str, process_id: str) -> str:
         download_folder = os.path.join(video_folder, "download")
         os.makedirs(download_folder, exist_ok=True)
-        audio_dest = os.path.join(
-            download_folder, f"input_{process_id}{Path(audio_path).suffix}"
-        )
+        audio_dest = os.path.join(download_folder, f"input_{process_id}{Path(audio_path).suffix}")
         os.replace(audio_path, audio_dest)
         return audio_dest
 
@@ -383,12 +357,8 @@ class ProcessAudioDiarizationPipelineUseCase:
             max_speakers=max_s,
         )
 
-    def _identify_voices(
-        self, recognition_folder: str, hf_token: str, d_id: str | None
-    ) -> dict:
-        self._notify(
-            d_id, DiarizationStatus.PROCESSING.value, DiarizationStep.RECOGNIZING.value
-        )
+    def _identify_voices(self, recognition_folder: str, hf_token: str, d_id: str | None) -> dict:
+        self._notify(d_id, DiarizationStatus.PROCESSING.value, DiarizationStep.RECOGNIZING.value)
         voice_db = VoiceDB(db=self.db, hf_token=hf_token)
         if len(voice_db) == 0:
             return {}
@@ -410,9 +380,7 @@ class ProcessAudioDiarizationPipelineUseCase:
                         spk,
                         best_score,
                     )
-                    _, s3_path = voice_db.add(
-                        name=best_match, audio_path=match.audio_path
-                    )
+                    _, s3_path = voice_db.add(name=best_match, audio_path=match.audio_path)
                     if s3_path:
                         reinforced_paths[spk] = s3_path
                 except Exception as e:
@@ -444,16 +412,10 @@ class ProcessAudioDiarizationPipelineUseCase:
             },
         }
 
-    def _update_record_metadata(
-        self, record: Any, storage_prefix: str, yt_metadata: Optional[Any]
-    ):
+    def _update_record_metadata(self, record: Any, storage_prefix: str, yt_metadata: Optional[Any]):
         record.storage_path = cast(Any, storage_prefix)
         if yt_metadata:
-            metadata_dict = (
-                yt_metadata.model_dump()
-                if hasattr(yt_metadata, "model_dump")
-                else vars(yt_metadata)
-            )
+            metadata_dict = yt_metadata.model_dump() if hasattr(yt_metadata, "model_dump") else vars(yt_metadata)
             record.source_metadata = cast(Any, metadata_dict)
         self.db.commit()
 

@@ -98,9 +98,7 @@ class TestChunkFAISSRepositoryExtended:
         monkeypatch.setattr("rank_bm25.BM25Okapi", MagicMock(return_value=mock_bm25))
 
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
@@ -130,9 +128,7 @@ class TestChunkFAISSRepositoryExtended:
 
     def test_delete_simple_id(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
@@ -143,9 +139,7 @@ class TestChunkFAISSRepositoryExtended:
 
     def test_list_chunks_with_limit(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)

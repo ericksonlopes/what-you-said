@@ -59,15 +59,11 @@ class IngestionJobSQLRepository:
                 session.add(job)
                 session.commit()
                 session.refresh(job)
-                logger.debug(
-                    "Ingestion job created successfully", context={"job_id": job.id}
-                )
+                logger.debug("Ingestion job created successfully", context={"job_id": job.id})
 
                 return cast(UUID, job.id)
             except Exception as e:
-                logger.error(
-                    "Error creating ingestion job", context={**extra, "error": str(e)}
-                )
+                logger.error("Error creating ingestion job", context={**extra, "error": str(e)})
                 session.rollback()
                 raise
 
@@ -136,9 +132,7 @@ class IngestionJobSQLRepository:
                 session.commit()
                 logger.debug("Ingestion job updated successfully", context=extra)
             except Exception as e:
-                logger.error(
-                    "Error updating ingestion job", context={**extra, "error": str(e)}
-                )
+                logger.error("Error updating ingestion job", context={**extra, "error": str(e)})
                 session.rollback()
                 raise
 
@@ -175,9 +169,7 @@ class IngestionJobSQLRepository:
                         job.ingestion_type = ingestion_type
                     session.commit()
                 else:
-                    logger.warning(
-                        "Job not found for linking", context={"job_id": job_id}
-                    )
+                    logger.warning("Job not found for linking", context={"job_id": job_id})
             except Exception as e:
                 logger.error(
                     "Error linking job to source",
@@ -228,9 +220,7 @@ class IngestionJobSQLRepository:
                 )
                 raise
 
-    def list_recent_jobs(
-        self, limit: int = 50, offset: int = 0
-    ) -> List[IngestionJobModel]:
+    def list_recent_jobs(self, limit: int = 50, offset: int = 0) -> List[IngestionJobModel]:
         """Backward compatible list_recent_jobs with offset support."""
         return self.list_jobs(limit=limit, offset=offset)
 
@@ -252,27 +242,19 @@ class IngestionJobSQLRepository:
                         "search": search,
                     },
                 )
-                query = session.query(IngestionJobModel).options(
-                    joinedload(IngestionJobModel.content_source)
-                )
+                query = session.query(IngestionJobModel).options(joinedload(IngestionJobModel.content_source))
 
                 if status:
                     if status == "processing":
-                        query = query.filter(
-                            IngestionJobModel.status.in_(["processing", "started"])
-                        )
+                        query = query.filter(IngestionJobModel.status.in_(["processing", "started"]))
                     elif status == "completed":
-                        query = query.filter(
-                            IngestionJobModel.status.in_(["done", "finished"])
-                        )
+                        query = query.filter(IngestionJobModel.status.in_(["done", "finished"]))
                     elif status == "failed":
                         # Exclude Duplicates from Failed
                         query = query.filter(
                             IngestionJobModel.status.in_(["failed", "error"]),
                             (IngestionJobModel.error_message.is_(None))
-                            | (
-                                ~IngestionJobModel.error_message.ilike(DUPLICATE_FILTER)
-                            ),
+                            | (~IngestionJobModel.error_message.ilike(DUPLICATE_FILTER)),
                         )
                     elif status == "cancelled":
                         # Include Duplicates in Cancelled
@@ -291,33 +273,22 @@ class IngestionJobSQLRepository:
                         | (IngestionJobModel.external_source.ilike(search_term))
                     )
 
-                result = (
-                    query.order_by(IngestionJobModel.created_at.desc())
-                    .limit(limit)
-                    .offset(offset)
-                    .all()
-                )
+                result = query.order_by(IngestionJobModel.created_at.desc()).limit(limit).offset(offset).all()
                 return result
             except Exception as e:
                 logger.error("Error listing ingestion jobs", context={"error": str(e)})
                 raise
 
-    def count_jobs(
-        self, status: Optional[str] = None, search: Optional[str] = None
-    ) -> int:
+    def count_jobs(self, status: Optional[str] = None, search: Optional[str] = None) -> int:
         with Connector() as session:
             try:
                 query = session.query(IngestionJobModel)
 
                 if status:
                     if status == "processing":
-                        query = query.filter(
-                            IngestionJobModel.status.in_(["processing", "started"])
-                        )
+                        query = query.filter(IngestionJobModel.status.in_(["processing", "started"]))
                     elif status == "completed":
-                        query = query.filter(
-                            IngestionJobModel.status.in_(["done", "finished"])
-                        )
+                        query = query.filter(IngestionJobModel.status.in_(["done", "finished"]))
                     elif status == "failed":
                         # Exclude Duplicates from Failed
                         query = query.filter(
@@ -361,29 +332,19 @@ class IngestionJobSQLRepository:
                     )
 
                 total = base_query.count()
-                processing = base_query.filter(
-                    IngestionJobModel.status.in_(["processing", "started"])
-                ).count()
-                completed = base_query.filter(
-                    IngestionJobModel.status.in_(["done", "finished"])
-                ).count()
+                processing = base_query.filter(IngestionJobModel.status.in_(["processing", "started"])).count()
+                completed = base_query.filter(IngestionJobModel.status.in_(["done", "finished"])).count()
 
                 # Treat "Duplicate" errors as CANCELLED
-                duplicate_filter = IngestionJobModel.error_message.ilike(
-                    DUPLICATE_FILTER
-                )
-                not_duplicate_filter = (IngestionJobModel.error_message.is_(None)) | (
-                    ~duplicate_filter
-                )
+                duplicate_filter = IngestionJobModel.error_message.ilike(DUPLICATE_FILTER)
+                not_duplicate_filter = (IngestionJobModel.error_message.is_(None)) | (~duplicate_filter)
 
                 failed = base_query.filter(
                     IngestionJobModel.status.in_(["failed", "error"]),
                     not_duplicate_filter,
                 ).count()
 
-                cancelled = base_query.filter(
-                    (IngestionJobModel.status == "cancelled") | duplicate_filter
-                ).count()
+                cancelled = base_query.filter((IngestionJobModel.status == "cancelled") | duplicate_filter).count()
 
                 return {
                     "total": total,
@@ -396,9 +357,7 @@ class IngestionJobSQLRepository:
                 logger.error("Error getting status counts", context={"error": str(e)})
                 raise
 
-    def list_recent_jobs_by_subject(
-        self, subject_id: Any, limit: int = 50, offset: int = 0
-    ) -> List[IngestionJobModel]:
+    def list_recent_jobs_by_subject(self, subject_id: Any, limit: int = 50, offset: int = 0) -> List[IngestionJobModel]:
         subject_id = ensure_uuid(subject_id)
         from src.infrastructure.repositories.sql.models.content_source import (
             ContentSourceModel,
@@ -436,14 +395,8 @@ class IngestionJobSQLRepository:
         with Connector() as session:
             try:
                 extra = {"content_source_id": content_source_id}
-                logger.debug(
-                    "Listing ingestion jobs by content source ID", context=extra
-                )
-                result = (
-                    session.query(IngestionJobModel)
-                    .filter_by(content_source_id=content_source_id)
-                    .all()
-                )
+                logger.debug("Listing ingestion jobs by content source ID", context=extra)
+                result = session.query(IngestionJobModel).filter_by(content_source_id=content_source_id).all()
                 logger.debug("List successful", context={**extra, "count": len(result)})
                 return result
             except Exception as e:
@@ -453,9 +406,7 @@ class IngestionJobSQLRepository:
                 )
                 raise
 
-    def mark_previous_jobs_as_reprocessed(
-        self, content_source_id: Any, current_job_id: Any
-    ) -> int:
+    def mark_previous_jobs_as_reprocessed(self, content_source_id: Any, current_job_id: Any) -> int:
         content_source_id = ensure_uuid(content_source_id)
         current_job_id = ensure_uuid(current_job_id)
         """Mark all previous jobs for a content source as REPROCESSED."""

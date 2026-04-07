@@ -39,9 +39,7 @@ class IdentifySpeakersInProcessedAudioUseCase:
         if not s3_prefix:
             raise ValueError("No storage path found for this diarization.")
 
-        local_dir = os.path.join(
-            audio_cfg.temp_download_dir, f"recognize_{diarization_id}"
-        )
+        local_dir = os.path.join(audio_cfg.temp_download_dir, f"recognize_{diarization_id}")
         os.makedirs(local_dir, exist_ok=True)
 
         try:
@@ -64,15 +62,11 @@ class IdentifySpeakersInProcessedAudioUseCase:
                             best_match,
                             spk,
                         )
-                        _, s3_path = voice_db.add(
-                            name=best_match, audio_path=match.audio_path
-                        )
+                        _, s3_path = voice_db.add(name=best_match, audio_path=match.audio_path)
                         if s3_path:
                             reinforced_paths[spk] = s3_path
                     except Exception as e:
-                        logger.error(
-                            "Failed to reinforce voice profile '%s': %s", best_match, e
-                        )
+                        logger.error("Failed to reinforce voice profile '%s': %s", best_match, e)
 
             recognition_data: dict[str, object] = {
                 "mapping": mapping,
