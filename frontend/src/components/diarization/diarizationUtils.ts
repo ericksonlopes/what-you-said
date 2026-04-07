@@ -92,15 +92,8 @@ export function extractSpeakersFromSegments(segments: any[], recognition?: any):
     const mapping = recognition?.mapping || {};
     const details = recognition?.details || {};
 
-    const reverseMapping: Record<string, string> = {};
-    for (const [key, value] of Object.entries(mapping)) {
-        reverseMapping[value as string] = key;
-    }
-
     return speakerLabels.map((label, i) => {
         const identifiedName = mapping[label];
-        
-        // If it's not generic, the label ITSELF is likely already the identified name
         const assigned = identifiedName || label;
         
         let confidence = 0;
