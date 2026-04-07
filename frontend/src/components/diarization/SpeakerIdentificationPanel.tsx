@@ -16,6 +16,10 @@ interface SpeakerIdentificationPanelProps {
     readonly canRecognize: boolean;
 }
 
+const isGenericSpeaker = (label: string) => {
+    return /^SPEAKER_\d+$/i.test(label) || label.toUpperCase().startsWith('SPEAKER');
+};
+
 const SpeakerDropdown: React.FC<{
     speaker: Speaker;
     availableVoices: any[];
@@ -63,8 +67,8 @@ const SpeakerDropdown: React.FC<{
             >
                 <div className="flex items-center gap-3 overflow-hidden">
                     <User className={`w-4 h-4 transition-colors ${isOpen ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-400'}`} />
-                    <span className={`text-[13px] font-bold truncate ${speaker.assigned === speaker.label ? 'text-zinc-500' : 'text-zinc-100'}`}>
-                        {speaker.assigned === speaker.label ? t('diarization.identification.use_label', { label: speaker.label }) : speaker.assigned}
+                    <span className={`text-[13px] font-bold truncate ${ (speaker.assigned === speaker.label && isGenericSpeaker(speaker.label)) ? 'text-zinc-500' : 'text-zinc-100'}`}>
+                        {(speaker.assigned === speaker.label && isGenericSpeaker(speaker.label)) ? t('diarization.identification.use_label', { label: speaker.label }) : speaker.assigned}
                     </span>
                 </div>
                 <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
@@ -103,7 +107,12 @@ const SpeakerDropdown: React.FC<{
                                         : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
                                 }`}
                             >
-                                <span className="text-xs font-bold">{t('diarization.identification.use_label', { label: speaker.label })}</span>
+                                <span className="text-xs font-bold">
+                                    {isGenericSpeaker(speaker.label) 
+                                        ? t('diarization.identification.use_label', { label: speaker.label }) 
+                                        : speaker.label
+                                    }
+                                </span>
                                 {speaker.assigned === speaker.label && <Check className="w-3.5 h-3.5" />}
                             </button>
 
@@ -182,7 +191,7 @@ const SpeakerCard: React.FC<{
                     <div>
                         <div className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{speaker.label}</div>
                         <div className="text-[15px] font-black text-zinc-100 tracking-tight leading-none truncate max-w-[140px]">
-                            {speaker.assigned === speaker.label ? t('diarization.identification.unknown') : speaker.assigned}
+                            {(speaker.assigned === speaker.label && isGenericSpeaker(speaker.label)) ? t('diarization.identification.unknown') : speaker.assigned}
                         </div>
                     </div>
                 </div>

@@ -81,7 +81,7 @@ export function buildTranscriptFromSegments(segments: any[], mapping?: any) {
 }
 
 export function extractSpeakersFromSegments(segments: any[], recognition?: any): any[] {
-    const speakerLabels = [...new Set(segments.map((s: any) => s.speaker as string))].sort();
+    const speakerLabels = [...new Set(segments.map((s: any) => s.speaker as string))].sort((a, b) => a.localeCompare(b));
     const mapping = recognition?.mapping || {};
     const details = recognition?.details || {};
 
@@ -92,14 +92,16 @@ export function extractSpeakersFromSegments(segments: any[], recognition?: any):
 
     return speakerLabels.map((label, i) => {
         const identifiedName = mapping[label];
-        const isAlreadyIdentified = !identifiedName && reverseMapping[label];
-        const originalLabel = isAlreadyIdentified ? reverseMapping[label] : label;
         
-        const assigned = identifiedName || (isAlreadyIdentified ? label : label);
+        // If it's not generic, the label ITSELF is likely already the identified name
+        const assigned = identifiedName || label;
         
-        const confidence = details[originalLabel]?.score
-            ? Math.round(details[originalLabel].score * 100)
-            : (identifiedName ? 95 : 0);
+        let confidence = 0;
+        if (details[label]?.score) {
+            confidence = Math.round(details[label].score * 100);
+        } else if (identifiedName) {
+            confidence = 95;
+        }
 
         return {
             id: String(i),
