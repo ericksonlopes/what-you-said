@@ -1,57 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Settings, Trash2, Edit2, Check, X, Brain, Briefcase,
-  ChefHat, Cpu, Landmark, Lightbulb, Activity, Hash,
-  Plus, AlertTriangle, Database, Book, Globe, Zap, Shield,
-  Search, Code, MessageSquare, Layout, Layers, HardDrive,
-  Cloud, Lock, User, Users, Target, Award, GraduationCap,
-  Music, Video, Image, FileText, Mail, Terminal, Bug
+import { 
+  Settings, Trash2, Edit2, Check, X, Plus, AlertTriangle, Search, Zap
 } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Subject } from '../types';
-
-const ICONS = [
-  { name: 'Brain', icon: Brain },
-  { name: 'Briefcase', icon: Briefcase },
-  { name: 'ChefHat', icon: ChefHat },
-  { name: 'Cpu', icon: Cpu },
-  { name: 'Landmark', icon: Landmark },
-  { name: 'Lightbulb', icon: Lightbulb },
-  { name: 'Activity', icon: Activity },
-  { name: 'Hash', icon: Hash },
-  { name: 'Database', icon: Database },
-  { name: 'Book', icon: Book },
-  { name: 'Globe', icon: Globe },
-  { name: 'Zap', icon: Zap },
-  { name: 'Shield', icon: Shield },
-  { name: 'Search', icon: Search },
-  { name: 'Code', icon: Code },
-  { name: 'MessageSquare', icon: MessageSquare },
-  { name: 'Layout', icon: Layout },
-  { name: 'Layers', icon: Layers },
-  { name: 'HardDrive', icon: HardDrive },
-  { name: 'Cloud', icon: Cloud },
-  { name: 'Lock', icon: Lock },
-  { name: 'User', icon: User },
-  { name: 'Users', icon: Users },
-  { name: 'Target', icon: Target },
-  { name: 'Award', icon: Award },
-  { name: 'GraduationCap', icon: GraduationCap },
-  { name: 'Music', icon: Music },
-  { name: 'Video', icon: Video },
-  { name: 'Image', icon: Image },
-  { name: 'FileText', icon: FileText },
-  { name: 'Mail', icon: Mail },
-  { name: 'Terminal', icon: Terminal },
-  { name: 'Bug', icon: Bug },
-];
-
-const getSubjectIcon = (iconName?: string) => {
-  const item = ICONS.find(i => i.name === iconName);
-  return item ? item.icon : Hash;
-};
+import { SubjectIcon, ICONS_LIST as ICONS } from './SubjectIcon';
 
 export function KnowledgeAdminView() {
   const { t } = useTranslation();
@@ -158,7 +113,6 @@ export function KnowledgeAdminView() {
           ) : (
             filteredSubjects.map((subject) => {
               const isEditing = editingId === subject.id;
-              const Icon = getSubjectIcon(isEditing ? editForm.icon : subject.icon);
 
               return (
                 <motion.div
@@ -177,7 +131,7 @@ export function KnowledgeAdminView() {
                         <div className="flex flex-col items-center gap-3">
                           <label className="text-[10px] font-black uppercase tracking-widest text-zinc-600 self-start">{t('knowledge_contexts.icon_label')}</label>
                           <div className="grid grid-cols-6 gap-2 bg-black/20 p-3 rounded-xl border border-white/5 max-h-[160px] overflow-y-auto custom-scrollbar">
-                            {ICONS.map(({ name: iconName, icon: ItemIcon }) => (
+                             {ICONS.map(({ name: iconName }) => (
                               <button
                                 key={iconName}
                                 onClick={() => setEditForm({ ...editForm, icon: iconName })}
@@ -186,7 +140,7 @@ export function KnowledgeAdminView() {
                                     : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                                   }`}
                               >
-                                <ItemIcon className="w-4 h-4" />
+                                <SubjectIcon iconName={iconName} className="w-4 h-4" />
                               </button>
                             ))}
                           </div>
@@ -237,7 +191,7 @@ export function KnowledgeAdminView() {
                     <div className="flex items-center justify-between gap-6">
                       <div className="flex items-center gap-5 flex-1 min-w-0">
                         <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-white/5 flex items-center justify-center shadow-inner group">
-                          <Icon className="w-7 h-7 text-zinc-400 group-hover:text-emerald-400 transition-colors" />
+                          <SubjectIcon iconName={subject.icon} className="w-7 h-7 text-zinc-400 group-hover:text-emerald-400 transition-colors" />
                         </div>
                         <div className="min-w-0">
                           <h3 className="text-xl font-bold text-white truncate">{subject.name}</h3>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-  Search, Sparkles, Lock, FileText,
+  Search, Sparkles, FileText,
   SlidersHorizontal, Database, TextSearch, Network, ListOrdered, 
   ChevronDown, X, Copy, Check, Languages, Cpu, Hash, Calendar, 
   Clock, ArrowUpDown, SquarePlay, BookOpen, Globe, Filter, Newspaper, Loader2,
@@ -10,6 +10,7 @@ import {
 import { useAppContext } from '../store/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../services/api';
+import { SubjectIcon } from './SubjectIcon';
 
 // --- Types ---
 interface SearchResult {
@@ -30,7 +31,8 @@ interface SearchResult {
 
 const getIcon = (type: string) => {
   switch (type.toLowerCase()) {
-    case 'youtube': return SquarePlay;
+    case 'youtube': 
+    case 'video': return SquarePlay;
     case 'article': return Newspaper;
     case 'pdf': return FileText;
     case 'wikipedia': return BookOpen;
@@ -56,24 +58,6 @@ const getModalModeLabelForScore = (mode: string, score: number) => {
   return `${(score * 100).toFixed(1)}% MATCH`;
 };
 
-const renderContextBadge = (selectedSubjects: any[], t: any) => {
-  if (!selectedSubjects || selectedSubjects.length === 0) {
-    return <span className="text-red-400 font-medium whitespace-nowrap">{t('sidebar.contexts.none')}</span>;
-  }
-  if (selectedSubjects.length <= 2) {
-    return selectedSubjects.map(s => (
-      <span key={s.id} className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs truncate max-w-[180px]" title={s.name}>
-        {s.name}
-      </span>
-    ));
-  }
-  return (
-    <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs whitespace-nowrap">
-      {selectedSubjects.length} {t('sidebar.contexts.title')}
-    </span>
-  );
-};
-
 export function SearchView() {
   const { subjects, selectedSubjects, sources } = useAppContext();
   const { t } = useTranslation();
@@ -87,6 +71,36 @@ export function SearchView() {
   const [copied, setCopied] = useState(false);
   const [searchMode, setSearchMode] = useState<'semantic' | 'bm25' | 'hybrid'>('semantic');
   const [useRerank, setUseRerank] = useState(true);
+  // Local context selection (independent from sidebar). Empty array + searchAll=true => search across all contexts.
+  const [searchSubjectIds, setSearchSubjectIds] = useState<string[]>(() => selectedSubjects.map(s => s.id));
+  const [searchAll, setSearchAll] = useState<boolean>(true);
+  const [isContextsOpen, setIsContextsOpen] = useState(false);
+  const [contextsFilter, setContextsFilter] = useState('');
+  const contextsRef = React.useRef<HTMLDivElement>(null);
+
+  const filteredSubjects = React.useMemo(
+    () => subjects.filter(s => s.name.toLowerCase().includes(contextsFilter.toLowerCase())),
+    [subjects, contextsFilter]
+  );
+
+  // Close contexts popover on click outside
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (contextsRef.current && !contextsRef.current.contains(e.target as Node)) {
+        setIsContextsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  const contextsLabel = searchAll
+    ? t('sidebar.contexts.title_all')
+    : searchSubjectIds.length === 0
+      ? t('sidebar.contexts.none')
+      : searchSubjectIds.length === 1
+        ? subjects.find(s => s.id === searchSubjectIds[0])?.name || t('common.selected_one')
+        : t('common.selected', { count: searchSubjectIds.length });
 
   const sourceMap = React.useMemo(() => {
     const map = new Map<string, string>();
@@ -98,14 +112,15 @@ export function SearchView() {
   }, [sources]);
 
   const runSearch = useCallback(async (currentQuery: string, currentMode: string, currentUseRerank: boolean) => {
-    if (!currentQuery.trim() || selectedSubjects.length === 0) return;
+    if (!currentQuery.trim()) return;
+    if (!searchAll && searchSubjectIds.length === 0) return;
 
     setIsSearching(true);
     setHasSearched(true);
     setResults([]);
 
     try {
-      const subjectIds = selectedSubjects.length > 0 ? selectedSubjects.map(s => s.id) : undefined;
+      const subjectIds = searchAll ? undefined : searchSubjectIds;
       const data = await api.search(currentQuery, topK, subjectIds, currentMode, currentUseRerank);
 
       const mappedResults: SearchResult[] = data.results.map((res: any) => {
@@ -136,7 +151,7 @@ export function SearchView() {
     } finally {
       setIsSearching(false);
     }
-  }, [selectedSubjects, topK, sourceMap, t]);
+  }, [searchAll, searchSubjectIds, topK, sourceMap, subjects, t]);
 
   // Re-run search automatically when the mode or useRerank changes (only if a search was already performed)
   useEffect(() => {
@@ -158,104 +173,187 @@ export function SearchView() {
       transition={{ duration: 0.4 }}
       className="h-full flex flex-col overflow-hidden"
     >
-      {/* Header & Search Bar */}
-      <div className="p-8 pb-4 max-w-5xl mx-auto w-full flex-shrink-0">
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
+      {/* Header */}
+      <div className="px-8 pt-10 pb-6 max-w-4xl mx-auto w-full flex-shrink-0">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="mb-8 text-center"
+          transition={{ duration: 0.4 }}
+          className="mb-6"
         >
-          <h2 className="text-3xl font-bold text-white tracking-tight mb-3">{t('search.title')}</h2>
-          <p className="text-zinc-400">
-            {t('search.subtitle')}
-          </p>
+          <h2 className="text-2xl font-semibold text-white tracking-tight">{t('search.title')}</h2>
+          <p className="text-sm text-zinc-500 mt-1">{t('search.subtitle')}</p>
         </motion.div>
 
-        <motion.form 
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          onSubmit={handleSearch} 
-          className="relative max-w-4xl mx-auto"
+        {/* Search Input — pill */}
+        <motion.form
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
+          onSubmit={handleSearch}
+          className="relative"
         >
-          <div className="relative flex items-center bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:border-white/20 focus-within:border-emerald-500/50 focus-within:ring-4 focus-within:ring-emerald-500/10 rounded-2xl shadow-2xl transition-all p-2">
-            <Search className="w-6 h-6 text-zinc-400 ml-4" />
+          <div className="group relative flex items-center h-14 bg-zinc-900/60 backdrop-blur-xl border border-white/10 hover:border-white/15 focus-within:border-emerald-500/40 focus-within:ring-4 focus-within:ring-emerald-500/5 rounded-full transition-all pl-5 pr-2">
+            <Search className="w-5 h-5 text-zinc-500 flex-shrink-0" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('search.placeholder')}
-              className="w-full bg-transparent text-xl text-zinc-100 placeholder:text-zinc-600 px-5 py-4 focus:outline-none font-sans"
+              className="w-full bg-transparent text-base text-zinc-100 placeholder:text-zinc-600 px-4 focus:outline-none"
             />
             <button
               type="submit"
-              disabled={!query.trim() || isSearching || selectedSubjects.length === 0}
-              className="group px-8 py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 disabled:opacity-50 disabled:hover:bg-emerald-500 transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] active:scale-95 flex items-center gap-3 uppercase tracking-wider text-sm"
+              disabled={!query.trim() || isSearching || (!searchAll && searchSubjectIds.length === 0)}
+              className="h-10 px-5 bg-emerald-500 text-black text-sm font-semibold rounded-full hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.97] flex items-center gap-2 flex-shrink-0"
             >
               {isSearching ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Search className="w-5 h-5 transition-transform group-hover:scale-110" />
+                <Search className="w-4 h-4" />
               )}
-              {isSearching ? t('common.actions.syncing') : t('common.actions.search')}
+              <span>{isSearching ? t('common.actions.syncing') : t('common.actions.search')}</span>
             </button>
           </div>
         </motion.form>
 
-        {/* Search Controls */}
-        <motion.div 
+        {/* Toolbar */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="max-w-4xl mx-auto mt-6 flex flex-wrap items-center justify-between gap-4"
+          transition={{ delay: 0.2, duration: 0.4 }}
+          className="mt-4 flex items-center gap-2 min-w-0"
         >
-          <div className="flex items-center gap-2 text-sm min-w-0 flex-1">
-            <Database className="w-4 h-4 text-zinc-500 flex-shrink-0" />
-            <span className="text-zinc-400 whitespace-nowrap flex-shrink-0">{t('search.results.source')}:</span>
-            <div className="flex gap-1.5 flex-nowrap overflow-hidden min-w-0">
-              {renderContextBadge(selectedSubjects, t)}
-            </div>
+          {/* Contexts chip — opens its own popover */}
+          <div ref={contextsRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsContextsOpen(v => !v)}
+              className={`h-9 inline-flex items-center gap-2 px-3 rounded-full text-xs font-medium transition-all ring-1 ${
+                searchAll
+                  ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30 hover:bg-emerald-500/15'
+                  : 'bg-white/[0.04] text-zinc-200 ring-white/10 hover:bg-white/[0.07]'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span className="max-w-[200px] truncate">{contextsLabel}</span>
+              <ChevronDown className={`w-3.5 h-3.5 opacity-60 transition-transform ${isContextsOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {isContextsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                  transition={{ duration: 0.12 }}
+                  className="absolute top-full left-0 mt-2 w-72 bg-zinc-900/95 backdrop-blur-xl ring-1 ring-white/10 rounded-2xl shadow-2xl overflow-hidden z-30"
+                >
+                  {/* Search input */}
+                  <div className="p-2 border-b border-white/5">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        autoFocus
+                        type="text"
+                        value={contextsFilter}
+                        onChange={(e) => setContextsFilter(e.target.value)}
+                        placeholder={t('common.actions.search') + '...'}
+                        className="w-full h-8 pl-8 pr-2 bg-white/[0.04] ring-1 ring-white/10 rounded-lg text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-emerald-500/30"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-1.5">
+                    <button
+                      onClick={() => { setSearchAll(true); setIsContextsOpen(false); }}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs transition-colors ${
+                        searchAll ? 'bg-emerald-500/10 text-emerald-300' : 'text-zinc-200 hover:bg-white/5'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 font-medium">
+                        <Database className="w-3.5 h-3.5" />
+                        {t('sidebar.contexts.title')} • All
+                      </span>
+                      {searchAll && <Check className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <div className="h-px bg-white/5" />
+                  <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5">
+                    {filteredSubjects.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-xs text-zinc-500">{t('sidebar.contexts.none')}</div>
+                    ) : (
+                      filteredSubjects.map(s => {
+                        const checked = !searchAll && searchSubjectIds.includes(s.id);
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => {
+                              setSearchAll(false);
+                              setSearchSubjectIds(ids =>
+                                ids.includes(s.id) ? ids.filter(i => i !== s.id) : [...ids, s.id]
+                              );
+                            }}
+                            className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs transition-colors ${
+                              checked ? 'bg-white/[0.06] text-zinc-100' : 'text-zinc-300 hover:bg-white/5'
+                            }`}
+                          >
+                            <span className="flex items-center gap-2 min-w-0">
+                              <SubjectIcon iconName={s.icon} className="w-3.5 h-3.5" />
+                              <span className="truncate">{s.name}</span>
+                            </span>
+                            <span className={`w-4 h-4 rounded-md flex items-center justify-center flex-shrink-0 ${
+                              checked ? 'bg-emerald-500 text-black' : 'ring-1 ring-white/15'
+                            }`}>
+                              {checked && <Check className="w-3 h-3" strokeWidth={3} />}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Top K Selector */}
+          {/* spacer pushes options to the right */}
+          <div className="flex-1 min-w-0" />
+
+          {/* Options group */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Top K */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsTopKOpen(!isTopKOpen)}
                 onBlur={() => setTimeout(() => setIsTopKOpen(false), 150)}
-                className="flex items-center gap-2 bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 rounded-lg p-1.5 px-3 h-[34px] transition-colors"
+                className="h-9 inline-flex items-center gap-1.5 px-3 rounded-full text-xs text-zinc-300 bg-white/[0.04] ring-1 ring-white/10 hover:bg-white/[0.07] transition-all"
+                title={t('search.options.topKn')}
               >
-                <ListOrdered className="w-3.5 h-3.5 text-zinc-500" />
-                <span className="text-xs text-zinc-400 font-medium">{t('search.options.topKn')}:</span>
-                <span className="text-xs text-zinc-200 font-medium w-4 text-left">{topK}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-zinc-500 transition-transform duration-200 ${isTopKOpen ? 'rotate-180' : ''}`} />
+                <ListOrdered className="w-3.5 h-3.5 text-zinc-500 flex-shrink-0" />
+                <span className="font-medium tabular-nums">{topK}</span>
+                <ChevronDown className={`w-3 h-3 text-zinc-500 flex-shrink-0 transition-transform ${isTopKOpen ? 'rotate-180' : ''}`} />
               </button>
-              
               <AnimatePresence>
                 {isTopKOpen && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    transition={{ duration: 0.1 }}
-                    className="absolute top-full right-0 mt-1 w-24 bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl overflow-hidden z-20"
+                    exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute top-full right-0 mt-2 w-28 bg-zinc-900/95 backdrop-blur-xl ring-1 ring-white/10 rounded-xl shadow-2xl overflow-hidden z-20 p-1"
                   >
                     {[3, 5, 10, 20, 50].map((val) => (
                       <button
                         key={val}
-                        onClick={() => {
-                          setTopK(val);
-                          setIsTopKOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                          topK === val 
-                            ? 'bg-emerald-500/10 text-emerald-400 font-medium' 
-                            : 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white'
+                        onClick={() => { setTopK(val); setIsTopKOpen(false); }}
+                        className={`w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                          topK === val
+                            ? 'bg-emerald-500/10 text-emerald-300'
+                            : 'text-zinc-300 hover:bg-white/5'
                         }`}
                       >
-                        {val}
+                        {val} results
                       </button>
                     ))}
                   </motion.div>
@@ -263,80 +361,54 @@ export function SearchView() {
               </AnimatePresence>
             </div>
 
-            {/* Re-rank Toggle */}
+            {/* Re-rank — icon toggle */}
             <button
               type="button"
               onClick={() => setUseRerank(!useRerank)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border flex-shrink-0 ${
-                useRerank 
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]' 
-                  : 'bg-zinc-900/80 text-zinc-500 border-zinc-800 hover:border-zinc-700 hover:text-zinc-300'
-              }`}
               title={t('search.options.rerank')}
-            >
-              <ArrowUpDown className="w-3.5 h-3.5" />
-              {t('common.actions.filter')} {useRerank ? 'ON' : 'OFF'}
-            </button>
-
-            {/* Search Mode Toggle */}
-            <div className="flex flex-nowrap items-center gap-1 bg-zinc-900/80 border border-zinc-800 rounded-lg p-1 flex-shrink-0">
-            {/* Semantic */}
-            <button
-              type="button"
-              onClick={() => setSearchMode('semantic')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
-                searchMode === 'semantic'
-                  ? 'bg-zinc-800 text-emerald-400 shadow-sm border border-zinc-700/50'
-                  : 'text-zinc-500 hover:text-zinc-300'
+              aria-pressed={useRerank}
+              className={`h-9 w-9 inline-flex items-center justify-center rounded-full transition-all ring-1 ${
+                useRerank
+                  ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30'
+                  : 'bg-white/[0.03] text-zinc-500 ring-white/10 hover:bg-white/[0.06] hover:text-zinc-300'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              {t('search.modes.semantic')}
+              <ArrowUpDown className="w-4 h-4" />
             </button>
 
-            {/* Keyword (BM25) */}
-            <button
-              type="button"
-              onClick={() => setSearchMode('bm25')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
-                searchMode === 'bm25'
-                  ? 'bg-zinc-800 text-sky-400 shadow-sm border border-zinc-700/50'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              <TextSearch className="w-3.5 h-3.5" />
-              {t('search.modes.bm25')}
-            </button>
-
-            {/* Hybrid */}
-            <button
-              type="button"
-              onClick={() => setSearchMode('hybrid')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
-                searchMode === 'hybrid'
-                  ? 'bg-zinc-800 text-violet-400 shadow-sm border border-zinc-700/50'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              {t('search.modes.hybrid')}
-            </button>
-
-            {/* MMR (Disabled — needs dedicated implementation) */}
-            <div className="relative group">
-              <button 
+            {/* Mode — icon-only segmented control */}
+            <div className="h-9 inline-flex items-center p-1 rounded-full bg-white/[0.04] ring-1 ring-white/10">
+              {[
+                { key: 'semantic', icon: Sparkles, label: t('search.modes.semantic'), color: 'text-emerald-300' },
+                { key: 'bm25', icon: TextSearch, label: t('search.modes.bm25'), color: 'text-sky-300' },
+                { key: 'hybrid', icon: SlidersHorizontal, label: t('search.modes.hybrid'), color: 'text-violet-300' },
+              ].map(({ key, icon: Icon, label, color }) => {
+                const active = searchMode === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setSearchMode(key as any)}
+                    title={label}
+                    className={`h-7 inline-flex items-center gap-1.5 px-2.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                      active ? `bg-zinc-800 ${color} shadow-sm` : 'text-zinc-500 hover:text-zinc-300'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                    {label}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
                 disabled
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md text-zinc-500 text-xs font-medium cursor-not-allowed opacity-70 whitespace-nowrap"
+                title={`${t('ingestion.coming_soon.title')} (MMR)`}
+                className="h-7 inline-flex items-center gap-1.5 px-2.5 rounded-full text-xs font-medium text-zinc-600 cursor-not-allowed whitespace-nowrap"
               >
                 <Network className="w-3.5 h-3.5" />
                 MMR
-                <Lock className="w-3 h-3 ml-1" />
               </button>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-[10px] text-zinc-300 text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xl z-10">
-                {t('ingestion.coming_soon.title')} (MMR)
-              </div>
             </div>
-          </div>
           </div>
         </motion.div>
       </div>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppContext } from '../store/AppContext';
+import { SubjectIcon } from './SubjectIcon';
 
 export function ContextSelector() {
   const { t } = useTranslation();
@@ -174,9 +175,12 @@ export function ContextSelector() {
                               <SelectionIcon />
                             </div>
                             <div className="flex flex-col items-start min-w-0">
-                                <span className={`text-[15px] font-bold tracking-tight truncate ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
-                                    {subject.name}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <SubjectIcon iconName={subject.icon} className={`w-3.5 h-3.5 ${isSelected ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                                  <span className={`text-[15px] font-bold tracking-tight truncate ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
+                                      {subject.name}
+                                  </span>
+                                </div>
                                 {subject.sourceCount !== undefined && (
                                     <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">
                                         {subject.sourceCount} {t('sidebar.operations.sources')}

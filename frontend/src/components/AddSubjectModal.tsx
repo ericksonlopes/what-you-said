@@ -1,54 +1,14 @@
 import React, { useState, type SyntheticEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  X, Brain, Briefcase, ChefHat, Cpu, Landmark, Lightbulb, Activity, Hash,
-  Database, Book, Globe, Zap, Shield, Search, Code, MessageSquare, Layout,
-  Layers, HardDrive, Cloud, Lock, User, Users, Target, Award, GraduationCap,
-  Music, Video, Image, FileText, Mail, Terminal, Bug
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { SubjectIcon, ICONS_LIST as ICONS } from './SubjectIcon';
 
 interface AddSubjectModalProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
 }
-
-const ICONS = [
-  { name: 'Brain', icon: Brain },
-  { name: 'Briefcase', icon: Briefcase },
-  { name: 'ChefHat', icon: ChefHat },
-  { name: 'Cpu', icon: Cpu },
-  { name: 'Landmark', icon: Landmark },
-  { name: 'Lightbulb', icon: Lightbulb },
-  { name: 'Activity', icon: Activity },
-  { name: 'Hash', icon: Hash },
-  { name: 'Database', icon: Database },
-  { name: 'Book', icon: Book },
-  { name: 'Globe', icon: Globe },
-  { name: 'Zap', icon: Zap },
-  { name: 'Shield', icon: Shield },
-  { name: 'Search', icon: Search },
-  { name: 'Code', icon: Code },
-  { name: 'MessageSquare', icon: MessageSquare },
-  { name: 'Layout', icon: Layout },
-  { name: 'Layers', icon: Layers },
-  { name: 'HardDrive', icon: HardDrive },
-  { name: 'Cloud', icon: Cloud },
-  { name: 'Lock', icon: Lock },
-  { name: 'User', icon: User },
-  { name: 'Users', icon: Users },
-  { name: 'Target', icon: Target },
-  { name: 'Award', icon: Award },
-  { name: 'GraduationCap', icon: GraduationCap },
-  { name: 'Music', icon: Music },
-  { name: 'Video', icon: Video },
-  { name: 'Image', icon: Image },
-  { name: 'FileText', icon: FileText },
-  { name: 'Mail', icon: Mail },
-  { name: 'Terminal', icon: Terminal },
-  { name: 'Bug', icon: Bug },
-];
 
 export function AddSubjectModal({ isOpen, onClose }: AddSubjectModalProps) {
   const { t } = useTranslation();
@@ -153,7 +113,7 @@ export function AddSubjectModal({ isOpen, onClose }: AddSubjectModalProps) {
                           : 'bg-black/40 border-white/5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${selectedIcon === iconName ? 'scale-110' : ''}`} />
+                      <SubjectIcon iconName={iconName} className={`w-4 h-4 transition-transform duration-200 group-hover:scale-110 ${selectedIcon === iconName ? 'scale-110' : ''}`} />
                     </button>
                   ))}
                 </div>

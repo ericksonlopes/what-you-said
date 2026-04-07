@@ -8,6 +8,7 @@ import {
   Search
 } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
+import { SubjectIcon } from './SubjectIcon';
 
 interface LocalContextSelectorProps {
   mode: 'single' | 'multi';
@@ -171,7 +172,7 @@ export const LocalContextSelector: React.FC<LocalContextSelectorProps> = ({
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg
                           ${isSelected ? 'bg-primary-500/20' : 'bg-white/5 border border-white/5 group-hover:bg-white/10'}`}>
-                          {subject.icon || '📁'}
+                          <SubjectIcon iconName={subject.icon} className="w-4 h-4" />
                         </div>
                         <div className="text-left">
                           <p className="text-sm font-medium">{subject.name}</p>

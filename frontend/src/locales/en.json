@@ -22,6 +22,9 @@
       "selectAll": "Select all",
       "deselectAll": "Deselect all"
     },
+    "selected_one": "1 selected",
+    "selected_other": "{{count}} selected",
+    "all": "All",
     "errors": {
       "general": "An unexpected error occurred. Please try again."
     },
@@ -58,6 +61,7 @@
     },
     "contexts": {
       "title": "Knowledge Contexts",
+      "title_all": "Knowledge Contexts • All",
       "placeholder": "Filter contexts...",
       "none": "No contexts found.",
       "only": "Only",

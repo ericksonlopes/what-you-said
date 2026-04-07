@@ -22,6 +22,9 @@
       "selectAll": "Selecionar todos",
       "deselectAll": "Desmarcar todos"
     },
+    "selected_one": "1 selecionado",
+    "selected_other": "{{count}} selecionados",
+    "all": "Todos",
     "errors": {
       "general": "Ocorreu um erro inesperado. Tente novamente."
     },
@@ -58,6 +61,7 @@
     },
     "contexts": {
       "title": "Bases de Conhecimento",
+      "title_all": "Bases de Conhecimento • Todas",
       "placeholder": "Filtrar contextos...",
       "none": "Nenhum contexto encontrado.",
       "only": "Apenas",
