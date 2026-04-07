@@ -1,11 +1,14 @@
-import pytest
+# ruff: noqa: E402
 from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 from src.presentation.api.dependencies import (
+    get_content_source_use_case,
     get_cs_service,
     get_model_loader,
-    get_content_source_use_case,
 )
 
 client = TestClient(app)

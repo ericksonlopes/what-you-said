@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, List, Any, Union
-from typing import cast
+from typing import Any, List, Optional, Union, cast
 from uuid import UUID
 
 from sqlalchemy.orm import joinedload

@@ -1,14 +1,18 @@
-import pytest
+# ruff: noqa: E402
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 # Mock flashrank at module level since it might not be installed in all environments
 mock_flashrank = MagicMock()
 sys.modules["flashrank"] = mock_flashrank
 
+from src.infrastructure.repositories.vector.models.chunk_model import (
+    ChunkModel,  # noqa: E402
+)
 from src.infrastructure.services.re_rank_service import ReRankService  # noqa: E402
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel  # noqa: E402
 
 
 @pytest.mark.ReRankService
@@ -23,7 +27,7 @@ class TestReRankService:
 
         assert service._ranker is not None
         # Verify that it was called with the correct model and a cache_dir containing flashrank_cache
-        args, kwargs = mock_ranker_class.call_args
+        _, kwargs = mock_ranker_class.call_args
         assert kwargs["model_name"] == "test-model"
         assert "flashrank_cache" in kwargs["cache_dir"]
 

@@ -1,6 +1,7 @@
 import anyio
 import pytest
 from starlette.responses import Response
+
 from src.presentation.api.middleware.trace_middleware import TraceMiddleware
 
 

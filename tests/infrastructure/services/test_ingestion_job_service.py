@@ -1,10 +1,12 @@
-import pytest
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 from uuid import uuid4
-from datetime import datetime, timezone
-from src.infrastructure.services.ingestion_job_service import IngestionJobService
+
+import pytest
+
 from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.infrastructure.repositories.sql.models.ingestion_job import IngestionJobModel
+from src.infrastructure.services.ingestion_job_service import IngestionJobService
 
 
 @pytest.mark.IngestionJobService

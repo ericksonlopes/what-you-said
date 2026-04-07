@@ -1,5 +1,7 @@
-import pytest
+# ruff: noqa: E402
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # Module-level patch for boto3 to prevent botocore initialization during class/module loading
 patch("boto3.Session").start()
@@ -12,13 +14,15 @@ from src.application.use_cases.generate_speaker_audio_access_url import (  # noq
 from src.application.use_cases.identify_speakers_in_processed_audio import (  # noqa: E402
     IdentifySpeakersInProcessedAudioUseCase,
 )
-from src.application.use_cases.list_s3_audio_files import ListS3AudioFilesUseCase  # noqa: E402
+from src.application.use_cases.list_s3_audio_files import (
+    ListS3AudioFilesUseCase,  # noqa: E402
+)
 from src.application.use_cases.manage_voice_profiles import (  # noqa: E402
-    RegisterNewVoiceProfileUseCase,
+    DeleteVoiceAudioFileUseCase,
     DeleteVoiceProfileUseCase,
     ListRegisteredVoiceProfilesUseCase,
     ListVoiceAudioFilesUseCase,
-    DeleteVoiceAudioFileUseCase,
+    RegisterNewVoiceProfileUseCase,
 )
 from src.infrastructure.repositories.sql.models.diarization_record import (  # noqa: E402
     DiarizationRecord,

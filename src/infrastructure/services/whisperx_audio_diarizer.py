@@ -5,9 +5,9 @@ import numpy as np
 import torch
 import whisperx
 
-from src.domain.entities.diarization import Segment, DiarizationResult
-from src.infrastructure.utils.audio_utils import load_whisperx_audio, get_best_device
+from src.domain.entities.diarization import DiarizationResult, Segment
 from src.infrastructure.services.model_loader_service import model_loader
+from src.infrastructure.utils.audio_utils import get_best_device, load_whisperx_audio
 
 logger = logging.getLogger(__name__)
 

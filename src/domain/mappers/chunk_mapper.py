@@ -9,6 +9,7 @@ from typing import Any, Dict
 from uuid import uuid4
 
 from langchain_core.documents import Document
+
 from src.domain.entities.chunk_entity import ChunkEntity
 from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
@@ -128,7 +129,8 @@ class ChunkMapper:
     def _normalize_source_type(source: str) -> str:
         """Normalize the source type to the canonical string value used for persistence.
 
-        Tries to map by enum member name (case-insensitive) or by enum value. If mapping fails, returns the input string.
+        Tries to map by enum member name (case-insensitive) or by enum value.
+        If mapping fails, returns the input string.
         """
         s = source.strip()
         # try by name (case-insensitive)

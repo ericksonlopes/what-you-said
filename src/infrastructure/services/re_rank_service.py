@@ -1,7 +1,9 @@
 import os
 import tempfile
 from typing import List
+
 from flashrank import Ranker, RerankRequest
+
 from src.config.logger import Logger
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 

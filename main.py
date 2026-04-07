@@ -1,6 +1,8 @@
-from contextlib import asynccontextmanager
-import warnings
 import os
+
+# ruff: noqa: E402
+import warnings
+from contextlib import asynccontextmanager
 
 # Suppress NNPACK warnings (Unsupported hardware)
 os.environ["NNPACK_CPU_FAST_8x8_CONV"] = "0"
@@ -9,12 +11,14 @@ os.environ["NNPACK_CPU_FAST_8x8_CONV"] = "0"
 # causes DLL discovery issues on Windows that don't affect the core app.
 warnings.filterwarnings("ignore", category=UserWarning, module="torchcodec")
 
-from fastapi import FastAPI, Depends  # noqa: E402
+from fastapi import Depends, FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 from src.config.logger import setup_logging  # noqa: E402
 from src.presentation.api.dependencies import get_current_user  # noqa: E402
-from src.presentation.api.middleware.trace_middleware import TraceMiddleware  # noqa: E402
+from src.presentation.api.middleware.trace_middleware import (
+    TraceMiddleware,  # noqa: E402
+)
 from src.presentation.api.routes import (  # noqa: E402
     audio_diarization_and_recognition_router as audio_router,
 )
@@ -29,7 +33,9 @@ from src.presentation.api.routes import (  # noqa: E402
     source_router,
     subject_router,
 )
-from src.presentation.api.routes import voice_profile_management_router as voice_router  # noqa: E402
+from src.presentation.api.routes import (
+    voice_profile_management_router as voice_router,  # noqa: E402
+)
 
 logger = setup_logging()
 
@@ -46,10 +52,10 @@ async def lifespan(app: FastAPI):
         from src.config.settings import Settings
         from src.infrastructure.services.model_loader_service import ModelLoaderService
         from src.infrastructure.services.re_rank_service import ReRankService
+        from src.infrastructure.services.redis_event_bus import RedisEventBus
         from src.infrastructure.services.redis_task_queue_service import (
             RedisTaskQueueService,
         )
-        from src.infrastructure.services.redis_event_bus import RedisEventBus
 
         logger.info("Initializing Settings...")
         _settings = Settings()
@@ -81,16 +87,16 @@ async def lifespan(app: FastAPI):
         logger.info("Re-rank model pre-loaded successfully.")
 
         # Register worker tasks and initialize Redis Task Queue
-        from src.infrastructure.services.redis_task_queue_service import register_task
         from src.application.workers import (
-            run_file_ingestion_worker,
-            run_youtube_ingestion_worker,
-            run_web_ingestion_worker,
+            run_audio_diarization_dispatcher_worker,
             run_audio_diarization_worker,
             run_diarization_ingestion_worker,
+            run_file_ingestion_worker,
+            run_web_ingestion_worker,
             run_youtube_dispatcher_worker,
-            run_audio_diarization_dispatcher_worker,
+            run_youtube_ingestion_worker,
         )
+        from src.infrastructure.services.redis_task_queue_service import register_task
 
         register_task("run_file_ingestion_worker", run_file_ingestion_worker)
         register_task("run_youtube_ingestion_worker", run_youtube_ingestion_worker)
@@ -216,6 +222,7 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
+
     from src.config.settings import settings
 
     uvicorn.run(

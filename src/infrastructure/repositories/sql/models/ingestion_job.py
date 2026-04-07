@@ -4,7 +4,7 @@ ORM models for ingestion_jobs table.
 
 import uuid
 
-from sqlalchemy import Column, Text, DateTime, func, ForeignKey, UUID, Integer, Index
+from sqlalchemy import UUID, Column, DateTime, ForeignKey, Index, Integer, Text, func
 from sqlalchemy.orm import relationship, synonym
 
 from src.infrastructure.repositories.sql.connector import Base

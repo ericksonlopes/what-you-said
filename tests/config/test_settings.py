@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.config.settings import Settings, App, SQLConfig, VectorConfig
+from src.config.settings import App, Settings, SQLConfig, VectorConfig
 
 
 def test_allowed_log_levels_default():

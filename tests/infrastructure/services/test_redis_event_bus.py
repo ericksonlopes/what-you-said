@@ -1,6 +1,8 @@
 import json
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.infrastructure.services.redis_event_bus import RedisEventBus
 
 

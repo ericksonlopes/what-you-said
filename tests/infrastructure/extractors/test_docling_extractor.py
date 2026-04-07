@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 
 @pytest.mark.DoclingExtractor
@@ -131,8 +132,9 @@ class TestDoclingExtractor:
         assert extractor._get_file_type("no_ext") == "unknown"
 
     def test_extract_with_images(self, mock_converter, tmp_path):
-        from src.infrastructure.extractors.docling_extractor import DoclingExtractor
         from docling_core.types.doc import PictureItem
+
+        from src.infrastructure.extractors.docling_extractor import DoclingExtractor
 
         test_file = tmp_path / "images.pdf"
         test_file.write_text("dummy")

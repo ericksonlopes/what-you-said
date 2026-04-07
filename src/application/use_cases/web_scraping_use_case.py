@@ -11,8 +11,10 @@ from src.domain.entities.chunk_entity import ChunkEntity
 from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
 from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.domain.entities.enums.source_type_enum_entity import SourceType
+from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.infrastructure.extractors.crawl4ai_extractor import Crawl4AIExtractor
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
+from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.embedding_service import EmbeddingService
 from src.infrastructure.services.ingestion_job_service import IngestionJobService
@@ -20,9 +22,7 @@ from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
 )
 from src.infrastructure.services.model_loader_service import ModelLoaderService
-from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.text_splitter_service import TextSplitterService
-from src.domain.interfaces.services.i_event_bus import IEventBus
 
 logger = Logger()
 

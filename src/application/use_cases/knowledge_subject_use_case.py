@@ -1,10 +1,11 @@
 from uuid import UUID
+
+from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.config.logger import Logger
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
 )
-from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 
 logger = Logger()
 

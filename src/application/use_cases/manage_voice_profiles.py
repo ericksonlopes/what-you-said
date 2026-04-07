@@ -1,10 +1,12 @@
-from contextlib import suppress
 import os
+from contextlib import suppress
 from typing import cast
 
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
+from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
@@ -89,10 +91,11 @@ class DeleteVoiceProfileUseCase:
 
 
 class TrainVoiceProfileFromSpeakerSegmentUseCase:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, event_bus: IEventBus | None = None):
         self.db = db
         self.repo = DiarizationRepository(db)
         self.storage = StorageService()
+        self.event_bus = event_bus
 
     def execute(
         self,
@@ -107,6 +110,23 @@ class TrainVoiceProfileFromSpeakerSegmentUseCase:
         if not record.storage_path:
             raise ValueError("No storage path found for this diarization.")
 
+        # Ensure we update status if we have an event bus (background context)
+        if self.event_bus:
+            self.repo.update_status(
+                diarization_id,
+                DiarizationStatus.TRAINING.value,
+                status_message=f"Treinando voz: {name}",
+            )
+            self.event_bus.publish(
+                "ingestion_status",
+                {
+                    "type": "diarization",
+                    "id": diarization_id,
+                    "status": DiarizationStatus.TRAINING.value,
+                    "message": f"Treinando perfil de voz '{name}'...",
+                },
+            )
+
         s3_key = f"{record.storage_path}/{speaker_label}.wav"
 
         audio_cfg = settings.audio
@@ -117,14 +137,52 @@ class TrainVoiceProfileFromSpeakerSegmentUseCase:
 
         try:
             self.storage.download_file(s3_key, local_path)
-        except Exception:
-            raise ValueError(f"Speaker audio not found in storage: {speaker_label}")
 
-        try:
             hf_token = settings.auth.hf_token or ""
             voice_db = VoiceDB(db=self.db, hf_token=hf_token)
             voice_id, _ = voice_db.add(name=name, audio_path=local_path)
+
+            if self.event_bus:
+                self.repo.update_status(
+                    diarization_id,
+                    DiarizationStatus.COMPLETED.value,
+                    status_message=f"Voz '{name}' treinada com sucesso",
+                )
+                self.event_bus.publish(
+                    "ingestion_status",
+                    {
+                        "type": "diarization",
+                        "id": diarization_id,
+                        "status": DiarizationStatus.COMPLETED.value,
+                        "message": f"Perfil de voz '{name}' registrado!",
+                    },
+                )
+                # Also notify specifically about the voice
+                self.event_bus.publish(
+                    "ingestion_status",
+                    {"type": "voice", "action": "train", "name": name},
+                )
+
             return voice_id
+
+        except Exception as e:
+            if self.event_bus:
+                self.repo.update_status(
+                    diarization_id,
+                    DiarizationStatus.FAILED.value,
+                    error_message=str(e),
+                    status_message="Falha no treinamento de voz",
+                )
+                self.event_bus.publish(
+                    "ingestion_status",
+                    {
+                        "type": "diarization",
+                        "id": diarization_id,
+                        "status": DiarizationStatus.FAILED.value,
+                        "message": f"Erro no treinamento: {str(e)}",
+                    },
+                )
+            raise
         finally:
             if os.path.exists(local_path):
                 os.remove(local_path)

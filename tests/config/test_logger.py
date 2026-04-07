@@ -1,4 +1,4 @@
-from src.config.logger import setup_logging, Logger
+from src.config.logger import Logger, setup_logging
 
 
 def test_setup_logging():

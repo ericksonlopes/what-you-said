@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 
 from src.domain.entities.enums.search_mode_enum import SearchMode
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel

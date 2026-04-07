@@ -1,19 +1,21 @@
-import pytest
-from langchain_core.documents import Document
-from src.domain.entities.enums.source_type_enum_entity import SourceType
 from unittest.mock import MagicMock
 from uuid import uuid4
-from src.application.use_cases.diarization_ingestion_use_case import (
-    DiarizationIngestionUseCase,
-)
+
+import pytest
+from langchain_core.documents import Document
+
 from src.application.dtos.commands.ingest_diarization_command import (
     IngestDiarizationCommand,
 )
-from src.infrastructure.repositories.sql.models.diarization_record import (
-    DiarizationRecord,
+from src.application.use_cases.diarization_ingestion_use_case import (
+    DiarizationIngestionUseCase,
 )
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
+)
+from src.infrastructure.repositories.sql.models.diarization_record import (
+    DiarizationRecord,
 )
 
 

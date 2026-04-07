@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 from src.application.ingestion_context import IngestionContext
 from src.application.use_cases.auth_use_case import AuthUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
-from src.application.use_cases.diarization_ingestion_use_case import (
-    DiarizationIngestionUseCase,
-)
 from src.application.use_cases.delete_diarization_use_case import (
     DeleteDiarizationUseCase,
+)
+from src.application.use_cases.diarization_ingestion_use_case import (
+    DiarizationIngestionUseCase,
 )
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
 from src.application.use_cases.generate_speaker_audio_access_url import (
@@ -22,12 +22,12 @@ from src.application.use_cases.identify_speakers_in_processed_audio import (
 from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
 from src.application.use_cases.list_s3_audio_files import ListS3AudioFilesUseCase
 from src.application.use_cases.manage_voice_profiles import (
+    DeleteVoiceAudioFileUseCase,
+    DeleteVoiceProfileUseCase,
+    ListRegisteredVoiceProfilesUseCase,
+    ListVoiceAudioFilesUseCase,
     RegisterNewVoiceProfileUseCase,
     TrainVoiceProfileFromSpeakerSegmentUseCase,
-    ListRegisteredVoiceProfilesUseCase,
-    DeleteVoiceProfileUseCase,
-    ListVoiceAudioFilesUseCase,
-    DeleteVoiceAudioFileUseCase,
 )
 from src.application.use_cases.retrieve_processed_audio_history import (
     RetrieveProcessedAudioHistoryUseCase,
@@ -49,6 +49,9 @@ from src.infrastructure.repositories.sql.chunk_index_repository import (
 from src.infrastructure.repositories.sql.connector import Session as DBSessionFactory
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
+)
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
 )
 from src.infrastructure.repositories.sql.ingestion_job_repository import (
     IngestionJobSQLRepository,
@@ -96,6 +99,14 @@ def get_source_repo() -> ContentSourceSQLRepository:
 
 def get_job_repo() -> IngestionJobSQLRepository:
     return IngestionJobSQLRepository()
+
+
+def get_diarization_repo(db: Session = Depends(get_db)) -> DiarizationRepository:
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
+
+    return DiarizationRepository(db)
 
 
 def get_subject_repo() -> KnowledgeSubjectSQLRepository:
@@ -229,7 +240,10 @@ def get_vector_repository(
     except ImportError as e:
         from fastapi import HTTPException
 
-        error_msg = f"Vector driver for {settings.vector.store_type} is not installed: {e}. Please run 'pip install qdrant-client' (or the appropriate driver)."
+        error_msg = (
+            f"Vector driver for {settings.vector.store_type} is not installed: {e}. "
+            f"Please run 'pip install qdrant-client' (or the appropriate driver)."
+        )
         from src.config.logger import Logger
 
         Logger().error(error_msg, context={"store_type": settings.vector.store_type})

@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pytest
+
 from src.infrastructure.services.pyannote_voice_recognizer import VoiceRecognizer
 
 

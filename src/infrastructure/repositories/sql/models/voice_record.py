@@ -5,7 +5,7 @@ ORM models for diarization and voice recognition tables.
 import datetime
 import uuid
 
-from sqlalchemy import Column, String, DateTime, JSON
+from sqlalchemy import JSON, Column, DateTime, String
 
 from src.infrastructure.repositories.sql.connector import Base
 

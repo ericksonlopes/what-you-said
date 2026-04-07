@@ -9,11 +9,11 @@ from src.infrastructure.repositories.sql.models.diarization_record import (
 )
 from src.presentation.api.dependencies import (
     get_db,
-    get_task_queue_service,
-    get_identify_speakers_use_case,
-    get_retrieve_history_use_case,
     get_generate_speaker_url_use_case,
+    get_identify_speakers_use_case,
     get_list_s3_files_use_case,
+    get_retrieve_history_use_case,
+    get_task_queue_service,
 )
 
 client = TestClient(app)

@@ -1,6 +1,7 @@
 import uuid
-import pytest
 from types import SimpleNamespace
+
+import pytest
 
 from src.application.use_cases.search_use_case import SearchUseCase
 from src.domain.entities.enums.search_mode_enum import SearchMode

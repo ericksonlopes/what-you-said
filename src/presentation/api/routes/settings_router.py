@@ -2,21 +2,21 @@ import time
 from typing import Annotated
 
 import sqlalchemy
-from src.config.settings import Settings
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from fastapi import Depends, APIRouter, HTTPException, Request
-from src.presentation.api.dependencies import get_vector_repository, get_settings
+from src.config.settings import Settings
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
-from src.presentation.api.schemas.settings_schemas import (
-    SettingsResponse,
-    AppSettingsSchema,
-    VectorSettingsSchema,
-    ModelSettingsSchema,
-    SQLSettingsSchema,
-    RedisSettingsSchema,
-    HealthCheckResponse,
-)
 from src.infrastructure.repositories.sql.connector import Connector
+from src.presentation.api.dependencies import get_settings, get_vector_repository
+from src.presentation.api.schemas.settings_schemas import (
+    AppSettingsSchema,
+    HealthCheckResponse,
+    ModelSettingsSchema,
+    RedisSettingsSchema,
+    SettingsResponse,
+    SQLSettingsSchema,
+    VectorSettingsSchema,
+)
 
 router = APIRouter()
 

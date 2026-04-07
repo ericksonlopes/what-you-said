@@ -1,11 +1,13 @@
-import pytest
-from unittest.mock import MagicMock
-from uuid import uuid4
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from src.infrastructure.services.content_source_service import ContentSourceService
+from unittest.mock import MagicMock
+from uuid import uuid4
+
+import pytest
+
 from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
 from src.domain.entities.enums.source_type_enum_entity import SourceType
+from src.infrastructure.services.content_source_service import ContentSourceService
 
 
 @pytest.mark.Dependencies

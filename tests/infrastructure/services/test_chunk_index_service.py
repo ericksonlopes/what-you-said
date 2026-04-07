@@ -1,11 +1,13 @@
-import pytest
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 from uuid import uuid4
-from datetime import datetime, timezone
-from src.infrastructure.services.chunk_index_service import ChunkIndexService
+
+import pytest
+
 from src.domain.entities.chunk_entity import ChunkEntity
 from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
+from src.infrastructure.services.chunk_index_service import ChunkIndexService
 
 
 @pytest.mark.ChunkIndexService

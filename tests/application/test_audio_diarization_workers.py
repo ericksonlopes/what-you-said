@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock, patch
+
 import pytest
-from src.application.workers import run_audio_diarization_dispatcher_worker
+
 from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
+from src.application.workers import run_audio_diarization_dispatcher_worker
 
 
 @pytest.mark.AudioDiarizationWorker

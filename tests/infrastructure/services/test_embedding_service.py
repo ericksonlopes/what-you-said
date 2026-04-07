@@ -1,5 +1,6 @@
-from src.infrastructure.services.embedding_service import EmbeddingService
 import pytest
+
+from src.infrastructure.services.embedding_service import EmbeddingService
 
 
 class DummyModel:

@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -10,11 +11,13 @@ mock_langchain_chroma = MagicMock()
 sys.modules["chromadb"] = mock_chromadb
 sys.modules["langchain_chroma"] = mock_langchain_chroma
 
+from src.domain.entities.enums.search_mode_enum import SearchMode  # noqa: E402
 from src.infrastructure.repositories.vector.chroma.chunk_repository import (  # noqa: E402
     ChunkChromaRepository,
 )
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel  # noqa: E402
-from src.domain.entities.enums.search_mode_enum import SearchMode  # noqa: E402
+from src.infrastructure.repositories.vector.models.chunk_model import (
+    ChunkModel,  # noqa: E402
+)
 
 
 @pytest.mark.ChunkChromaRepository

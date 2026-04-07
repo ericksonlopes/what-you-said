@@ -1,11 +1,11 @@
-import uuid
 import time
-from unittest.mock import MagicMock
+import uuid
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
-from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 
 
 class DummyDoc:
@@ -40,10 +40,9 @@ def make_use_case_mocks():
 
 def test_throttling_logic(monkeypatch):
     use_case = make_use_case_mocks()
-    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
-
     # Mock settings
     from src.config.settings import settings
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
     monkeypatch.setattr(settings.youtube, "throttle_batch_size", 2)
     monkeypatch.setattr(settings.youtube, "throttle_wait_seconds", 0.1)

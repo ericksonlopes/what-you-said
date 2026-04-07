@@ -1,12 +1,14 @@
-import pytest
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone
+
+import pytest
+
+from src.domain.entities.enums.search_mode_enum import SearchMode
+from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
     ChunkWeaviateRepository,
 )
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
-from src.domain.entities.enums.search_mode_enum import SearchMode
 
 
 @pytest.mark.ChunkWeaviateRepository

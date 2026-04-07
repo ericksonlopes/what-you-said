@@ -1,12 +1,14 @@
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
+
 import pytest
-from src.infrastructure.repositories.sql.ingestion_job_repository import (
-    IngestionJobSQLRepository,
-)
+
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
 )
-from src.domain.entities.enums.source_type_enum_entity import SourceType
+from src.infrastructure.repositories.sql.ingestion_job_repository import (
+    IngestionJobSQLRepository,
+)
 
 
 @pytest.mark.IngestionJobRepository

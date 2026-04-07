@@ -1,13 +1,17 @@
+from unittest.mock import MagicMock, mock_open, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
 from fastapi.testclient import TestClient
+
 from main import app
 from src.presentation.api.dependencies import (
     get_db,
-    get_register_voice_profile_use_case,
-    get_train_voice_from_speaker_use_case,
-    get_list_voice_profiles_use_case,
     get_delete_voice_profile_use_case,
+    get_diarization_repo,
+    get_event_bus,
+    get_list_voice_profiles_use_case,
+    get_register_voice_profile_use_case,
+    get_task_queue_service,
 )
 
 client = TestClient(app)
@@ -32,21 +36,35 @@ class TestVoiceProfileRouter:
         app.dependency_overrides.clear()
 
     def test_train_from_speaker_success(self):
+        # 1. Mock dependencies
         app.dependency_overrides[get_db] = lambda: MagicMock()
-        mock_use_case = MagicMock()
-        app.dependency_overrides[get_train_voice_from_speaker_use_case] = lambda: (
-            mock_use_case
-        )
+        mock_task_queue = MagicMock()
+        app.dependency_overrides[get_task_queue_service] = lambda: mock_task_queue
 
-        mock_use_case.execute.return_value = "v-456"
+        mock_repo = MagicMock()
+        app.dependency_overrides[get_diarization_repo] = lambda: mock_repo
+        mock_repo.get_by_id.return_value = MagicMock(id="d-1")
+
+        mock_event_bus = MagicMock()
+        app.dependency_overrides[get_event_bus] = lambda: mock_event_bus
+
+        # 2. Execute request
         payload = {
             "diarization_id": "d-1",
             "speaker_label": "SPEAKER_00",
             "name": "Bob",
         }
         response = client.post("/rest/voices/train-from-speaker", json=payload)
-        assert response.status_code == 200
-        assert response.json()["voice_id"] == "v-456"
+
+        # 3. Assert status and body
+        assert response.status_code == 202
+        assert "Treinamento de voz iniciado" in response.json()["message"]
+        assert response.json()["name"] == "Bob"
+
+        # 4. Verify queue was called
+        assert mock_task_queue.enqueue.called
+
+        app.dependency_overrides.clear()
 
         app.dependency_overrides.clear()
 

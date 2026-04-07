@@ -1,4 +1,5 @@
 from typing import Optional
+
 from src.config.logger import Logger
 from src.config.settings import VectorConfig
 

@@ -1,5 +1,6 @@
 import logging
-from src.infrastructure.loggers.std_logger import StdLogger, InterceptHandler
+
+from src.infrastructure.loggers.std_logger import InterceptHandler, StdLogger
 
 LOG_FORMAT = "{asctime} | {levelname:<8} | {filepath}:{funcName}:{lineno} | {message} | {context}"
 

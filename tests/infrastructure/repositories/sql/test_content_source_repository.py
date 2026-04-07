@@ -1,6 +1,8 @@
-import pytest
-from uuid import uuid4
 from unittest.mock import patch
+from uuid import uuid4
+
+import pytest
+
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
 )

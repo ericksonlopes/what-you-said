@@ -1,7 +1,9 @@
-import pytest
+# ruff: noqa: E402
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 # Mock dependencies
 mock_faiss_lib = MagicMock()
@@ -10,11 +12,13 @@ mock_langchain_faiss = MagicMock()
 sys.modules["langchain_community.vectorstores"] = MagicMock()
 sys.modules["langchain_community.vectorstores.faiss"] = mock_langchain_faiss
 
+from src.domain.entities.enums.search_mode_enum import SearchMode  # noqa: E402
 from src.infrastructure.repositories.vector.faiss.chunk_repository import (  # noqa: E402
     ChunkFAISSRepository,
 )
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel  # noqa: E402
-from src.domain.entities.enums.search_mode_enum import SearchMode  # noqa: E402
+from src.infrastructure.repositories.vector.models.chunk_model import (
+    ChunkModel,  # noqa: E402
+)
 
 
 @pytest.mark.ChunkFAISSRepository

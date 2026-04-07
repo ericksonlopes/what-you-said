@@ -9,14 +9,16 @@ from src.application.dtos.commands.ingest_diarization_command import (
 from src.config.logger import Logger
 from src.domain.entities.chunk_entity import ChunkEntity
 from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.domain.entities.enums.source_type_enum_entity import SourceType
+from src.domain.interfaces.services.i_event_bus import IEventBus
+from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
-from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
-from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
+from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.embedding_service import EmbeddingService
 from src.infrastructure.services.ingestion_job_service import IngestionJobService
@@ -24,9 +26,7 @@ from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
 )
 from src.infrastructure.services.model_loader_service import ModelLoaderService
-from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.text_splitter_service import TextSplitterService
-from src.domain.interfaces.services.i_event_bus import IEventBus
 
 logger = Logger()
 
@@ -368,7 +368,9 @@ class DiarizationIngestionUseCase:
                     curr_texts.append(text)
             else:
                 if curr_speaker is not None:
-                    ts = f"[{self._format_seconds(cast(float, curr_start))} - {self._format_seconds(cast(float, curr_end))}]"
+                    start_str = self._format_seconds(cast(float, curr_start))
+                    end_str = self._format_seconds(cast(float, curr_end))
+                    ts = f"[{start_str} - {end_str}]"
                     merged_lines.append(f"{ts} {curr_speaker}: {' '.join(curr_texts)}")
 
                 curr_speaker, curr_start, curr_end, curr_texts = (

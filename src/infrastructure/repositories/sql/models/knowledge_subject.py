@@ -4,7 +4,7 @@ ORM models for knowledge_subjects table.
 
 import uuid
 
-from sqlalchemy import Column, Text, DateTime, func, UUID
+from sqlalchemy import UUID, Column, DateTime, Text, func
 from sqlalchemy.orm import relationship
 
 from src.infrastructure.repositories.sql.connector import Base

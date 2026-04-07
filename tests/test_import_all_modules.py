@@ -1,11 +1,12 @@
+# ruff: noqa: E402
 """
 Import all modules under the `src` package by package name to ensure coverage can
 see files that aren't otherwise executed by unit tests. This test will fail if
 any module fails to import so import problems are visible in CI.
 """
 
-import os
 import importlib
+import os
 import traceback
 
 import src

@@ -1,8 +1,8 @@
 import logging
 import warnings
-from typing import List, Annotated, Optional
+from typing import Annotated, List, Optional
 
-from pydantic import field_validator, Field, BaseModel
+from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from src.config.validators import docker_host_fallback, docker_host_fallback_optional

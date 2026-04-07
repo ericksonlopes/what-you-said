@@ -1,6 +1,8 @@
-import pytest
 import sys
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.infrastructure.repositories.vector.weaviate.weaviate_client import (
     WeaviateClient,
 )

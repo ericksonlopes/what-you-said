@@ -1,14 +1,14 @@
 import secrets
-from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timezone
+from typing import Any, Dict, Optional, Tuple
 
 from src.domain.entities.user import User as UserEntity
-from src.domain.interfaces.repository.user_repository import IUserRepository
 from src.domain.exception.auth_exceptions import (
-    InvalidStateError,
     GoogleAuthError,
+    InvalidStateError,
     UserNotCreatedError,
 )
+from src.domain.interfaces.repository.user_repository import IUserRepository
 from src.infrastructure.services.auth_service import AuthService
 
 

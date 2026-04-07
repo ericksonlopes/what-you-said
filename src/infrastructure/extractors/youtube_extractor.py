@@ -6,10 +6,10 @@ from urllib.parse import parse_qs, urlparse
 
 import imageio_ffmpeg
 from youtube_transcript_api import (
-    YouTubeTranscriptApi,
     FetchedTranscript,
-    TranscriptsDisabled,
     NoTranscriptFound,
+    TranscriptsDisabled,
+    YouTubeTranscriptApi,
 )
 from youtube_transcript_api.proxies import GenericProxyConfig, WebshareProxyConfig
 from yt_dlp import YoutubeDL
@@ -17,12 +17,12 @@ from yt_dlp import YoutubeDL
 from src.config.logger import Logger
 from src.config.settings import settings
 from src.domain.exception.youtube_exceptions import (
+    YoutubeIPBlockedException,
+    YoutubeNetworkException,
     YoutubeTranscriptNotFoundException,
     YoutubeTranscriptsDisabledException,
     YoutubeVideoPrivateException,
     YoutubeVideoUnplayableException,
-    YoutubeNetworkException,
-    YoutubeIPBlockedException,
 )
 from src.domain.interfaces.extractors.youtube_extractor_interface import (
     IYoutubeExtractor,
@@ -54,7 +54,11 @@ class YoutubeExtractor(IYoutubeExtractor):
             "source_address": "0.0.0.0",  # nosec
             # Mimic a modern browser to avoid blocks
             "http_headers": {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.5",
                 "Referer": "https://www.google.com/",

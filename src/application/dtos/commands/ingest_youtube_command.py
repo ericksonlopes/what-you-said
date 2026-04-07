@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import List, Optional
 
 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
 

@@ -1,9 +1,11 @@
-import pytest
 import uuid
 from unittest.mock import MagicMock, patch
-from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
+
+import pytest
+
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 
 
 @pytest.mark.Dependencies
@@ -366,10 +368,10 @@ class TestYoutubeIngestionUseCaseEdgeCases:
                 assert mock_services["vector_service"].delete_by_video_id.called
 
     def test_known_exceptions_handling(self, use_case, mock_services):
-        from src.domain.exception.youtube_exceptions import YoutubeVideoPrivateException
         from src.domain.entities.enums.content_source_status_enum import (
             ContentSourceStatus,
         )
+        from src.domain.exception.youtube_exceptions import YoutubeVideoPrivateException
 
         video_id = "v1"
         # Ensure source exists so status update is called

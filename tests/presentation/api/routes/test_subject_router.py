@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 from src.presentation.api.dependencies import get_ks_service, get_ks_use_case
 

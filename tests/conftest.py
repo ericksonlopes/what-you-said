@@ -1,5 +1,5 @@
-from unittest.mock import MagicMock, patch
 import os
+from unittest.mock import MagicMock, patch
 
 # Suppress NNPACK warnings (Unsupported hardware)
 os.environ["NNPACK_CPU_FAST_8x8_CONV"] = "0"
@@ -40,8 +40,8 @@ def mock_infrastructure():
 def mock_auth():
     """Global mock for current user to avoid 401 Unauthorized in API tests."""
     from main import app
-    from src.presentation.api.dependencies import get_current_user
     from src.domain.entities.user import User
+    from src.presentation.api.dependencies import get_current_user
 
     mock_user = User(id="admin", email="admin@whatyousaid.local", full_name="Admin")
     app.dependency_overrides[get_current_user] = lambda: mock_user

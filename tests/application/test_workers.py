@@ -1,15 +1,17 @@
-from unittest.mock import ANY, AsyncMock, MagicMock, patch
-import pytest
 import asyncio
-from src.application.service_registry import registry
-from src.application.workers import (
-    run_file_ingestion_worker,
-    run_youtube_ingestion_worker,
-    run_web_ingestion_worker,
-)
+from unittest.mock import ANY, AsyncMock, MagicMock, patch
+
+import pytest
+
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
+from src.application.service_registry import registry
+from src.application.workers import (
+    run_file_ingestion_worker,
+    run_web_ingestion_worker,
+    run_youtube_ingestion_worker,
+)
 
 
 @pytest.mark.Workers
@@ -187,11 +189,12 @@ class TestWorkers:
                 mock_logger.error.assert_called_once()
 
     def test_run_diarization_ingestion_worker_success(self):
-        from src.application.workers import run_diarization_ingestion_worker
+        from uuid import uuid4
+
         from src.application.dtos.commands.ingest_diarization_command import (
             IngestDiarizationCommand,
         )
-        from uuid import uuid4
+        from src.application.workers import run_diarization_ingestion_worker
 
         with (
             patch(
@@ -276,10 +279,10 @@ class TestWorkers:
             mock_use_case.execute.assert_called_once()
 
     def test_run_audio_diarization_worker_success(self):
-        from src.application.workers import run_audio_diarization_worker
         from src.application.dtos.commands.process_audio_command import (
             ProcessAudioCommand,
         )
+        from src.application.workers import run_audio_diarization_worker
 
         with (
             patch("multiprocessing.get_context") as mock_get_ctx,
@@ -298,10 +301,10 @@ class TestWorkers:
             mock_process.join.assert_called_once()
 
     def test_run_audio_diarization_worker_failure(self):
-        from src.application.workers import run_audio_diarization_worker
         from src.application.dtos.commands.process_audio_command import (
             ProcessAudioCommand,
         )
+        from src.application.workers import run_audio_diarization_worker
 
         with (
             patch("multiprocessing.get_context") as mock_get_ctx,

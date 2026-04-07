@@ -1,8 +1,10 @@
-import pytest
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 from uuid import uuid4
-from types import SimpleNamespace
-from datetime import datetime, timezone
+
+import pytest
+
 from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
 )

@@ -1,8 +1,9 @@
-import pytest
 import sys
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
-from types import SimpleNamespace
+
+import pytest
 
 # Mock weaviate and its complex nested structure
 mock_weaviate = MagicMock()
@@ -15,10 +16,10 @@ sys.modules["weaviate.collections.classes.filters"] = MagicMock()
 sys.modules["weaviate.classes"] = MagicMock()
 sys.modules["weaviate.classes.query"] = MagicMock()
 
+from src.domain.entities.enums.search_mode_enum import SearchMode  # noqa: E402
 from src.infrastructure.repositories.vector.weaviate.chunk_repository import (  # noqa: E402
     ChunkWeaviateRepository,
 )
-from src.domain.entities.enums.search_mode_enum import SearchMode  # noqa: E402
 
 
 @pytest.mark.ChunkRepository

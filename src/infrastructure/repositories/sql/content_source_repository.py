@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, List, Any
-from typing import cast
+from typing import Any, List, Optional, cast
 from uuid import UUID
 
 from src.config.logger import Logger
@@ -114,7 +113,7 @@ class ContentSourceSQLRepository:
                 )
                 # Search within JSON field (syntax works for SQLite and Postgres)
                 # Using string comparison for the diarization_id in the JSON object
-                from sqlalchemy import cast, String
+                from sqlalchemy import String, cast
 
                 # Search within JSON field in a way that works for SQLite and Postgres
                 # Using cast to String to ensure we can compare with the diarization_id

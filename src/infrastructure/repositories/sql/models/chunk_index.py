@@ -5,16 +5,16 @@ ORM models for chunk_index table.
 import uuid
 
 from sqlalchemy import (
-    Column,
-    Text,
-    DateTime,
-    Integer,
-    func,
-    ForeignKey,
-    text,
-    UUID,
-    Index,
     JSON,
+    UUID,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Text,
+    func,
+    text,
 )
 from sqlalchemy.orm import relationship
 
