@@ -95,3 +95,29 @@ torchaudio = { index = "pytorch-cu126" }
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pypackages__",
+    "dist",
+    "node_modules",
+    "venv",
+    "scripts",
+]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
