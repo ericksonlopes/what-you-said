@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.infrastructure.services.model_loader_service import ModelLoaderService
 
 

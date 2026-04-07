@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Any, cast
+from typing import Any, Dict, List, Optional, cast
 from uuid import UUID
 
 from src.domain.entities.content_source_entity import ContentSourceEntity

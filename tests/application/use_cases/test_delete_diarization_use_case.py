@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from src.application.use_cases.delete_diarization_use_case import (
     DeleteDiarizationUseCase,

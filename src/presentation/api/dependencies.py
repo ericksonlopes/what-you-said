@@ -6,11 +6,11 @@ from sqlalchemy.orm import Session
 from src.application.ingestion_context import IngestionContext
 from src.application.use_cases.auth_use_case import AuthUseCase
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
-from src.application.use_cases.diarization_ingestion_use_case import (
-    DiarizationIngestionUseCase,
-)
 from src.application.use_cases.delete_diarization_use_case import (
     DeleteDiarizationUseCase,
+)
+from src.application.use_cases.diarization_ingestion_use_case import (
+    DiarizationIngestionUseCase,
 )
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
 from src.application.use_cases.generate_speaker_audio_access_url import (
@@ -22,12 +22,12 @@ from src.application.use_cases.identify_speakers_in_processed_audio import (
 from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
 from src.application.use_cases.list_s3_audio_files import ListS3AudioFilesUseCase
 from src.application.use_cases.manage_voice_profiles import (
+    DeleteVoiceAudioFileUseCase,
+    DeleteVoiceProfileUseCase,
+    ListRegisteredVoiceProfilesUseCase,
+    ListVoiceAudioFilesUseCase,
     RegisterNewVoiceProfileUseCase,
     TrainVoiceProfileFromSpeakerSegmentUseCase,
-    ListRegisteredVoiceProfilesUseCase,
-    DeleteVoiceProfileUseCase,
-    ListVoiceAudioFilesUseCase,
-    DeleteVoiceAudioFileUseCase,
 )
 from src.application.use_cases.retrieve_processed_audio_history import (
     RetrieveProcessedAudioHistoryUseCase,

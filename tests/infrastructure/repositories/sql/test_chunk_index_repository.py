@@ -1,6 +1,8 @@
-import pytest
-from uuid import uuid4
 from unittest.mock import patch
+from uuid import uuid4
+
+import pytest
+
 from src.infrastructure.repositories.sql.chunk_index_repository import (
     ChunkIndexSQLRepository,
 )

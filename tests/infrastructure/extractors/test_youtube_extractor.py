@@ -2,16 +2,16 @@ from unittest.mock import patch
 
 import pytest
 from youtube_transcript_api import (
-    TranscriptsDisabled,
     NoTranscriptFound,
+    TranscriptsDisabled,
 )
 
 from src.config.logger import Logger
-from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.domain.exception.youtube_exceptions import (
     YoutubeTranscriptNotFoundException,
     YoutubeTranscriptsDisabledException,
 )
+from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
 logger = Logger()
 

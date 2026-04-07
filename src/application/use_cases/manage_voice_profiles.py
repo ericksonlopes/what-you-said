@@ -1,5 +1,5 @@
-from contextlib import suppress
 import os
+from contextlib import suppress
 from typing import cast
 
 from sqlalchemy.orm import Session

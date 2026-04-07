@@ -1,7 +1,6 @@
 from typing import Any, List, Optional, Union
 from uuid import UUID
 
-
 from src.application.dtos.results.search_chunks_result import SearchChunksResult
 from src.config.logger import Logger
 from src.domain.entities.enums.search_mode_enum import SearchMode

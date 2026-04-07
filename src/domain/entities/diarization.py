@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timezone
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 import soundfile as sf
 from pydantic import BaseModel, Field

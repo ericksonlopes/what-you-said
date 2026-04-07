@@ -1,12 +1,14 @@
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 import torch
-from unittest.mock import patch
+
 from src.infrastructure.utils.audio_utils import (
-    load_audio_tensor,
-    load_whisperx_audio,
     cosine_similarity,
     get_best_device,
+    load_audio_tensor,
+    load_whisperx_audio,
 )
 
 

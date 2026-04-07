@@ -1,10 +1,12 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
+
 from src.application.use_cases.auth_use_case import AuthUseCase
 from src.domain.entities.user import User
 from src.domain.exception.auth_exceptions import (
-    InvalidStateError,
     GoogleAuthError,
+    InvalidStateError,
     UserNotCreatedError,
 )
 

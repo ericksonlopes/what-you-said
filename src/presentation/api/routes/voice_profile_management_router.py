@@ -1,29 +1,29 @@
-from typing import Annotated
 import os
 import tempfile
+from typing import Annotated
+
 import anyio
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
-from fastapi import APIRouter, HTTPException, Depends, File, UploadFile, Form
-
-from src.infrastructure.repositories.storage.storage import StorageService
 from src.application.use_cases.manage_voice_profiles import (
-    RegisterNewVoiceProfileUseCase,
-    ListRegisteredVoiceProfilesUseCase,
-    DeleteVoiceProfileUseCase,
-    TrainVoiceProfileFromSpeakerSegmentUseCase,
-    ListVoiceAudioFilesUseCase,
     DeleteVoiceAudioFileUseCase,
-)
-from src.presentation.api.dependencies import (
-    get_register_voice_profile_use_case,
-    get_list_voice_profiles_use_case,
-    get_delete_voice_profile_use_case,
-    get_train_voice_from_speaker_use_case,
-    get_list_voice_audio_files_use_case,
-    get_delete_voice_audio_file_use_case,
-    get_event_bus,
+    DeleteVoiceProfileUseCase,
+    ListRegisteredVoiceProfilesUseCase,
+    ListVoiceAudioFilesUseCase,
+    RegisterNewVoiceProfileUseCase,
+    TrainVoiceProfileFromSpeakerSegmentUseCase,
 )
 from src.domain.interfaces.services.i_event_bus import IEventBus
+from src.infrastructure.repositories.storage.storage import StorageService
+from src.presentation.api.dependencies import (
+    get_delete_voice_audio_file_use_case,
+    get_delete_voice_profile_use_case,
+    get_event_bus,
+    get_list_voice_audio_files_use_case,
+    get_list_voice_profiles_use_case,
+    get_register_voice_profile_use_case,
+    get_train_voice_from_speaker_use_case,
+)
 from src.presentation.api.schemas.voice_profile_requests import (
     VoiceProfileRegistrationRequest,
     VoiceProfileTrainingFromSpeakerRequest,

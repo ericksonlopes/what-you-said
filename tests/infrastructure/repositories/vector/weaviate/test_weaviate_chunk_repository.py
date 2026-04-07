@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
+
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 from src.infrastructure.repositories.vector.weaviate.chunk_repository import (
     ChunkWeaviateRepository,

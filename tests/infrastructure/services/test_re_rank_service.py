@@ -1,14 +1,17 @@
-import pytest
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
+
+import pytest
 
 # Mock flashrank at module level since it might not be installed in all environments
 mock_flashrank = MagicMock()
 sys.modules["flashrank"] = mock_flashrank
 
+from src.infrastructure.repositories.vector.models.chunk_model import (
+    ChunkModel,  # noqa: E402
+)
 from src.infrastructure.services.re_rank_service import ReRankService  # noqa: E402
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel  # noqa: E402
 
 
 @pytest.mark.ReRankService

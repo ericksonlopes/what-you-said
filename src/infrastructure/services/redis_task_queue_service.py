@@ -176,16 +176,16 @@ class RedisTaskQueueService(ITaskQueue):
 
     def _deserialize_args(self, raw_args: list) -> list:
         """Reconstruct dataclass command objects from serialized dicts."""
+        from src.application.dtos.commands.ingest_diarization_command import (
+            IngestDiarizationCommand,
+        )
         from src.application.dtos.commands.ingest_file_command import IngestFileCommand
+        from src.application.dtos.commands.ingest_web_command import IngestWebCommand
         from src.application.dtos.commands.ingest_youtube_command import (
             IngestYoutubeCommand,
         )
-        from src.application.dtos.commands.ingest_web_command import IngestWebCommand
         from src.application.dtos.commands.process_audio_command import (
             ProcessAudioCommand,
-        )
-        from src.application.dtos.commands.ingest_diarization_command import (
-            IngestDiarizationCommand,
         )
 
         command_classes = {

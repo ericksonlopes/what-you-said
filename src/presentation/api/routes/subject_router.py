@@ -3,17 +3,17 @@ from uuid import UUID
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 
+from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
 from src.config.logger import Logger
+from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.infrastructure.services.knowledge_subject_service import (
     KnowledgeSubjectService,
 )
-from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
 from src.presentation.api.dependencies import (
+    get_event_bus,
     get_ks_service,
     get_ks_use_case,
-    get_event_bus,
 )
-from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.presentation.api.schemas.subject_schemas import (
     SubjectCreate,
     SubjectResponse,

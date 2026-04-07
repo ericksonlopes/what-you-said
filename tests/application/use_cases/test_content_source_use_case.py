@@ -1,6 +1,8 @@
-import pytest
 import uuid
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 
 

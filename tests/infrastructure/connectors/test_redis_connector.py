@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from src.infrastructure.connectors.redis_connector import RedisConnector
 
 

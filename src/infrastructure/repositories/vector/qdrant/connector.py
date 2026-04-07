@@ -2,6 +2,7 @@ import warnings
 from typing import Optional
 
 from qdrant_client import QdrantClient
+
 from src.config.logger import Logger
 
 warnings.filterwarnings(

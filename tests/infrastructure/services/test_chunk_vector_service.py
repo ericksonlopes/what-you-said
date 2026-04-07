@@ -1,11 +1,13 @@
-import pytest
 from unittest.mock import MagicMock
 from uuid import uuid4
-from src.infrastructure.services.chunk_vector_service import ChunkVectorService
+
+import pytest
+
 from src.domain.entities.chunk_entity import ChunkEntity
-from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.domain.entities.enums.search_mode_enum import SearchMode
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
+from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 
 
 @pytest.mark.ChunkVectorService

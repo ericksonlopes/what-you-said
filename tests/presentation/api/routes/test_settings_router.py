@@ -1,6 +1,8 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from fastapi.testclient import TestClient
+
 from main import app
 from src.presentation.api.dependencies import get_settings, get_vector_repository
 

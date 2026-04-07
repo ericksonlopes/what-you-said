@@ -5,7 +5,7 @@ ORM models for diarization and voice recognition tables.
 import datetime
 import uuid
 
-from sqlalchemy import Column, String, Float, DateTime, JSON, ForeignKey, UUID
+from sqlalchemy import JSON, UUID, Column, DateTime, Float, ForeignKey, String
 
 from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.infrastructure.repositories.sql.connector import Base

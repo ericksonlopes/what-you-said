@@ -1,11 +1,12 @@
-import pytest
 from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
-from main import app
-from src.presentation.api.dependencies import get_ingest_youtube_use_case
-
-from src.application.dtos.results.ingest_youtube_result import IngestYoutubeResult
 from uuid import UUID
+
+import pytest
+from fastapi.testclient import TestClient
+
+from main import app
+from src.application.dtos.results.ingest_youtube_result import IngestYoutubeResult
+from src.presentation.api.dependencies import get_ingest_youtube_use_case
 
 client = TestClient(app)
 

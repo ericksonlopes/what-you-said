@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.application.use_cases.process_audio_diarization_pipeline import (
     ProcessAudioDiarizationPipelineUseCase,
 )

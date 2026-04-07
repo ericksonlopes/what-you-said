@@ -10,8 +10,8 @@ from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCo
 from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
 from src.application.service_registry import registry
 from src.infrastructure.loggers.std_logger import (
-    set_global_context,
     clear_global_context,
+    set_global_context,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,14 +44,14 @@ def run_file_ingestion_worker(cmd: IngestFileCommand):
         return
 
     try:
-        from src.presentation.api.dependencies import (
-            resolve_ingestion_context,
-            resolve_vector_repository,
-            resolve_rerank_service,
-        )
-        from src.infrastructure.services.chunk_vector_service import ChunkVectorService
         from src.application.use_cases.file_ingestion_use_case import (
             FileIngestionUseCase,
+        )
+        from src.infrastructure.services.chunk_vector_service import ChunkVectorService
+        from src.presentation.api.dependencies import (
+            resolve_ingestion_context,
+            resolve_rerank_service,
+            resolve_vector_repository,
         )
 
         ctx = resolve_ingestion_context(app)
@@ -93,15 +93,15 @@ def run_youtube_ingestion_worker(cmd: IngestYoutubeCommand):
         return
 
     try:
-        from src.presentation.api.dependencies import (
-            resolve_ingestion_context,
-            resolve_vector_repository,
+        from src.application.use_cases.youtube_ingestion_use_case import (
+            YoutubeIngestionUseCase,
         )
         from src.infrastructure.services.youtube_vector_service import (
             YouTubeVectorService,
         )
-        from src.application.use_cases.youtube_ingestion_use_case import (
-            YoutubeIngestionUseCase,
+        from src.presentation.api.dependencies import (
+            resolve_ingestion_context,
+            resolve_vector_repository,
         )
 
         ctx = resolve_ingestion_context(app)
@@ -238,17 +238,17 @@ def run_diarization_ingestion_worker(cmd: IngestDiarizationCommand):
         return
 
     try:
-        from src.presentation.api.dependencies import (
-            resolve_ingestion_context,
-            resolve_vector_repository,
-            resolve_rerank_service,
+        from src.application.use_cases.diarization_ingestion_use_case import (
+            DiarizationIngestionUseCase,
         )
-        from src.infrastructure.services.chunk_vector_service import ChunkVectorService
         from src.infrastructure.repositories.sql.diarization_repository import (
             DiarizationRepository,
         )
-        from src.application.use_cases.diarization_ingestion_use_case import (
-            DiarizationIngestionUseCase,
+        from src.infrastructure.services.chunk_vector_service import ChunkVectorService
+        from src.presentation.api.dependencies import (
+            resolve_ingestion_context,
+            resolve_rerank_service,
+            resolve_vector_repository,
         )
 
         ctx = resolve_ingestion_context(app)
@@ -302,17 +302,17 @@ def run_web_ingestion_worker(cmd: Any):
 
     async def _run():
         try:
-            from src.presentation.api.dependencies import (
-                resolve_ingestion_context,
-                resolve_vector_repository,
-                resolve_rerank_service,
-                get_web_extractor,
+            from src.application.use_cases.web_scraping_use_case import (
+                WebScrapingUseCase,
             )
             from src.infrastructure.services.chunk_vector_service import (
                 ChunkVectorService,
             )
-            from src.application.use_cases.web_scraping_use_case import (
-                WebScrapingUseCase,
+            from src.presentation.api.dependencies import (
+                get_web_extractor,
+                resolve_ingestion_context,
+                resolve_rerank_service,
+                resolve_vector_repository,
             )
 
             ctx = resolve_ingestion_context(app)
@@ -347,21 +347,20 @@ def run_web_ingestion_worker(cmd: Any):
 
 def _audio_diarization_subprocess(cmd_dict: dict):
     """Run audio diarization in a separate process to avoid torch/CUDA thread deadlocks."""
+    from src.application.use_cases.process_audio_diarization_pipeline import (
+        ProcessAudioDiarizationPipelineUseCase,
+    )
     from src.infrastructure.repositories.sql.connector import (
         Session as DBSessionFactory,
     )
-    from src.application.use_cases.process_audio_diarization_pipeline import (
-        ProcessAudioDiarizationPipelineUseCase,
+    from src.infrastructure.repositories.sql.content_source_repository import (
+        ContentSourceSQLRepository,
     )
     from src.infrastructure.repositories.sql.diarization_repository import (
         DiarizationRepository,
     )
-    from src.infrastructure.services.redis_event_bus import RedisEventBus
-
     from src.infrastructure.services.content_source_service import ContentSourceService
-    from src.infrastructure.repositories.sql.content_source_repository import (
-        ContentSourceSQLRepository,
-    )
+    from src.infrastructure.services.redis_event_bus import RedisEventBus
 
     db = DBSessionFactory()
     event_bus = RedisEventBus()

@@ -1,5 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from src.infrastructure.extractors.plain_text_extractor import PlainTextExtractor
 
 

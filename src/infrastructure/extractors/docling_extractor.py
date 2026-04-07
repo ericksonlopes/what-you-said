@@ -1,6 +1,6 @@
 import os
 import threading
-from typing import List, Any
+from typing import Any, List
 
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions

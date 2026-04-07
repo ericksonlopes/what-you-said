@@ -9,6 +9,7 @@ from typing import Any, Dict
 from uuid import uuid4
 
 from langchain_core.documents import Document
+
 from src.domain.entities.chunk_entity import ChunkEntity
 from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel

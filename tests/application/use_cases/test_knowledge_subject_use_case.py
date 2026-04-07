@@ -1,10 +1,12 @@
-import pytest
 import uuid
-from unittest.mock import MagicMock
-from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
-from src.domain.entities.knowledge_subject_entity import KnowledgeSubjectEntity
-from src.domain.entities.content_source_entity import ContentSourceEntity
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
+
+import pytest
+
+from src.application.use_cases.knowledge_subject_use_case import KnowledgeSubjectUseCase
+from src.domain.entities.content_source_entity import ContentSourceEntity
+from src.domain.entities.knowledge_subject_entity import KnowledgeSubjectEntity
 
 
 @pytest.mark.KnowledgeSubjectUseCase

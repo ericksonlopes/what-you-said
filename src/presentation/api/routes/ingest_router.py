@@ -4,48 +4,46 @@ from typing import Annotated, Dict, Optional
 from uuid import UUID
 
 import anyio
-from fastapi import APIRouter, Body, Depends, HTTPException
-from fastapi import UploadFile, File, Form
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, UploadFile
 
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.dtos.enums.youtube_data_type import YoutubeDataType
-from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
-from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
-from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
-from src.infrastructure.services.content_source_service import ContentSourceService
 from src.application.use_cases.diarization_ingestion_use_case import (
     DiarizationIngestionUseCase,
 )
+from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
+from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
+from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
 from src.application.workers import (
-    run_file_ingestion_worker,
-    run_youtube_ingestion_worker,
-    run_youtube_dispatcher_worker,
-    run_web_ingestion_worker,
     run_diarization_ingestion_worker,
+    run_file_ingestion_worker,
+    run_web_ingestion_worker,
+    run_youtube_dispatcher_worker,
+    run_youtube_ingestion_worker,
 )
-
 from src.config.logger import Logger
+from src.domain.entities.user import User
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
+from src.infrastructure.services.content_source_service import ContentSourceService
 from src.presentation.api.dependencies import (
-    get_ingest_youtube_use_case,
-    get_file_ingestion_use_case,
-    get_web_scraping_use_case,
-    get_diarization_ingestion_use_case,
-    get_task_queue_service,
     get_cs_service,
     get_current_user,
+    get_diarization_ingestion_use_case,
+    get_file_ingestion_use_case,
+    get_ingest_youtube_use_case,
+    get_task_queue_service,
+    get_web_scraping_use_case,
 )
-from src.domain.entities.user import User
 from src.presentation.api.schemas.ingest_schemas import (
-    IngestResponse,
-    YoutubeIngestRequest,
-    FileUrlIngestRequest,
-    WebIngestRequest,
-    DiarizationIngestRequest,
     ChannelPreviewRequest,
     ChannelPreviewResponse,
     ChannelVideoItem,
+    DiarizationIngestRequest,
+    FileUrlIngestRequest,
+    IngestResponse,
+    WebIngestRequest,
+    YoutubeIngestRequest,
 )
 
 logger = Logger()
@@ -465,8 +463,8 @@ def preview_youtube_channel(
         raise HTTPException(status_code=400, detail="channel_url is required")
 
     try:
-        from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
         from src.domain.entities.enums.source_type_enum_entity import SourceType
+        from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
         extractor = YoutubeExtractor()
         videos, channel_name = extractor.extract_channel_videos(

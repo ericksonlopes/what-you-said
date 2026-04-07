@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import httpx
-from jose import jwt, JWTError
+from jose import JWTError, jwt
 
 from src.config.settings import settings
 from src.domain.entities.user import User as UserEntity

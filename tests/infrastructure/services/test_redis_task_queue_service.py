@@ -3,6 +3,7 @@ import time
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from src.infrastructure.services.redis_task_queue_service import (
     RedisTaskQueueService,
     register_task,

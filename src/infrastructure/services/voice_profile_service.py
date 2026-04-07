@@ -1,8 +1,8 @@
 import datetime
-from contextlib import suppress
 import logging
 import os
 import uuid
+from contextlib import suppress
 from typing import cast
 from urllib.parse import unquote
 
@@ -27,8 +27,8 @@ class VoiceDB:
 
     def _get_inference(self):
         if self._inference is None:
-            from pyannote.audio import Model, Inference
             import torch
+            from pyannote.audio import Inference, Model
 
             model = Model.from_pretrained(
                 "pyannote/wespeaker-voxceleb-resnet34-LM", use_auth_token=self.hf_token

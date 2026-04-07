@@ -1,11 +1,13 @@
-import pytest
 import uuid
 from unittest.mock import AsyncMock, MagicMock
-from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
-from src.application.dtos.commands.ingest_web_command import IngestWebCommand
-from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
-from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+
+import pytest
 from langchain_core.documents import Document
+
+from src.application.dtos.commands.ingest_web_command import IngestWebCommand
+from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
+from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 
 
 @pytest.fixture

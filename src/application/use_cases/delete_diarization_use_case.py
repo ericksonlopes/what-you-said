@@ -1,13 +1,14 @@
 import logging
 import os
 import shutil
+
 from sqlalchemy.orm import Session
 
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
-from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.repositories.storage.storage import StorageService
+from src.infrastructure.services.content_source_service import ContentSourceService
 
 logger = logging.getLogger(__name__)
 

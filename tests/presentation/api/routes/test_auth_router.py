@@ -1,9 +1,11 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import MagicMock, AsyncMock
 from fastapi.testclient import TestClient
+
 from main import app
-from src.presentation.api.dependencies import get_auth_use_case, get_current_user
 from src.domain.entities.user import User
+from src.presentation.api.dependencies import get_auth_use_case, get_current_user
 
 client = TestClient(app)
 

@@ -1,6 +1,8 @@
-import pytest
-import numpy as np
 from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pytest
+
 from src.infrastructure.services.voice_profile_service import VoiceDB
 
 

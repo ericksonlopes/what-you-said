@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, cast
+from typing import List, Optional, cast
 from uuid import UUID
 
 from src.domain.entities.knowledge_subject_entity import KnowledgeSubjectEntity

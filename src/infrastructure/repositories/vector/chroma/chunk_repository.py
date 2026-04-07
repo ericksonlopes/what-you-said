@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import List, Optional, Any, Dict
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from src.config.logger import Logger

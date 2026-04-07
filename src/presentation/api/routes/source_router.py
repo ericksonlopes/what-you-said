@@ -1,22 +1,21 @@
 from typing import Annotated, List
 
-from fastapi import Depends, HTTPException, APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 
+from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.config.logger import Logger
+from src.domain.entities.enums.source_type_enum_entity import SourceType
+from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.model_loader_service import ModelLoaderService
 from src.presentation.api.dependencies import (
-    get_cs_service,
-    get_model_loader,
     get_content_source_use_case,
+    get_cs_service,
     get_event_bus,
+    get_model_loader,
 )
-from src.domain.interfaces.services.i_event_bus import IEventBus
-from src.domain.entities.enums.source_type_enum_entity import SourceType
-from src.application.use_cases.content_source_use_case import ContentSourceUseCase
 from src.presentation.api.schemas.model_schemas import ModelInfoResponse
 from src.presentation.api.schemas.source_schemas import SourceResponse, SourceUpdate
-
 
 logger = Logger()
 router = APIRouter()

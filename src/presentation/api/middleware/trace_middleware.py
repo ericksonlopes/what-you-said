@@ -1,9 +1,11 @@
 import uuid
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from src.infrastructure.loggers.std_logger import (
-    set_global_context,
     clear_global_context,
+    set_global_context,
 )
 
 

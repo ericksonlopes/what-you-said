@@ -1,15 +1,16 @@
-from typing import Optional, Annotated
+from typing import Annotated, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.application.use_cases.auth_use_case import AuthUseCase
+from src.config.settings import Settings
+from src.domain.entities.user import User
+from src.domain.exception.auth_exceptions import AuthDomainError
 from src.presentation.api.dependencies import (
     get_auth_use_case,
-    get_settings,
     get_current_user,
+    get_settings,
 )
-from src.config.settings import Settings
-from src.domain.exception.auth_exceptions import AuthDomainError
-from src.domain.entities.user import User
 
 router = APIRouter()
 

@@ -1,11 +1,11 @@
 import inspect
-from contextlib import suppress
 import logging
 import os
 import sys
+from contextlib import suppress
 from contextvars import ContextVar
 from datetime import datetime
-from typing import Optional, Any, Dict
+from typing import Any, Dict, Optional
 
 from src.config.settings import settings
 from src.domain.interfaces.logger.logger import ILogger

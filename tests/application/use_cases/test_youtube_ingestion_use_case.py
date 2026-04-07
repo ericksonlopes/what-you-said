@@ -1,7 +1,8 @@
-import pytest
 import uuid
-from unittest.mock import MagicMock
 from types import SimpleNamespace
+from unittest.mock import MagicMock
+
+import pytest
 
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase

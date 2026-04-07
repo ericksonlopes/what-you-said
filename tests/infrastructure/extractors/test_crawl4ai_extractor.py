@@ -1,7 +1,9 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from src.infrastructure.extractors.crawl4ai_extractor import Crawl4AIExtractor
 from langchain_core.documents import Document
+
+from src.infrastructure.extractors.crawl4ai_extractor import Crawl4AIExtractor
 
 
 @pytest.mark.anyio

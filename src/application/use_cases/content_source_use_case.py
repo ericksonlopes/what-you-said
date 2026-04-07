@@ -1,4 +1,5 @@
 from uuid import UUID
+
 from src.config.logger import Logger
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.infrastructure.services.chunk_index_service import ChunkIndexService

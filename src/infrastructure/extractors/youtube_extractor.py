@@ -6,10 +6,10 @@ from urllib.parse import parse_qs, urlparse
 
 import imageio_ffmpeg
 from youtube_transcript_api import (
-    YouTubeTranscriptApi,
     FetchedTranscript,
-    TranscriptsDisabled,
     NoTranscriptFound,
+    TranscriptsDisabled,
+    YouTubeTranscriptApi,
 )
 from youtube_transcript_api.proxies import GenericProxyConfig, WebshareProxyConfig
 from yt_dlp import YoutubeDL
@@ -17,12 +17,12 @@ from yt_dlp import YoutubeDL
 from src.config.logger import Logger
 from src.config.settings import settings
 from src.domain.exception.youtube_exceptions import (
+    YoutubeIPBlockedException,
+    YoutubeNetworkException,
     YoutubeTranscriptNotFoundException,
     YoutubeTranscriptsDisabledException,
     YoutubeVideoPrivateException,
     YoutubeVideoUnplayableException,
-    YoutubeNetworkException,
-    YoutubeIPBlockedException,
 )
 from src.domain.interfaces.extractors.youtube_extractor_interface import (
     IYoutubeExtractor,

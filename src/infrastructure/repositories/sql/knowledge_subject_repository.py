@@ -1,4 +1,4 @@
-from typing import Optional, List, Any, cast
+from typing import Any, List, Optional, cast
 from uuid import UUID
 
 from sqlalchemy.orm import selectinload

@@ -1,13 +1,15 @@
+from unittest.mock import MagicMock, mock_open, patch
+
 import pytest
-from unittest.mock import MagicMock, patch, mock_open
 from fastapi.testclient import TestClient
+
 from main import app
 from src.presentation.api.dependencies import (
     get_db,
+    get_delete_voice_profile_use_case,
+    get_list_voice_profiles_use_case,
     get_register_voice_profile_use_case,
     get_train_voice_from_speaker_use_case,
-    get_list_voice_profiles_use_case,
-    get_delete_voice_profile_use_case,
 )
 
 client = TestClient(app)

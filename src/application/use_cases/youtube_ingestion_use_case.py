@@ -1,9 +1,9 @@
 import concurrent.futures
-from contextlib import suppress
 import random
 import threading
 import time
 import uuid
+from contextlib import suppress
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -20,12 +20,12 @@ from src.domain.entities.enums.content_source_status_enum import ContentSourceSt
 from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
 from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.domain.exception.youtube_exceptions import (
-    YoutubeVideoPrivateException,
-    YoutubeVideoUnplayableException,
+    YoutubeIPBlockedException,
+    YoutubeNetworkException,
     YoutubeTranscriptNotFoundException,
     YoutubeTranscriptsDisabledException,
-    YoutubeNetworkException,
-    YoutubeIPBlockedException,
+    YoutubeVideoPrivateException,
+    YoutubeVideoUnplayableException,
 )
 from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor

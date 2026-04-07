@@ -1,26 +1,28 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from src.presentation.api.dependencies import (
-    get_settings,
-    get_chunk_repo,
-    get_source_repo,
-    get_job_repo,
-    get_subject_repo,
-    get_model_loader,
-    get_embedding_service,
-    get_weaviate_client,
-    get_vector_repository,
-    get_ks_service,
-    get_cs_service,
-    get_job_service,
-    get_chunk_vector_service,
-    get_chunk_index_service,
-    get_youtube_vector_service,
-    get_search_chunks_use_case,
-    get_ingest_youtube_use_case,
-)
+
+import pytest
+
 from src.config.settings import Settings
 from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
+from src.presentation.api.dependencies import (
+    get_chunk_index_service,
+    get_chunk_repo,
+    get_chunk_vector_service,
+    get_cs_service,
+    get_embedding_service,
+    get_ingest_youtube_use_case,
+    get_job_repo,
+    get_job_service,
+    get_ks_service,
+    get_model_loader,
+    get_search_chunks_use_case,
+    get_settings,
+    get_source_repo,
+    get_subject_repo,
+    get_vector_repository,
+    get_weaviate_client,
+    get_youtube_vector_service,
+)
 
 
 @pytest.mark.Dependencies

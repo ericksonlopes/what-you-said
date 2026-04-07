@@ -1,10 +1,10 @@
 import logging
 import threading
-from typing import Any, Dict, ClassVar, Optional
+from typing import Any, ClassVar, Dict, Optional
 
 import torch
 import whisperx
-from pyannote.audio import Model, Inference
+from pyannote.audio import Inference, Model
 from sentence_transformers import SentenceTransformer
 
 from src.domain.interfaces.services.mode_loader_service import IModelLoaderService

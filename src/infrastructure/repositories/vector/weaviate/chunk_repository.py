@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Optional
 from uuid import UUID
 
 from src.config.logger import Logger

@@ -1,5 +1,6 @@
 from typing import Any, Optional
 from uuid import UUID
+
 from src.config.logger import Logger
 
 logger = Logger()

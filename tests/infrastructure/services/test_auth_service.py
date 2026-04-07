@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from src.infrastructure.services.auth_service import AuthService
+
+import pytest
+
 from src.domain.entities.user import User
+from src.infrastructure.services.auth_service import AuthService
 
 
 @pytest.fixture

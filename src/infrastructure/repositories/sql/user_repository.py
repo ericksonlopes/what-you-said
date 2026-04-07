@@ -1,13 +1,13 @@
-from typing import Optional, Any
 from datetime import datetime, timezone
+from typing import Any, Optional
 
 from sqlalchemy import select
 
-from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
+from src.domain.entities.user import User as UserEntity
 from src.domain.interfaces.repository.user_repository import IUserRepository
 from src.infrastructure.repositories.sql.connector import Connector
 from src.infrastructure.repositories.sql.models.user import User as UserModel
-from src.domain.entities.user import User as UserEntity
+from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 
 
 class UserSQLRepository(IUserRepository):

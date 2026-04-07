@@ -1,13 +1,15 @@
-import pytest
-from uuid import uuid4
 from unittest.mock import patch
-from src.infrastructure.repositories.sql.knowledge_subject_repository import (
-    KnowledgeSubjectSQLRepository,
-)
+from uuid import uuid4
+
+import pytest
+
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
 )
-from src.domain.entities.enums.source_type_enum_entity import SourceType
+from src.infrastructure.repositories.sql.knowledge_subject_repository import (
+    KnowledgeSubjectSQLRepository,
+)
 
 
 @pytest.mark.KnowledgeSubjectRepository

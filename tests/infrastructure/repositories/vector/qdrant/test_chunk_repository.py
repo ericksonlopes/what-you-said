@@ -1,15 +1,16 @@
-import pytest
-import pydantic_core
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone
+
+import pydantic_core
+import pytest
 from qdrant_client.http import models as rest
 
+from src.domain.entities.enums.search_mode_enum import SearchMode
+from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
 from src.infrastructure.repositories.vector.qdrant.chunk_repository import (
     ChunkQdrantRepository,
 )
-from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel
-from src.domain.entities.enums.search_mode_enum import SearchMode
 
 
 @pytest.mark.ChunkQdrantRepository

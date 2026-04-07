@@ -1,11 +1,13 @@
-import pytest
-from unittest.mock import MagicMock
-from fastapi.testclient import TestClient
-from main import app
-from src.presentation.api.dependencies import get_job_service
-from uuid import uuid4
 from datetime import datetime, timezone
 from types import SimpleNamespace
+from unittest.mock import MagicMock
+from uuid import uuid4
+
+import pytest
+from fastapi.testclient import TestClient
+
+from main import app
+from src.presentation.api.dependencies import get_job_service
 
 
 @pytest.fixture

@@ -1,7 +1,9 @@
-import pytest
 from datetime import datetime, timezone
-from src.infrastructure.repositories.sql.user_repository import UserSQLRepository
+
+import pytest
+
 from src.domain.entities.user import User
+from src.infrastructure.repositories.sql.user_repository import UserSQLRepository
 
 
 @pytest.mark.usefixtures("sqlite_memory")

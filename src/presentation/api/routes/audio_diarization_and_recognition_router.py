@@ -1,20 +1,20 @@
 import logging
 import traceback
-from typing import Annotated, Any, cast, Optional
+from typing import Annotated, Any, Optional, cast
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
+from src.application.use_cases.delete_diarization_use_case import (
+    DeleteDiarizationUseCase,
+)
 from src.application.use_cases.generate_speaker_audio_access_url import (
     GenerateSpeakerAudioAccessUrlUseCase,
 )
 from src.application.use_cases.identify_speakers_in_processed_audio import (
     IdentifySpeakersInProcessedAudioUseCase,
-)
-from src.application.use_cases.delete_diarization_use_case import (
-    DeleteDiarizationUseCase,
 )
 from src.application.use_cases.list_s3_audio_files import ListS3AudioFilesUseCase
 from src.application.use_cases.retrieve_processed_audio_history import (
@@ -25,12 +25,12 @@ from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
 from src.presentation.api.dependencies import (
     get_db,
-    get_task_queue_service,
+    get_delete_diarization_use_case,
     get_generate_speaker_url_use_case,
     get_identify_speakers_use_case,
     get_list_s3_files_use_case,
     get_retrieve_history_use_case,
-    get_delete_diarization_use_case,
+    get_task_queue_service,
 )
 from src.presentation.api.schemas.audio_processing_requests import (
     AudioProcessingRequest,
@@ -53,10 +53,11 @@ async def update_diarization_segments(
     Updates the segments of a diarization and marks it as completed.
     This is used when the user confirms the final transcript.
     """
+    from typing import cast
+
     from src.infrastructure.repositories.sql.diarization_repository import (
         DiarizationRepository,
     )
-    from typing import cast
 
     try:
         repo = DiarizationRepository(db)
@@ -72,13 +73,13 @@ async def update_diarization_segments(
 
         # Trigger ingestion for ContentSource
         try:
-            from src.infrastructure.repositories.sql.content_source_repository import (
-                ContentSourceSQLRepository,
-            )
             from src.application.dtos.commands.ingest_diarization_command import (
                 IngestDiarizationCommand,
             )
             from src.application.workers import run_diarization_ingestion_worker
+            from src.infrastructure.repositories.sql.content_source_repository import (
+                ContentSourceSQLRepository,
+            )
 
             cs_repo = ContentSourceSQLRepository()
             target_source = cs_repo.get_by_diarization_id(diarization_id)

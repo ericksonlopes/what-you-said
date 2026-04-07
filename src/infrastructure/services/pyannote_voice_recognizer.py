@@ -1,14 +1,16 @@
 import os
 import time
 from pathlib import Path
+
 import numpy as np
-from src.domain.entities.voice import MatchResult, BatchResult
+
+from src.domain.entities.voice import BatchResult, MatchResult
+from src.infrastructure.services.model_loader_service import model_loader
 from src.infrastructure.utils.audio_utils import (
-    load_audio_tensor,
     cosine_similarity,
     get_best_device,
+    load_audio_tensor,
 )
-from src.infrastructure.services.model_loader_service import model_loader
 
 
 class VoiceRecognizer:

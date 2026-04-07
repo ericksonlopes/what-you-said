@@ -1,12 +1,14 @@
-import pytest
-from langchain_core.documents import Document
 from unittest.mock import MagicMock
 from uuid import uuid4
-from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
+
+import pytest
+from langchain_core.documents import Document
+
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
-from src.domain.entities.enums.source_type_enum_entity import SourceType
-from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
+from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
 from src.domain.entities.enums.content_source_status_enum import ContentSourceStatus
+from src.domain.entities.enums.ingestion_job_status_enum import IngestionJobStatus
+from src.domain.entities.enums.source_type_enum_entity import SourceType
 
 
 @pytest.mark.FileIngestionUseCase

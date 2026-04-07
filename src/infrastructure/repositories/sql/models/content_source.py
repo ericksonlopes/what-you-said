@@ -5,17 +5,17 @@ ORM models for content_sources table.
 import uuid
 
 from sqlalchemy import (
-    Column,
-    Text,
-    DateTime,
-    Integer,
-    func,
-    ForeignKey,
-    UUID,
-    text,
-    UniqueConstraint,
-    Index,
     JSON,
+    UUID,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
 )
 from sqlalchemy.orm import relationship
 

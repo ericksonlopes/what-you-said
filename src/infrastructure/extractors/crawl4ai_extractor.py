@@ -1,10 +1,11 @@
 import re
 import tempfile
-import httpx
+from typing import Any, Dict, List
+
 import anyio
-from typing import Any, List, Dict
+import httpx
+from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
 from langchain_core.documents import Document
-from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode
 
 from src.config.logger import Logger
 from src.domain.interfaces.extractors.base_extractor_interface import IBaseExtractor

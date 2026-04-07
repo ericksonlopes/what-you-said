@@ -1,8 +1,8 @@
+from src.domain.entities.diarization import DiarizationResult, Segment
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
-from src.domain.entities.diarization import DiarizationResult, Segment
-from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 
 
 class TestDiarizationRepository:

@@ -4,28 +4,25 @@ import re
 import shutil
 import uuid
 from pathlib import Path
-from typing import Any, cast, Optional
+from typing import Any, Optional, cast
 from urllib.parse import unquote
 
 from sqlalchemy.orm import Session
 
-from src.infrastructure.repositories.sql.diarization_repository import (
-    DiarizationRepository,
-)
 from src.config.settings import settings
-
-from src.infrastructure.repositories.storage.storage import StorageService
-from src.infrastructure.services.whisperx_audio_diarizer import AudioDiarizer
-from src.infrastructure.services.pyannote_voice_recognizer import VoiceRecognizer
-from src.infrastructure.services.voice_profile_service import VoiceDB
-
-from src.domain.interfaces.services.i_event_bus import IEventBus
-
-from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.domain.entities.enums.diarization_status_enum import (
     DiarizationStatus,
     DiarizationStep,
 )
+from src.domain.interfaces.services.i_event_bus import IEventBus
+from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
+)
+from src.infrastructure.repositories.storage.storage import StorageService
+from src.infrastructure.services.pyannote_voice_recognizer import VoiceRecognizer
+from src.infrastructure.services.voice_profile_service import VoiceDB
+from src.infrastructure.services.whisperx_audio_diarizer import AudioDiarizer
 
 logger = logging.getLogger(__name__)
 
@@ -245,10 +242,10 @@ class ProcessAudioDiarizationPipelineUseCase:
         # Create/Update ContentSource in AWAITING_VERIFICATION status
         if self.cs_service:
             try:
-                from src.domain.entities.enums.source_type_enum_entity import SourceType
                 from src.domain.entities.enums.content_source_status_enum import (
                     ContentSourceStatus,
                 )
+                from src.domain.entities.enums.source_type_enum_entity import SourceType
 
                 cs_source_type = (
                     SourceType.YOUTUBE if source_type == "youtube" else SourceType.AUDIO

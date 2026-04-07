@@ -1,6 +1,6 @@
 import math
 from contextlib import suppress
-from typing import Literal, List, Tuple, Dict, Optional
+from typing import Dict, List, Literal, Optional, Tuple
 
 from langchain_core.documents import Document
 from youtube_transcript_api import FetchedTranscript
