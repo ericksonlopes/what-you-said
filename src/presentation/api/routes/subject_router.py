@@ -112,9 +112,7 @@ def update_subject(
             },
         )
     except Exception as e:
-        logger.error(
-            e, context={"action": "update_subject", "subject_id": str(subject_id)}
-        )
+        logger.error(e, context={"action": "update_subject", "subject_id": str(subject_id)})
         raise HTTPException(status_code=500, detail=INTERNAL_ERROR)
 
 
@@ -145,7 +143,5 @@ def delete_subject(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            e, context={"action": "delete_subject", "subject_id": str(subject_id)}
-        )
+        logger.error(e, context={"action": "delete_subject", "subject_id": str(subject_id)})
         raise HTTPException(status_code=500, detail=INTERNAL_ERROR)

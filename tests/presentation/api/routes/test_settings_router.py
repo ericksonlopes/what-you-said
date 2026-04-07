@@ -69,9 +69,7 @@ def test_check_health_api():
 
 
 def test_check_health_sql():
-    with patch(
-        "src.presentation.api.routes.settings_router.Connector"
-    ) as mock_connector:
+    with patch("src.presentation.api.routes.settings_router.Connector") as mock_connector:
         mock_session = MagicMock()
         mock_connector.return_value.__enter__.return_value = mock_session
 
@@ -109,9 +107,7 @@ def test_check_health_unknown():
 
 
 def test_check_health_exception():
-    with patch(
-        "src.presentation.api.routes.settings_router.Connector"
-    ) as mock_connector:
+    with patch("src.presentation.api.routes.settings_router.Connector") as mock_connector:
         mock_connector.side_effect = Exception("Connection failed")
         response = client.get("/rest/settings/check/sql")
         assert response.status_code == 200
