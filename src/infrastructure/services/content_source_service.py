@@ -96,6 +96,13 @@ class ContentSourceService:
         model = self._repo.get_by_id(id)
         return ContentSourceMapper.model_to_entity(model)
 
+    def get_by_diarization_id(
+        self, diarization_id: str
+    ) -> Optional[ContentSourceEntity]:
+        """Get a content source by its diarization_id in metadata."""
+        model = self._repo.get_by_diarization_id(diarization_id)
+        return ContentSourceMapper.model_to_entity(model)
+
     def list_by_subject(
         self,
         subject_id: UUID,
@@ -115,14 +122,21 @@ class ContentSourceService:
         return self._repo.count_by_subject(subject_id)
 
     def update_processing_status(
-        self, content_source_id: UUID, status: ContentSourceStatus
+        self,
+        content_source_id: UUID,
+        status: ContentSourceStatus,
+        status_message: Optional[str] = None,
+        error_message: Optional[str] = None,
     ) -> None:
         """Update the processing_status field for a content source.
 
         Accepts a ContentSourceStatus enum and persists its string value to the repository.
         """
         self._repo.update_status(
-            content_source_id=content_source_id, status=status.value
+            content_source_id=content_source_id,
+            status=status.value,
+            status_message=status_message,
+            error_message=error_message,
         )
 
     def finish_ingestion(
@@ -151,6 +165,24 @@ class ContentSourceService:
     def update_title(self, content_source_id: UUID, title: str) -> None:
         """Update the title of a content source."""
         self._repo.update_title(content_source_id=content_source_id, title=title)
+
+    def update_metadata(self, content_source_id: UUID, metadata: dict) -> None:
+        """Update the metadata of a content source."""
+        self._repo.update_metadata(
+            content_source_id=content_source_id, metadata=metadata
+        )
+
+    def get_existing_external_sources(
+        self, subject_id: UUID, source_type: SourceType
+    ) -> set[str]:
+        """Return a set of all external_source values for a subject and source_type.
+
+        Used for bulk deduplication when ingesting channels or large batches.
+        """
+        raw = self._repo.list_external_sources_by_subject(
+            subject_id=subject_id, source_type=source_type.value
+        )
+        return set(raw)
 
     def delete_source(self, content_source_id: UUID) -> bool:
         """Delete a content source by ID."""

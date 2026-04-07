@@ -6,3 +6,4 @@ class YoutubeDataType(str, Enum):
 
     VIDEO = "video"
     PLAYLIST = "playlist"
+    CHANNEL = "channel"

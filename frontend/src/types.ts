@@ -41,10 +41,22 @@ export type ContentSource = {
   maxTokensPerChunk?: number;
   origin?: string;
   processingStatus: string;
+  statusMessage?: string;
+  errorMessage?: string;
   sourceMetadata?: Record<string, any>;
 };
 
-export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts' | 'diarization' | 'voice_profiles';
+export interface RawQueueTask {
+  func_name: string;
+  args: any[];
+  kwargs: Record<string, any>;
+  task_title?: string;
+  metadata?: Record<string, any>;
+  enqueued_at: number;
+}
+
+export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts' | 'diarization' | 'voice_profiles' | 'queue';
+
 
 export type ToastType = 'success' | 'info' | 'error';
 

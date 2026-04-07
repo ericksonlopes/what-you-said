@@ -26,3 +26,18 @@ class ITaskQueue(ABC):
     ):
         """Adds a task to the queue."""
         pass
+
+    @abstractmethod
+    def peek_queue(self, limit: int = 50) -> list[dict]:
+        """Fetch pending tasks from the queue without removing them."""
+        pass
+
+    @abstractmethod
+    def clear_queue(self):
+        """Remove all pending tasks from the queue."""
+        pass
+
+    @abstractmethod
+    def remove_task_by_index(self, index: int) -> Optional[dict]:
+        """Remove a specific task from the queue by its index and return its data."""
+        pass

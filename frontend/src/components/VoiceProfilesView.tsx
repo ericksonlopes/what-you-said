@@ -287,7 +287,7 @@ const VoiceDetailsModal = ({
 
 export function VoiceProfilesView() {
   const { t } = useTranslation();
-  const { addToast } = useAppContext();
+  const { addToast, selectedSubjects } = useAppContext();
   const [voices, setVoices] = useState<VoiceProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -375,7 +375,9 @@ export function VoiceProfilesView() {
           
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95"
+            disabled={selectedSubjects.length === 0}
+            className={`flex items-center justify-center gap-2 px-6 py-3 rounded-2xl transition-all shadow-lg active:scale-95 font-black text-xs uppercase tracking-widest ${selectedSubjects.length === 0 ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50' : 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-emerald-500/20'}`}
+            title={selectedSubjects.length === 0 ? t('common.hints.select_subject') : ''}
           >
             <Plus className="w-4 h-4" />
             <span>{t('voices.new_btn')}</span>

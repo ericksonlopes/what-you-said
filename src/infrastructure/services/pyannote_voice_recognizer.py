@@ -8,6 +8,7 @@ from src.infrastructure.utils.audio_utils import (
     cosine_similarity,
     get_best_device,
 )
+from src.infrastructure.services.model_loader_service import model_loader
 
 
 class VoiceRecognizer:
@@ -16,19 +17,11 @@ class VoiceRecognizer:
         self.hf_token = hf_token
         self.threshold = threshold
         self._device = get_best_device()
-        self._inference = None
 
     def _get_inference(self):
-        if self._inference is None:
-            from pyannote.audio import Model, Inference
-            import torch
-
-            model = Model.from_pretrained(
-                "pyannote/wespeaker-voxceleb-resnet34-LM", use_auth_token=self.hf_token
-            )
-            device = torch.device(self._device)
-            self._inference = Inference(model, window="whole", device=device)
-        return self._inference
+        return model_loader.get_voice_inference(
+            hf_token=self.hf_token, device=self._device
+        )
 
     def _compare(self, embedding: np.ndarray) -> list[tuple[str, float, str]]:
         scores = []

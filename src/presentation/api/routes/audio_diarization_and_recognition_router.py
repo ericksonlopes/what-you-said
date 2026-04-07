@@ -1,6 +1,7 @@
 import logging
 import traceback
-from typing import Annotated, Any, cast
+from typing import Annotated, Any, cast, Optional
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -46,6 +47,7 @@ async def update_diarization_segments(
     diarization_id: str,
     request: UpdateDiarizationRequest,
     db: Annotated[Session, Depends(get_db)],
+    task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
 ):
     """
     Updates the segments of a diarization and marks it as completed.
@@ -68,9 +70,47 @@ async def update_diarization_segments(
         record.status = cast(Any, DiarizationStatus.COMPLETED.value)
         db.commit()
 
+        # Trigger ingestion for ContentSource
+        try:
+            from src.infrastructure.repositories.sql.content_source_repository import (
+                ContentSourceSQLRepository,
+            )
+            from src.application.dtos.commands.ingest_diarization_command import (
+                IngestDiarizationCommand,
+            )
+            from src.application.workers import run_diarization_ingestion_worker
+
+            cs_repo = ContentSourceSQLRepository()
+            target_source = cs_repo.get_by_diarization_id(diarization_id)
+
+            if target_source and target_source.subject_id:
+                logger.info(
+                    "Found ContentSource %s for diarization %s. Triggering ingestion...",
+                    target_source.id,
+                    diarization_id,
+                )
+
+                cmd = IngestDiarizationCommand(
+                    diarization_id=UUID(diarization_id),
+                    subject_id=cast(UUID, target_source.subject_id),
+                    name=cast(Optional[str], target_source.title),
+                    language=cast(str, target_source.language or "pt"),
+                    source_type=cast(Optional[str], target_source.source_type),
+                    external_source=cast(Optional[str], target_source.external_source),
+                    source_metadata=cast(Optional[dict[str, Any]], target_source.source_metadata),
+                )
+
+                task_queue.enqueue(
+                    run_diarization_ingestion_worker,
+                    cmd,
+                    task_title=f"Indexing: {target_source.title}",
+                )
+        except Exception as e:
+            logger.error("Failed to trigger ingestion for finalized diarization: %s", e)
+
         return {
             "status": "success",
-            "message": "Diarization updated and marked as completed",
+            "message": "Diarization updated and marked as completed. Indexing started.",
         }
     except HTTPException:
         raise
@@ -92,48 +132,105 @@ async def start_audio_processing_pipeline(
         request.source,
     )
 
-    # Create a pending record immediately so the frontend can show progress
-    from src.infrastructure.repositories.sql.diarization_repository import (
-        DiarizationRepository,
-    )
+    try:
+        from src.application.workers import run_audio_diarization_dispatcher_worker
+        from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
-    repo = DiarizationRepository(db)
-    record = repo.create_pending(
-        title=request.source,
-        source_type=request.source_type.value,
-        external_source=request.source,
-        language=request.language or "pt",
-        model_size=request.model_size or "base",
-        subject_id=request.subject_id,
-    )
+        # 1. Normalize source if YouTube
+        is_youtube = request.source_type.value == "youtube"
+        normalized_source = request.source
+        if is_youtube:
+            vid_id = YoutubeExtractor.get_video_id(request.source)
+            if vid_id:
+                normalized_source = vid_id
 
-    cmd = ProcessAudioCommand(
-        diarization_id=cast(str, record.id),
-        source_type=request.source_type.value,
-        source=request.source,
-        language=request.language or "pt",
-        num_speakers=request.num_speakers,
-        min_speakers=request.min_speakers,
-        max_speakers=request.max_speakers,
-        model_size=request.model_size or "large-v2",
-        recognize_voices=request.recognize_voices
-        if request.recognize_voices is not None
-        else True,
-    )
+        # 2. Detect YouTube Playlist/Channel
+        is_playlist = "list=" in request.source or "/playlist" in request.source
+        is_channel = (
+            "/channel/" in request.source
+            or "/c/" in request.source
+            or "/user/" in request.source
+            or "@" in request.source
+        )
 
-    task_queue.enqueue(
-        run_audio_diarization_worker,
-        cmd,
-        task_title=f"Audio diarization: {request.source_type.value}",
-        metadata={"source": request.source},
-    )
+        if is_youtube and (is_playlist or is_channel):
+            logger.info("Playlist/Channel detected, enqueueing dispatcher")
+            cmd = ProcessAudioCommand(
+                source_type=request.source_type.value,
+                source=request.source,  # Keep original URL for dispatcher to extract videos
+                language=request.language or "pt",
+                num_speakers=request.num_speakers,
+                min_speakers=request.min_speakers,
+                max_speakers=request.max_speakers,
+                model_size=request.model_size or "large-v2",
+                recognize_voices=request.recognize_voices
+                if request.recognize_voices is not None
+                else True,
+                subject_id=request.subject_id,
+            )
+            task_queue.enqueue(
+                run_audio_diarization_dispatcher_worker,
+                cmd,
+                task_title=f"Dispatcher: {request.source}",
+            )
 
-    return {
-        "id": record.id,
-        "message": "Audio processing started in background.",
-        "source_type": request.source_type.value,
-        "source": request.source,
-    }
+            # ------------------------------------------
+
+            return {
+                "status": "success",
+                "message": "Playlist/Channel processing started in background.",
+                "source": request.source,
+                "is_bulk": True,
+            }
+
+        # 3. Standard single video flow
+        from src.infrastructure.repositories.sql.diarization_repository import (
+            DiarizationRepository,
+        )
+
+        repo = DiarizationRepository(db)
+        record = repo.create_pending(
+            name=request.source,  # We keep URL as name initially or we could use normalized? Let's use normalized as identifier
+            source_type=request.source_type.value,
+            external_source=normalized_source,
+            language=request.language or "pt",
+            model_size=request.model_size or "base",
+            subject_id=request.subject_id,
+        )
+
+        cmd = ProcessAudioCommand(
+            diarization_id=cast(str, record.id),
+            source_type=request.source_type.value,
+            source=normalized_source,
+            language=request.language or "pt",
+            num_speakers=request.num_speakers,
+            min_speakers=request.min_speakers,
+            max_speakers=request.max_speakers,
+            model_size=request.model_size or "large-v2",
+            recognize_voices=request.recognize_voices
+            if request.recognize_voices is not None
+            else True,
+            subject_id=request.subject_id,
+        )
+
+        task_queue.enqueue(
+            run_audio_diarization_worker,
+            cmd,
+            task_title=f"Audio diarization: {request.source_type.value}",
+            metadata={"source": request.source},
+        )
+
+        # ---------------------------------------
+
+        return {
+            "id": record.id,
+            "message": "Audio processing started in background.",
+            "source_type": request.source_type.value,
+            "source": request.source,
+        }
+    except Exception as e:
+        logger.error("Failed to start audio processing: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post(
@@ -254,3 +351,52 @@ async def delete_diarization_record(
     if not deleted:
         raise HTTPException(status_code=404, detail="Diarization record not found")
     return {"status": "success", "message": "Diarization record and its files deleted"}
+
+
+@router.post("/{diarization_id}/reprocess")
+async def reprocess_diarization(
+    diarization_id: str,
+    db: Annotated[Session, Depends(get_db)],
+    task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
+):
+    """
+    Resets a diarization record to PENDING and re-enqueues the background worker.
+    """
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
+
+    repo = DiarizationRepository(db)
+    record = repo.get_by_id(diarization_id)
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Diarization not found")
+
+    # 1. Reset state
+    repo.reset_for_reprocessing(diarization_id)
+
+    # 2. Re-enqueue
+    cmd = ProcessAudioCommand(
+        diarization_id=diarization_id,
+        source_type=cast(str, record.source_type),
+        source=cast(str, record.external_source),
+        language=cast(str, record.language or "pt"),
+        model_size=cast(str, record.model_size or "large-v3"),
+        # We don't have the original speaker count constraints stored as columns,
+        # so we use defaults or just let the pipeline auto-detect.
+        recognize_voices=True,
+        subject_id=str(record.subject_id) if record.subject_id else None,
+    )
+
+    task_queue.enqueue(
+        run_audio_diarization_worker,
+        cmd,
+        task_title=f"Reprocess: {record.name or record.external_source}",
+        metadata={"source": record.external_source, "reprocessed": True},
+    )
+
+    return {
+        "status": "success",
+        "message": "Diarization reset and re-enqueued for processing.",
+        "id": diarization_id,
+    }

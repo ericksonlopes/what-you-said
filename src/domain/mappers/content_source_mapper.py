@@ -35,6 +35,8 @@ class ContentSourceMapper:
             ),
             status=cast(str, getattr(model, "status", "active")),
             chunks=cast(int, getattr(model, "chunks", 0)),
+            status_message=cast(Optional[str], getattr(model, "status_message", None)),
+            error_message=cast(Optional[str], getattr(model, "error_message", None)),
             source_metadata=cast(
                 Optional[dict], getattr(model, "source_metadata", None)
             ),

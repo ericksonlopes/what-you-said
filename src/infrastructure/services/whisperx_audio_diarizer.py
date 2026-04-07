@@ -7,6 +7,7 @@ import whisperx
 
 from src.domain.entities.diarization import Segment, DiarizationResult
 from src.infrastructure.utils.audio_utils import load_whisperx_audio, get_best_device
+from src.infrastructure.services.model_loader_service import model_loader
 
 logger = logging.getLogger(__name__)
 
@@ -42,27 +43,24 @@ class AudioDiarizer:
         else:
             self.batch_size = batch_size
 
-    def _transcribe(
-        self, audio_path: str, language: str | None
-    ) -> tuple[dict, np.ndarray]:
+    def _transcribe(self, audio: np.ndarray, language: str | None) -> dict:
         logger.info(
             "[1/3] Transcription starting (model=%s, device=%s, compute=%s)",
             self.model_size,
             self._device,
             self._compute_type,
         )
-        audio = load_whisperx_audio(audio_path)
-        logger.info("[1/3] Audio loaded, shape=%s", audio.shape)
 
-        logger.info("[1/3] Loading whisperx model...")
-        model = whisperx.load_model(
+        logger.info("[1/3] Getting/Loading whisperx model...")
+        model = model_loader.get_whisper_model(
             self.model_size,
             self._device,
             compute_type=self._compute_type,
             language=language,
         )
+
         logger.info(
-            "[1/3] Model loaded, starting transcription (batch_size=%d)...",
+            "[1/3] Model ready, starting transcription (batch_size=%d)...",
             self.batch_size,
         )
 
@@ -72,17 +70,13 @@ class AudioDiarizer:
             len(result.get("segments", [])),
             result.get("language", "?"),
         )
-
-        del model
-        if self._device == "cuda":
-            torch.cuda.empty_cache()
-        return result, audio
+        return result
 
     def _align(self, result: dict, audio: np.ndarray, language: str | None) -> dict:
         logger.info("[2/3] Word alignment starting")
         lang = language or result.get("language", "en")
         try:
-            model_a, metadata = whisperx.load_align_model(
+            model_a, metadata = model_loader.get_align_model(
                 language_code=lang, device=self._device
             )
             result = whisperx.align(
@@ -93,9 +87,6 @@ class AudioDiarizer:
                 self._device,
                 return_char_alignments=False,
             )
-            del model_a
-            if self._device == "cuda":
-                torch.cuda.empty_cache()
             logger.info("[2/3] Alignment complete")
         except Exception as e:
             logger.warning("[2/3] Skipped alignment: %s", e)
@@ -103,7 +94,7 @@ class AudioDiarizer:
 
     def _diarize(
         self,
-        audio_path: str,
+        audio: np.ndarray,
         result: dict,
         num_speakers: int | None,
         min_speakers: int | None,
@@ -119,17 +110,14 @@ class AudioDiarizer:
             if max_speakers:
                 kwargs["max_speakers"] = max_speakers
 
-        audio_np = load_whisperx_audio(audio_path)
-        logger.info("[3/3] Loading diarization pipeline...")
-        from whisperx.diarize import DiarizationPipeline
-
-        diarize_model = DiarizationPipeline(
-            model_name="pyannote/speaker-diarization-3.1",
-            token=self.hf_token,
+        logger.info("[3/3] Getting/Loading diarization pipeline...")
+        diarize_model = model_loader.get_diarization_pipeline(
+            hf_token=self.hf_token,
             device=self._device,
         )
+
         logger.info("[3/3] Running diarization with kwargs=%s...", kwargs)
-        diarize_segments = diarize_model(audio_np, **kwargs)
+        diarize_segments = diarize_model(audio, **kwargs)
         result = whisperx.assign_word_speakers(diarize_segments, result)
 
         segments = [
@@ -155,11 +143,17 @@ class AudioDiarizer:
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"File not found: {audio_path}")
 
-        logger.info("Starting diarization pipeline for: %s", audio_path)
-        result_trans, audio = self._transcribe(audio_path, language)
+        logger.info("Starting optimized diarization pipeline for: %s", audio_path)
+
+        # Load audio once
+        audio = load_whisperx_audio(audio_path)
+        logger.info("Audio loaded, shape=%s", audio.shape)
+
+        result_trans = self._transcribe(audio, language)
         result_aligned = self._align(result_trans, audio, language)
+
         segments, lang = self._diarize(
-            audio_path, result_aligned, num_speakers, min_speakers, max_speakers
+            audio, result_aligned, num_speakers, min_speakers, max_speakers
         )
 
         return DiarizationResult(

@@ -15,6 +15,7 @@ export function useIngestion() {
     inputType: 'youtube' | 'web' | 'file' | 'file_url',
     params: {
       url?: string;
+      videoUrls?: string[];
       subject: Subject;
       tokensPerChunk?: number;
       tokensOverlap?: number;
@@ -25,7 +26,7 @@ export function useIngestion() {
       excludeLinks?: boolean;
     }
   ) => {
-    const { subject, tokensPerChunk, tokensOverlap, url, youtubeDataType, file, doOcr, cssSelector, excludeLinks } = params;
+    const { subject, tokensPerChunk, tokensOverlap, url, videoUrls, youtubeDataType, file, doOcr, cssSelector, excludeLinks } = params;
     if (!subject) return;
 
     // 1. Immediate feedback
@@ -41,6 +42,7 @@ export function useIngestion() {
       if (inputType === 'youtube') {
         response = await api.ingestYoutube({
           video_url: url,
+          video_urls: videoUrls,
           subject_id: subject.id,
           tokens_per_chunk: tokensPerChunk,
           tokens_overlap: tokensOverlap,

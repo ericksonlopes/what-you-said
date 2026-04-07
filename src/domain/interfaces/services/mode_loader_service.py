@@ -14,3 +14,13 @@ class IModelLoaderService(ABC):
     @abstractmethod
     def model(self) -> SentenceTransformer:
         raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def dimensions(self) -> int:
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def max_seq_length(self) -> int:
+        raise NotImplementedError

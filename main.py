@@ -1,15 +1,20 @@
 from contextlib import asynccontextmanager
+import warnings
 
-from fastapi import FastAPI, Depends
-from fastapi.middleware.cors import CORSMiddleware
+# Silence torchcodec loading warnings since it's a beta component and often 
+# causes DLL discovery issues on Windows that don't affect the core app.
+warnings.filterwarnings("ignore", category=UserWarning, module="torchcodec")
 
-from src.config.logger import setup_logging
-from src.presentation.api.dependencies import get_current_user
-from src.presentation.api.middleware.trace_middleware import TraceMiddleware
-from src.presentation.api.routes import (
+from fastapi import FastAPI, Depends  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+
+from src.config.logger import setup_logging  # noqa: E402
+from src.presentation.api.dependencies import get_current_user  # noqa: E402
+from src.presentation.api.middleware.trace_middleware import TraceMiddleware  # noqa: E402
+from src.presentation.api.routes import (  # noqa: E402
     audio_diarization_and_recognition_router as audio_router,
 )
-from src.presentation.api.routes import (
+from src.presentation.api.routes import (  # noqa: E402
     auth_router,
     chunk_router,
     ingest_router,
@@ -20,7 +25,7 @@ from src.presentation.api.routes import (
     source_router,
     subject_router,
 )
-from src.presentation.api.routes import voice_profile_management_router as voice_router
+from src.presentation.api.routes import voice_profile_management_router as voice_router  # noqa: E402
 
 logger = setup_logging()
 
@@ -79,6 +84,8 @@ async def lifespan(app: FastAPI):
             run_web_ingestion_worker,
             run_audio_diarization_worker,
             run_diarization_ingestion_worker,
+            run_youtube_dispatcher_worker,
+            run_audio_diarization_dispatcher_worker,
         )
 
         register_task("run_file_ingestion_worker", run_file_ingestion_worker)
@@ -88,9 +95,14 @@ async def lifespan(app: FastAPI):
         register_task(
             "run_diarization_ingestion_worker", run_diarization_ingestion_worker
         )
+        register_task("run_youtube_dispatcher_worker", run_youtube_dispatcher_worker)
+        register_task(
+            "run_audio_diarization_dispatcher_worker",
+            run_audio_diarization_dispatcher_worker,
+        )
 
         logger.info("Initializing RedisTaskQueueService...")
-        app.state.task_queue = RedisTaskQueueService(num_workers=4)
+        app.state.task_queue = RedisTaskQueueService(num_workers=1)
         app.state.task_queue.start()
         logger.info("RedisTaskQueueService started.")
 

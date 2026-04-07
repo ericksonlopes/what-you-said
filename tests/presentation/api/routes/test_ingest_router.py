@@ -47,7 +47,7 @@ def test_ingest_youtube_success(mock_use_case):
 def test_ingest_youtube_skipped(mock_use_case):
     mock_result = MagicMock()
     mock_result.skipped = True
-    mock_result.reason = "Already exists"
+    mock_result.reason = "This content has already been ingested."
     mock_use_case.execute.return_value = mock_result
 
     response = client.post(
@@ -55,7 +55,7 @@ def test_ingest_youtube_skipped(mock_use_case):
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "Already exists"
+    assert response.json()["detail"] == "This content has already been ingested."
 
 
 def test_ingest_youtube_value_error(mock_use_case):
@@ -94,7 +94,7 @@ def test_ingest_youtube_reprocess():
 
         assert response.status_code == 200
         assert response.json()["skipped"] is False
-        assert "Reprocessing started" in response.json()["reason"]
+        assert response.json()["reason"] == "Ingestion started in background queue."
         assert mock_queue.enqueue.called
     finally:
         app.dependency_overrides.pop(get_task_queue_service, None)

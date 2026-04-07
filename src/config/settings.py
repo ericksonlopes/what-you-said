@@ -194,10 +194,10 @@ class RedisConfig(BaseSettings):
 class YoutubeConfig(BaseSettings):
     # Throttling configurations
     throttle_batch_size: int = Field(
-        default=4, description="Number of videos to process before waiting"
+        default=2, description="Number of videos to process before waiting"
     )
     throttle_wait_seconds: int = Field(
-        default=10, description="Seconds to wait between batches"
+        default=65, description="Seconds to wait between batches"
     )
 
     # Proxy configurations

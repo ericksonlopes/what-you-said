@@ -22,6 +22,8 @@ import { SpeakerIdentificationPanel } from './diarization/SpeakerIdentificationP
 import { TranscriptPanel } from './diarization/TranscriptPanel';
 import { DiarizationList } from './diarization/DiarizationList';
 
+import { DiarizationMetadataPanel } from './diarization/DiarizationMetadataPanel';
+
 export function DiarizationView() {
     const { t } = useTranslation();
     const { 
@@ -42,11 +44,12 @@ export function DiarizationView() {
     const [isLoadingJobs, setIsLoadingJobs] = useState(true);
     const [activeJob, setActiveJob] = useState<DiarizationJob | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     // Modal & Selection State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingJobId, setEditingJobId] = useState<string | null>(null);
-    const [editingTitle, setEditingTitle] = useState('');
+    const [editingName, setEditingName] = useState('');
     const [trainingSpeaker, setTrainingSpeaker] = useState<Speaker | null>(null);
 
     // Detail View State
@@ -93,7 +96,7 @@ export function DiarizationView() {
                 loadJobs(true).then(updatedJobs => {
                     const updated = updatedJobs.find(j => j.id === activeJob.id);
                     if (updated && updated.status !== activeJob.status) {
-                         if (updated.status === 'ready' || updated.status === 'completed' || updated.status === 'failed') {
+                         if (updated.status === 'awaiting_verification' || updated.status === 'completed' || updated.status === 'failed') {
                             handleOpenJob(updated);
                         } else {
                             setActiveJob(updated);
@@ -118,7 +121,7 @@ export function DiarizationView() {
             setFinalSegments(mergeSpeakerSegments(job.segments, job.recognitionResults));
             setSpeakers(extractSpeakersFromSegments(job.segments, job.recognitionResults));
             setStep('result');
-        } else if (job.status === 'ready') {
+        } else if (job.status === 'awaiting_verification') {
             setSpeakers(extractSpeakersFromSegments(job.segments, job.recognitionResults));
             setStep('identification');
         } else if (job.status === 'failed') {
@@ -147,9 +150,23 @@ export function DiarizationView() {
                 setViewMode('list');
             }
             addToast(t('diarization.notifications.delete_success'), 'success');
+            refreshSources();
+            refreshJobs();
         } catch (err) {
             console.error('Failed to delete diarization:', err);
             addToast(t('diarization.notifications.delete_error'), 'error');
+        }
+    };
+
+    const handleReprocessJob = async (id: string) => {
+        if (!globalThis.confirm(t('diarization.reprocess_confirmation'))) return;
+        try {
+            await api.reprocessDiarization(id);
+            addToast(t('diarization.notifications.reprocess_success'), 'success');
+            loadJobs(true);
+        } catch (err) {
+            console.error('Failed to reprocess diarization:', err);
+            addToast(t('diarization.notifications.reprocess_error'), 'error');
         }
     };
 
@@ -247,7 +264,7 @@ export function DiarizationView() {
             await api.ingestDiarization({
                 diarization_id: activeJob.id,
                 subject_id: subjectId,
-                title: activeJob.title,
+                name: activeJob.name,
                 tokens_per_chunk: 512,
                 tokens_overlap: 50,
                 language: activeJob.language || 'pt',
@@ -257,7 +274,8 @@ export function DiarizationView() {
             addToast('Transcrição salva e indexada com sucesso', 'success');
             refreshJobs();
             if (typeof refreshSources === 'function') refreshSources();
-            setStep('result');
+            loadJobs(true); // Refresh local diarization list
+            handleBackToList();
         } catch (err) {
             console.error('Error saving transcript:', err);
             addToast('Falha ao salvar transcrição', 'error');
@@ -266,10 +284,10 @@ export function DiarizationView() {
         }
     };
 
-    const handleSaveEditTitle = async (id: string) => {
-        if (editingTitle.trim()) {
-            setJobs(prev => prev.map(j => j.id === id ? {...j, title: editingTitle.trim()} : j));
-            if (activeJob?.id === id) setActiveJob({...activeJob, title: editingTitle.trim()});
+    const handleSaveEditName = async (id: string) => {
+        if (editingName.trim()) {
+            setJobs(prev => prev.map(j => j.id === id ? { ...j, name: editingName.trim() } : j));
+            if (activeJob?.id === id) setActiveJob({ ...activeJob, name: editingName.trim() });
         }
         setEditingJobId(null);
     };
@@ -293,14 +311,22 @@ export function DiarizationView() {
     }, [speakers, activeJob, step]);
 
     const filteredJobs = useMemo(() => {
-        if (!searchQuery.trim()) return jobs;
-        const q = searchQuery.toLowerCase();
-        return jobs.filter(j => 
-            j.title.toLowerCase().includes(q) || 
-            j.date.toLowerCase().includes(q) ||
-            j.status.toLowerCase().includes(q)
-        );
-    }, [jobs, searchQuery]);
+        let result = jobs;
+        
+        if (statusFilter !== 'all') {
+            result = result.filter(j => j.status === statusFilter);
+        }
+
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(j => 
+                j.name.toLowerCase().includes(q) || 
+                j.date.toLowerCase().includes(q) ||
+                j.status.toLowerCase().includes(q)
+            );
+        }
+        return result;
+    }, [jobs, searchQuery, statusFilter]);
 
     return (
         <div className="h-full flex overflow-hidden">
@@ -311,17 +337,23 @@ export function DiarizationView() {
                             key="list"
                             jobs={filteredJobs}
                             isLoading={isLoadingJobs}
+                            isRefreshing={isLoadingJobs}
+                            onRefresh={() => loadJobs()}
                             searchQuery={searchQuery}
                             onSearchChange={setSearchQuery}
+                            statusFilter={statusFilter}
+                            onStatusFilterChange={setStatusFilter}
                             onOpenJob={handleOpenJob}
                             onDeleteJob={handleDeleteJob}
+                            onReprocessJob={handleReprocessJob}
                             onNewJob={() => setIsModalOpen(true)}
-                            onEditJob={(job) => { setEditingJobId(job.id); setEditingTitle(job.title); }}
+                            onEditJob={(job) => { setEditingJobId(job.id); setEditingName(job.name); }}
                             editingJobId={editingJobId}
-                            editingTitle={editingTitle}
-                            onEditingTitleChange={setEditingTitle}
-                            onSaveEdit={handleSaveEditTitle}
+                            editingName={editingName}
+                            onEditingNameChange={setEditingName}
+                            onSaveEdit={handleSaveEditName}
                             onCancelEdit={() => setEditingJobId(null)}
+                            isNewJobDisabled={selectedSubjects.length === 0}
                         />
                     ) : (
                         <motion.div
@@ -342,7 +374,7 @@ export function DiarizationView() {
                                     </button>
                                     <div>
                                         <div className="flex items-center gap-3">
-                                            <h2 className="text-xl font-black text-white uppercase tracking-tight">{activeJob?.title}</h2>
+                                            <h2 className="text-xl font-black text-white uppercase tracking-tight">{activeJob?.name}</h2>
                                             {activeJob && (
                                                 <StatusBadge 
                                                     status={activeJob.status} 
@@ -364,6 +396,7 @@ export function DiarizationView() {
                             <div className="flex-1 flex overflow-hidden">
                                 <div className="w-96 flex-shrink-0">
                                     <SpeakerIdentificationPanel
+                                        job={activeJob}
                                         speakers={speakers}
                                         availableVoices={voices}
                                         isRecognizing={isRecognizing}
@@ -371,7 +404,7 @@ export function DiarizationView() {
                                         onSpeakerChange={handleSpeakerChange}
                                         onTrainVoice={setTrainingSpeaker}
                                         onRecognize={handleRecognizeSpeakers}
-                                        canRecognize={step === 'identification'}
+                                        canRecognize={step === 'identification' || step === 'result'}
                                     />
                                 </div>
                                 <div className="flex-1">
@@ -392,15 +425,16 @@ export function DiarizationView() {
                 </AnimatePresence>
             </div>
 
-            {/* 🔵 RIGHT SIDEBAR: CONTEXT SELECTION (Bases de Conhecimento) */}
-            <AnimatePresence>
-                {viewMode === 'list' && (
-                    <motion.div 
-                        initial={{ opacity: 0, x: 20, width: 0 }}
-                        animate={{ opacity: 1, x: 0, width: 320 }}
-                        exit={{ opacity: 0, x: 20, width: 0 }}
-                        className="border-l border-white/5 bg-black/20 backdrop-blur-xl flex flex-col shrink-0 overflow-hidden"
-                    >
+            {/* 🔵 RIGHT SIDEBAR */}
+            <AnimatePresence mode="wait">
+                <motion.div 
+                    key={viewMode === 'list' ? 'ecosystem' : 'metadata'}
+                    initial={{ opacity: 0, x: 20, width: 0 }}
+                    animate={{ opacity: 1, x: 0, width: 320 }}
+                    exit={{ opacity: 0, x: 20, width: 0 }}
+                    className="border-l border-white/5 bg-black/20 backdrop-blur-xl flex flex-col shrink-0 overflow-hidden"
+                >
+                    {viewMode === 'list' ? (
                         <div className="w-[320px] flex flex-col h-full">
                             <div className="p-6 border-b border-white/5 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -446,8 +480,10 @@ export function DiarizationView() {
                                 })}
                             </div>
                         </div>
-                    </motion.div>
-                )}
+                    ) : (
+                        activeJob && <DiarizationMetadataPanel job={activeJob} onReprocess={handleReprocessJob} />
+                    )}
+                </motion.div>
             </AnimatePresence>
 
             {/* MODALS */}

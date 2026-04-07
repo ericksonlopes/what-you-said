@@ -22,6 +22,18 @@ export const VoiceTrainingModal: React.FC<VoiceTrainingModalProps> = ({ isOpen, 
     const [isPlaying, setIsPlaying] = useState(false);
     const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
+    const isReinforce = !!(speaker?.assigned && !speaker.assigned.toUpperCase().startsWith('SPEAKER_') && speaker.assigned.toUpperCase() !== 'UNKNOWN');
+
+    React.useEffect(() => {
+        if (isOpen && speaker) {
+            if (isReinforce) {
+                setVoiceProfileName(speaker.assigned);
+            } else {
+                setVoiceProfileName('');
+            }
+        }
+    }, [isOpen, speaker, isReinforce]);
+
     const togglePlay = async () => {
         if (!speaker || !diarizationId) return;
 
@@ -58,7 +70,11 @@ export const VoiceTrainingModal: React.FC<VoiceTrainingModalProps> = ({ isOpen, 
                 name: name,
             });
             
-            addToast(t('diarization.notifications.train_success', { name }), 'success');
+            const successMsg = isReinforce 
+                ? t('diarization.notifications.reinforce_success', { name })
+                : t('diarization.notifications.train_success', { name });
+
+            addToast(successMsg, 'success');
             onTrained();
             onClose();
         } catch (err: any) {
@@ -88,10 +104,12 @@ export const VoiceTrainingModal: React.FC<VoiceTrainingModalProps> = ({ isOpen, 
                     >
                         <div className="p-6 border-b border-white/5 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+                                <div className={`p-2 rounded-xl ${isReinforce ? 'bg-blue-500/10 text-blue-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
                                     <Mic className="w-5 h-5" />
                                 </div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-tight">{t('diarization.voice_training.title')}</h3>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                                    {isReinforce ? t('diarization.voice_training.reinforce_title') : t('diarization.voice_training.title')}
+                                </h3>
                             </div>
                             <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
                                 <X className="w-5 h-5 text-zinc-500" />
@@ -117,14 +135,15 @@ export const VoiceTrainingModal: React.FC<VoiceTrainingModalProps> = ({ isOpen, 
                                 <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">{t('diarization.voice_training.profile_name_label')}</label>
                                 <input
                                     type="text"
-                                    autoFocus
+                                    autoFocus={!isReinforce}
+                                    disabled={isReinforce}
                                     value={voiceProfileName}
                                     onChange={(e) => setVoiceProfileName(e.target.value)}
                                     placeholder={t('diarization.voice_training.profile_name_placeholder')}
-                                    className="w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/30 transition-all font-medium"
+                                    className={`w-full px-4 py-3 bg-black/40 border border-white/5 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/30 transition-all font-medium ${isReinforce ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 />
                                 <p className="text-[9px] text-zinc-500 font-medium ml-1">
-                                    {t('diarization.voice_training.description')}
+                                    {isReinforce ? t('diarization.voice_training.reinforce_description') : t('diarization.voice_training.description')}
                                 </p>
                             </div>
                         </div>
@@ -139,10 +158,10 @@ export const VoiceTrainingModal: React.FC<VoiceTrainingModalProps> = ({ isOpen, 
                             <button
                                 onClick={handleTrainVoice}
                                 disabled={isTraining || !voiceProfileName.trim()}
-                                className="flex-1 py-3 px-4 bg-blue-500 text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-blue-400 transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className={`flex-1 py-3 px-4 font-black uppercase text-[10px] tracking-widest rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${isReinforce ? 'bg-blue-500 text-black shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:bg-blue-400' : 'bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:bg-emerald-400'}`}
                             >
                                 {isTraining ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
-                                {t('diarization.voice_training.submit_btn')}
+                                {isReinforce ? t('diarization.voice_training.reinforce_submit_btn') : t('diarization.voice_training.submit_btn')}
                             </button>
                         </div>
                     </motion.div>

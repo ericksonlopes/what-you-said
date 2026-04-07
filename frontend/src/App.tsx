@@ -33,6 +33,8 @@ import {ErrorBoundary} from './components/ErrorBoundary';
 import {ContentSource} from './types';
 import {ChatView} from './components/ChatView';
 import {KnowledgeAdminView} from './components/KnowledgeAdminView';
+import {QueueMonitorView} from './components/QueueMonitorView';
+
 
 function ActivityMonitorView() {
   const {
@@ -289,7 +291,9 @@ function ContentSourcesView() {
     setSelectedSubjects,
     subjects,
     setIsAddModalOpen,
-    sourceTypes
+    sourceTypes,
+    refreshSources,
+    addToast
   } = useAppContext();
   
   const { t } = useTranslation();
@@ -298,6 +302,7 @@ function ContentSourcesView() {
   const [typeFilter, setTypeFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const filteredSources = React.useMemo(() => {
     let result = sources;
@@ -396,8 +401,31 @@ function ContentSourcesView() {
               </div>
 
               <button
+                onClick={async () => {
+                   if (isSyncing) return;
+                   setIsSyncing(true);
+                   try {
+                     await refreshSources?.();
+                     addToast(t('notifications.sync.success'), 'success');
+                   } catch (err) {
+                     console.error('[ContentSourcesView] Sync failed:', err);
+                     addToast(t('notifications.sync.error'), 'error');
+                   } finally {
+                     setIsSyncing(false);
+                   }
+                }}
+                disabled={isSyncing}
+                className="group flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-zinc-300 bg-zinc-900 border border-white/5 rounded-lg hover:bg-zinc-800 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={t('common.actions.sync')}
+              >
+                <RefreshCw className={`w-4 h-4 transition-transform duration-500 ${isSyncing ? 'animate-spin text-emerald-400' : 'group-hover:rotate-180'}`} />
+              </button>
+
+              <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                disabled={selectedSubjects.length === 0}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${selectedSubjects.length === 0 ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50' : 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]'}`}
+                title={selectedSubjects.length === 0 ? t('common.hints.select_subject') : ''}
               >
                 <Plus className="w-4 h-4 stroke-[3px]" />
                 {t('sources.add_btn')}
@@ -499,7 +527,7 @@ function ContentSourcesView() {
 
 // --- Main Layout ---
 function MainContent() {
-  const { currentView, isAddModalOpen, setIsAddModalOpen, isAddSubjectModalOpen, setIsAddSubjectModalOpen, addToast } = useAppContext();
+  const { currentView, isAddModalOpen, setIsAddModalOpen, isAddSubjectModalOpen, setIsAddSubjectModalOpen, addToast, selectedSubjects } = useAppContext();
   const { isAuthEnabled, isAuthenticated, isLoading, login } = useAuth();
   const { t } = useTranslation();
 
@@ -550,10 +578,12 @@ function MainContent() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="group flex items-center gap-3 px-5 py-2 text-xs font-black uppercase tracking-widest text-white bg-zinc-900 border border-white/10 rounded-xl hover:bg-primary-500 hover:text-black hover:border-primary-400 transition-all"
+            disabled={selectedSubjects.length === 0}
+            className={`group flex items-center gap-3 px-5 py-2 text-xs font-black uppercase tracking-widest transition-all border rounded-xl ${selectedSubjects.length === 0 ? 'bg-zinc-900 text-zinc-600 border-white/5 cursor-not-allowed opacity-50' : 'text-white bg-zinc-900 border-white/10 hover:bg-primary-500 hover:text-black hover:border-primary-400'}`}
+            title={selectedSubjects.length === 0 ? t('common.hints.select_subject') : ''}
           >
             <Plus className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" />
-            Adicionar Dados
+            {t('common.actions.addData')}
           </button>
         </div>
       </header>
@@ -562,7 +592,9 @@ function MainContent() {
       <main className="flex-1 overflow-hidden relative">
         <ErrorBoundary>
           {currentView === 'activity' && <ActivityMonitorView />}
+          {currentView === 'queue' && <QueueMonitorView />}
           {currentView === 'sources' && <ContentSourcesView />}
+
           {currentView === 'chat' && <ChatView />}
           {currentView === 'search' && <SearchView />}
           {currentView === 'database' && <ChunksViewer />}

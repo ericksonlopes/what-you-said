@@ -8,7 +8,7 @@ class IngestDiarizationCommand:
     diarization_id: UUID
     subject_id: UUID
     subject_name: Optional[str] = None
-    title: Optional[str] = None
+    name: Optional[str] = None
     language: str = "pt"
     tokens_per_chunk: int = 512
     tokens_overlap: int = 50

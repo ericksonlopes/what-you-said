@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Clock, Loader2, CheckCircle2, AlertCircle, Play } from 'lucide-react';
 
 interface StatusBadgeProps {
-    readonly status: 'completed' | 'pending' | 'processing' | 'failed' | 'ready';
+    readonly status: 'completed' | 'pending' | 'processing' | 'failed' | 'awaiting_verification';
     readonly message?: string;
     readonly size?: 'sm' | 'md';
 }
@@ -11,19 +11,6 @@ interface StatusBadgeProps {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, message, size = 'md' }) => {
     const { t } = useTranslation();
     const isSm = size === 'sm';
-
-    const getFormattedMessage = () => {
-        if (!message) return null;
-        
-        const knownSteps = ['starting', 'downloading', 'diarizing', 'exporting', 'recognizing'];
-        if (knownSteps.includes(message)) {
-            return t(`diarization.status.steps.${message}`);
-        }
-        
-        return message;
-    };
-
-    const displayMsg = getFormattedMessage();
 
     const renderBadge = () => {
         switch (status) {
@@ -34,11 +21,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, message, size 
                         {t('diarization.status.completed')}
                     </div>
                 );
-            case 'ready':
+            case 'awaiting_verification':
                 return (
                     <div className={`inline-flex items-center gap-1.5 ${isSm ? 'px-2 py-0.5' : 'px-3 py-1'} rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-black uppercase ${isSm ? 'text-[8px]' : 'text-[10px]'} tracking-widest animate-pulse`}>
                         <Play className={isSm ? 'w-2.5 h-2.5' : 'w-3.5 h-3.5'} />
-                        {t('diarization.detail.auto_identify')}
+                        {t('diarization.status.awaiting_verification')}
                     </div>
                 );
             case 'processing':
@@ -68,11 +55,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, message, size 
     return (
         <div className={`flex flex-col gap-1.5 items-start ${isSm ? '' : 'min-w-[120px]'}`}>
             {renderBadge()}
-            {displayMsg && (
-                <div className={`px-1 text-zinc-500 font-medium italic lowercase animate-in fade-in slide-in-from-top-1 duration-500 ${isSm ? 'text-[9px]' : 'text-xs'}`}>
-                    {displayMsg}...
-                </div>
-            )}
         </div>
     );
 };

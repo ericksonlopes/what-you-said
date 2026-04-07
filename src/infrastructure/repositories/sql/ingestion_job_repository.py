@@ -187,6 +187,27 @@ class IngestionJobSQLRepository:
                 session.rollback()
                 raise
 
+    def delete(self, job_id: Any) -> bool:
+        """Delete an ingestion job by ID."""
+        job_id_uuid = ensure_uuid(job_id)
+        if not job_id_uuid:
+            return False
+        with Connector() as session:
+            try:
+                job = session.get(IngestionJobModel, job_id_uuid)
+                if not job:
+                    return False
+                session.delete(job)
+                session.commit()
+                return True
+            except Exception as e:
+                logger.error(
+                    "Error deleting ingestion job",
+                    context={"job_id": job_id, "error": str(e)},
+                )
+                session.rollback()
+                raise
+
     def get_by_id(self, job_id: Any) -> Optional[IngestionJobModel]:
         job_id = ensure_uuid(job_id)
         with Connector() as session:

@@ -1,4 +1,5 @@
-import { Subject, IngestionTask, ContentSource, Chunk, PaginatedResponse } from '../types';
+import { Subject, IngestionTask, ContentSource, Chunk, PaginatedResponse, RawQueueTask } from '../types';
+
 
 const API_BASE_URL = '/rest';
 
@@ -215,6 +216,30 @@ export const api = {
     return response.json();
   },
 
+  async previewYoutubeChannel(data: {
+    channel_url: string;
+    subject_id?: string;
+  }): Promise<{
+    channel_name: string;
+    total_videos: number;
+    videos: Array<{
+      video_id: string;
+      title: string;
+      url: string;
+      duration: number | null;
+      thumbnail: string | null;
+      already_ingested: boolean;
+    }>;
+  }> {
+    const response = await fetch(`${API_BASE_URL}/ingest/youtube/channel/preview`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data)
+    });
+    await handleResponseError(response, 'Channel preview failed');
+    return response.json();
+  },
+
   async ingestFile(formData: FormData): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/ingest/file`, {
       method: 'POST',
@@ -229,7 +254,7 @@ export const api = {
     diarization_id: string;
     subject_id: string;
     subject_name?: string;
-    title?: string;
+    name?: string;
     language?: string;
     tokens_per_chunk?: number;
     tokens_overlap?: number;
@@ -388,6 +413,15 @@ export const api = {
     return response.json();
   },
 
+  async reprocessDiarization(diarizationId: string): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/audio/${diarizationId}/reprocess`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to reprocess diarization');
+    return response.json();
+  },
+
   async getSpeakerAudioUrl(diarizationId: string, speakerLabel: string): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/audio/${diarizationId}/audio/${speakerLabel}`, {
       headers: getHeaders()
@@ -506,5 +540,33 @@ export const api = {
     });
     await handleResponseError(response, 'Failed to fetch user profile');
     return response.json();
+  },
+
+  async fetchRawQueue(limit: number = 50): Promise<RawQueueTask[]> {
+    const url = new URL(`${API_BASE_URL}/jobs/queue/raw`, globalThis.location.origin);
+    url.searchParams.append('limit', limit.toString());
+
+    const response = await fetch(url.toString(), {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to fetch raw queue');
+    return response.json();
+  },
+  
+  async clearQueue(): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/jobs/queue`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to clear queue');
+  },
+
+  async removeQueueTask(index: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/jobs/queue/${index}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to remove task from queue');
   }
 };
+

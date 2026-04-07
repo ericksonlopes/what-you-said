@@ -1,13 +1,11 @@
 import concurrent.futures
 from contextlib import suppress
 import random
-import re
 import threading
 import time
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from urllib.parse import parse_qs, urlparse
 from uuid import UUID
 
 from langchain_core.documents import Document
@@ -27,6 +25,7 @@ from src.domain.exception.youtube_exceptions import (
     YoutubeTranscriptNotFoundException,
     YoutubeTranscriptsDisabledException,
     YoutubeNetworkException,
+    YoutubeIPBlockedException,
 )
 from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
@@ -169,45 +168,13 @@ class YoutubeIngestionUseCase:
     ) -> None:
         """Processes a list of videos in batches with adaptive throttling."""
         batch_size = settings.youtube.throttle_batch_size
-        wait_time = settings.youtube.throttle_wait_seconds
-        current_wait_time = wait_time
-
-        def process_video_task(url: str) -> Dict[str, Any]:
-            try:
-                vid_id = self._extract_video_id_from_url(url)
-                if not vid_id:
-                    raise ValueError(f"Unable to extract video id from url: {url}")
-                # Use a separate variable or cast for Mypy
-                video_id_str: str = str(vid_id)
-                # subject is Any in _process_video_batch signature
-                return self._process_single_video(url, video_id_str, subject, cmd)
-            except YoutubeNetworkException as e:
-                logger.error(
-                    e,
-                    context={
-                        "video_url": url,
-                        "video_id": vid_id,
-                        "error_type": "network_error",
-                    },
-                )
-                return {
-                    "video_url": url,
-                    "video_id": vid_id,
-                    "error": str(e),
-                    "is_network_error": True,
-                }
-            except Exception as e:
-                logger.error(
-                    e,
-                    context={
-                        "video_url": url,
-                        "video_id": vid_id,
-                        "action": "process_video",
-                    },
-                )
-                return {"video_url": url, "video_id": vid_id, "error": str(e)}
+        current_wait_time = settings.youtube.throttle_wait_seconds
+        ip_blocked = False
 
         for i in range(0, len(video_list), batch_size):
+            if ip_blocked:
+                break
+
             batch = video_list[i : i + batch_size]
             logger.debug(
                 "Processing batch of YouTube videos",
@@ -218,29 +185,10 @@ class YoutubeIngestionUseCase:
                 },
             )
 
-            batch_has_network_error = False
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=len(batch)
-            ) as executor:
-                futures = [executor.submit(process_video_task, url) for url in batch]
-                for future in concurrent.futures.as_completed(futures):
-                    single_result = future.result()
-                    result.video_results.append(single_result)
+            batch_status = self._execute_batch(batch, subject, cmd, result)
+            ip_blocked = batch_status.get("ip_blocked", False)
 
-                    if single_result.get("is_network_error"):
-                        batch_has_network_error = True
-
-                    if (
-                        not single_result.get("skipped", False)
-                        and "error" not in single_result
-                    ):
-                        result.created_chunks = (
-                            result.created_chunks or 0
-                        ) + single_result.get("created_chunks", 0)
-                        result.vector_ids.extend(single_result.get("vector_ids", []))
-
-            # Adaptive Throttling
-            if batch_has_network_error:
+            if batch_status.get("network_error"):
                 current_wait_time = min(current_wait_time * 2, 600)
                 logger.warning(
                     "Network error detected. Increasing wait time",
@@ -248,46 +196,148 @@ class YoutubeIngestionUseCase:
                 )
 
             # Wait if there are more batches
-            if i + batch_size < len(video_list):
-                total_wait = current_wait_time + random.uniform(0, 5)  # nosec
-                logger.debug(
-                    "Throttling: waiting before next batch",
-                    context={"wait_time": total_wait},
-                )
-                time.sleep(total_wait)
+            if not ip_blocked and i + batch_size < len(video_list):
+                self._apply_throttling(current_wait_time)
+
+    def _execute_batch(
+        self,
+        batch: List[str],
+        subject: Any,
+        cmd: IngestYoutubeCommand,
+        result: IngestYoutubeResult,
+    ) -> Dict[str, bool]:
+        """Executes a single batch of videos using ThreadPoolExecutor."""
+        ip_blocked = False
+        batch_has_network_error = False
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(batch)) as executor:
+            futures = [
+                executor.submit(self._process_video_task_wrapper, url, subject, cmd)
+                for url in batch
+            ]
+            for future in concurrent.futures.as_completed(futures):
+                single_result = future.result()
+                result.video_results.append(single_result)
+
+                if single_result.get("is_ip_blocked"):
+                    ip_blocked = True
+                if single_result.get("is_network_error"):
+                    batch_has_network_error = True
+
+                if (
+                    not single_result.get("skipped", False)
+                    and "error" not in single_result
+                ):
+                    result.created_chunks = (
+                        result.created_chunks or 0
+                    ) + single_result.get("created_chunks", 0)
+                    result.vector_ids.extend(single_result.get("vector_ids", []))
+
+        return {"ip_blocked": ip_blocked, "network_error": batch_has_network_error}
+
+    def _process_video_task_wrapper(
+        self, url: str, subject: Any, cmd: IngestYoutubeCommand
+    ) -> Dict[str, Any]:
+        """Wrapper for processing a single video with error classification for batch results."""
+        vid_id = "unknown"
+        try:
+            extracted_id = YoutubeExtractor.get_video_id(url)
+            if not extracted_id:
+                raise ValueError(f"Unable to extract video id from url: {url}")
+            vid_id = str(extracted_id)
+            return self._process_single_video(url, vid_id, subject, cmd)
+
+        except YoutubeIPBlockedException as e:
+            logger.error(
+                "FATAL: YouTube IP Block detected. Aborting batch.",
+                context={"video_url": url, "error": str(e)},
+            )
+            return {
+                "video_url": url,
+                "video_id": vid_id,
+                "error": str(e),
+                "is_ip_blocked": True,
+            }
+        except YoutubeNetworkException as e:
+            logger.error(e, context={"video_url": url, "video_id": vid_id})
+            return {
+                "video_url": url,
+                "video_id": vid_id,
+                "error": str(e),
+                "is_network_error": True,
+            }
+        except Exception as e:
+            logger.error(
+                e,
+                context={"video_url": url, "video_id": vid_id, "action": "batch_task"},
+            )
+            return {"video_url": url, "video_id": vid_id, "error": str(e)}
+
+    def _apply_throttling(self, wait_time: float) -> None:
+        """Applies adaptive sleep between batches."""
+        total_wait = wait_time + random.uniform(0, 5)  # nosec
+        logger.debug(
+            "Throttling: waiting before next batch",
+            context={"wait_time": total_wait},
+        )
+        time.sleep(total_wait)
 
     def _finalize_parent_job(
         self, ingestion: Any, result: IngestYoutubeResult, any_failed: bool
     ) -> None:
         """Updates the status of the main tracking job."""
-        if any_failed:
-            errors = [
-                r["error"]
-                for r in result.video_results
-                if "error" in r and not r.get("cancelled", False)
-            ]
-            if errors:
-                error_summary = (
-                    f"Ingestion failed for {len(errors)} items: "
-                    + "; ".join(errors)[:200]
-                )
-                self._fail_job(ingestion, error_summary)
-            else:
-                # Only known limitations/cancellations
-                cancelled_msgs = [
-                    r["error"]
-                    for r in result.video_results
-                    if r.get("cancelled", False)
-                ]
-                summary = f"Partial ingestion: {len(cancelled_msgs)} items skipped (private/unplayable)."
-                self._report_status(
-                    job_id=ingestion.id,
-                    status="completed",
-                    message=summary,
-                    chunks_count=result.created_chunks,
-                )
-        else:
+        if not any_failed:
             self._finish_job(ingestion, chunks_count=result.created_chunks)
+            return
+
+        # 1. Fatal IP Block
+        if self._is_ip_blocked_in_results(result):
+            self._handle_ip_block_failure(ingestion, result)
+            return
+
+        # 2. Real Errors vs Cancellations
+        real_errors = [
+            r["error"]
+            for r in result.video_results
+            if "error" in r and not r.get("cancelled", False)
+        ]
+
+        if real_errors:
+            error_summary = (
+                f"Ingestion failed for {len(real_errors)} items: "
+                + "; ".join(real_errors)[:200]
+            )
+            self._fail_job(ingestion, error_summary)
+        else:
+            # Only known limitations/cancellations
+            self._handle_partial_ingestion_status(ingestion, result)
+
+    def _is_ip_blocked_in_results(self, result: IngestYoutubeResult) -> bool:
+        """Checks if any video result failed due to an IP block."""
+        return any(r.get("is_ip_blocked") for r in result.video_results)
+
+    def _handle_ip_block_failure(
+        self, ingestion: Any, result: IngestYoutubeResult
+    ) -> None:
+        """Handles the termination of a job due to an IP block."""
+        block_item = next(r for r in result.video_results if r.get("is_ip_blocked"))
+        error_summary = f"ABORTED: YouTube is blocking our requests (IP Ban/Block). {block_item.get('error', '')[:150]}"
+        self._fail_job(ingestion, error_summary)
+
+    def _handle_partial_ingestion_status(
+        self, ingestion: Any, result: IngestYoutubeResult
+    ) -> None:
+        """Reports status for jobs that were partially successful (due to private videos, etc)."""
+        cancelled_msgs = [
+            r["error"] for r in result.video_results if r.get("cancelled", False)
+        ]
+        summary = f"Partial ingestion: {len(cancelled_msgs)} items skipped (private/unplayable)."
+        self._report_status(
+            job_id=ingestion.id,
+            status="completed",
+            message=summary,
+            chunks_count=result.created_chunks,
+        )
 
     def _finalize_parent_source(
         self, source: Any, result: IngestYoutubeResult, cmd: IngestYoutubeCommand
@@ -300,7 +350,9 @@ class YoutubeIngestionUseCase:
         ]
 
         if real_errors:
-            self._fail_ingestion(source)
+            self._fail_ingestion(
+                source, error_message=real_errors[0] if real_errors else None
+            )
         elif cmd.data_type != YoutubeDataType.PLAYLIST:
             # For single videos, if not already DONE/FAILED
             current_source = self.cs_service.get_by_id(source.id)
@@ -401,7 +453,7 @@ class YoutubeIngestionUseCase:
 
             if source:
                 try:
-                    self._fail_ingestion(source)
+                    self._fail_ingestion(source, error_message=error_msg)
                 except Exception as ef:
                     logger.error(
                         ef,
@@ -433,31 +485,47 @@ class YoutubeIngestionUseCase:
             and existing.processing_status == "done"
             and not getattr(cmd, "reprocess", False)
         ):
-            logger.info(
-                "Source already exists and is DONE, skipping ingestion (reprocess=False)",
-                context={"source_id": str(existing.id), "external_source": video_id},
-            )
-            try:
-                failed_job = self.ingestion_service.create_job(
-                    content_source_id=existing.id,
-                    status=IngestionJobStatus.CANCELLED,
-                    embedding_model=self.model_loader_service.model_name,
-                    pipeline_version=self.PIPELINE_VERSION,
-                    ingestion_type=SourceType.YOUTUBE.value,
-                    vector_store_type=self.vector_store_type,
-                )
-                # Update with detailed messages
-                self.ingestion_service.update_job(
-                    job_id=failed_job.id,
-                    status=IngestionJobStatus.CANCELLED,
-                    error_message="Duplicate: this content has already been ingested.",
-                    status_message=f"Skipped: {video_id} already exists",
-                )
-            except Exception:
-                failed_job = None
-            return existing, failed_job, True
+            return self._handle_duplicate_ingestion(video_id, existing)
 
         # 2. Get or create Job
+        job = self._resolve_or_create_job(cmd, existing, video_id, subject_id)
+        return existing, job, False
+
+    def _handle_duplicate_ingestion(
+        self, video_id: str, existing: Any
+    ) -> tuple[Any, Any, bool]:
+        """Handles skipping ingestion when a duplicate source is found and completed."""
+        logger.info(
+            "Source already exists and is DONE, skipping ingestion (reprocess=False)",
+            context={"source_id": str(existing.id), "external_source": video_id},
+        )
+        try:
+            failed_job = self.ingestion_service.create_job(
+                content_source_id=existing.id,
+                status=IngestionJobStatus.CANCELLED,
+                embedding_model=self.model_loader_service.model_name,
+                pipeline_version=self.PIPELINE_VERSION,
+                ingestion_type=SourceType.YOUTUBE.value,
+                vector_store_type=self.vector_store_type,
+            )
+            self.ingestion_service.update_job(
+                job_id=failed_job.id,
+                status=IngestionJobStatus.CANCELLED,
+                error_message="Duplicate: this content has already been ingested.",
+                status_message=f"Skipped: {video_id} already exists",
+            )
+        except Exception:
+            failed_job = None
+        return existing, failed_job, True
+
+    def _resolve_or_create_job(
+        self,
+        cmd: IngestYoutubeCommand,
+        existing: Optional[Any],
+        video_id: str,
+        subject_id: UUID,
+    ) -> Any:
+        """Resolves existing job from command ID or creates a new one."""
         job = None
         jid = cmd.ingestion_job_id if hasattr(cmd, "ingestion_job_id") else None
         if jid:
@@ -469,8 +537,7 @@ class YoutubeIngestionUseCase:
             job = self._create_ingestion_job(
                 source=existing, external_source=video_id, subject_id=subject_id
             )
-
-        return existing, job, False
+        return job
 
     def _handle_reprocessing_cleanup(
         self, source: Any, job_id: UUID, video_id: str
@@ -531,7 +598,7 @@ class YoutubeIngestionUseCase:
 
         if source:
             try:
-                self._fail_ingestion(source)
+                self._fail_ingestion(source, error_message=error_msg)
             except Exception as ef:
                 logger.error(
                     ef,
@@ -558,14 +625,7 @@ class YoutubeIngestionUseCase:
         )
 
         if skipped:
-            return {
-                "video_url": video_url,
-                "video_id": video_id,
-                "skipped": True,
-                "reason": "source_exists_and_done",
-                "source_id": source.id if source else None,
-                "job_id": str(ingestion.id) if ingestion else None,
-            }
+            return self._format_skipped_result(video_url, video_id, source, ingestion)
 
         try:
             if ingestion is None:
@@ -719,9 +779,11 @@ class YoutubeIngestionUseCase:
 
             raise
 
-    def _fail_ingestion(self, source) -> None:
+    def _fail_ingestion(self, source, error_message: Optional[str] = None) -> None:
         self.cs_service.update_processing_status(
-            content_source_id=source.id, status=ContentSourceStatus.FAILED
+            content_source_id=source.id,
+            status=ContentSourceStatus.FAILED,
+            error_message=error_message,
         )
         logger.info(
             "Content source marked as FAILED",
@@ -737,57 +799,6 @@ class YoutubeIngestionUseCase:
         logger.info(
             "Ingestion job updated to FAILED", context={"job_id": str(ingestion.id)}
         )
-
-    @classmethod
-    def _extract_video_id_from_url(cls, url: str) -> Optional[str]:
-        if not url:
-            return None
-
-        # 1. Quick check for plain 11-char ID
-        if len(url) == 11 and re.match(r"^[A-Za-z0-9_-]{11}$", url):
-            return url
-
-        parsed = urlparse(url)
-        netloc = parsed.netloc.lower()
-        if "youtu.be" in netloc:
-            vid = parsed.path.lstrip("/")
-            return vid or None
-
-        if "youtube" in netloc:
-            q = parse_qs(parsed.query)
-            if "v" in q:
-                vid = q["v"][0]
-                if len(vid) == 11:
-                    return vid
-
-            path_parts = [p for p in parsed.path.split("/") if p]
-            for i, part in enumerate(path_parts):
-                if part in ("embed", "v", "shorts") and i + 1 < len(path_parts):
-                    vid = path_parts[i + 1]
-                    if len(vid) == 11:
-                        return vid
-            if path_parts:
-                potential_id = path_parts[-1]
-                # YouTube video IDs are strictly 11 characters.
-                # Avoid common navigation sub-paths.
-                if len(potential_id) == 11 and potential_id not in (
-                    "videos",
-                    "shorts",
-                    "about",
-                    "featured",
-                    "playlists",
-                ):
-                    return potential_id
-
-        # 2. Broader search: look for 11-char ID preceded by common prefixes or non-alphanumerics
-        m = re.search(
-            r"(?:v=|be/|embed/|shorts/|^|[^A-Za-z0-9_-])([A-Za-z0-9_-]{11})(?:$|[^A-Za-z0-9_-])",
-            url,
-        )
-        if m:
-            return m.group(1)
-
-        return None
 
     def _resolve_subject(self, cmd: IngestYoutubeCommand):
         if getattr(cmd, "subject_id", None):
@@ -1000,7 +1011,7 @@ class YoutubeIngestionUseCase:
 
         self.cs_service.finish_ingestion(
             content_source_id=source.id,
-            embedding_model=self.model_loader_service.model_name,
+            embedding_model=self.model_loader_service.model_name or "unknown",
             dimensions=dims_val,
             chunks=num_chunks,
             total_tokens=total_tokens,
@@ -1022,3 +1033,16 @@ class YoutubeIngestionUseCase:
             "Ingestion job marked as FINISHED",
             context={"job_id": str(ingestion.id), "chunks": chunks_count},
         )
+
+    def _format_skipped_result(
+        self, video_url: str, video_id: str, source: Any, ingestion: Any
+    ) -> Dict[str, Any]:
+        """Formats the result for a skipped ingestion."""
+        return {
+            "video_url": video_url,
+            "video_id": video_id,
+            "skipped": True,
+            "reason": "source_exists_and_done",
+            "source_id": source.id if source else None,
+            "job_id": str(ingestion.id) if ingestion else None,
+        }

@@ -12,9 +12,9 @@ export interface Speaker {
 
 export interface DiarizationJob {
     id: string;
-    title: string;
+    name: string;
     date: string;
-    status: 'completed' | 'pending' | 'processing' | 'failed' | 'ready';
+    status: 'completed' | 'pending' | 'processing' | 'failed' | 'awaiting_verification';
     duration: string;
     durationSeconds: number;
     sourceType: string;

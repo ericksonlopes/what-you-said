@@ -58,14 +58,16 @@ writer = rewriter.Rewriter()
 @writer.rewrites(ops.CreateTableOp)
 @writer.rewrites(ops.CreateIndexOp)
 def add_if_not_exists(context, revision, op):
-    op.if_not_exists = True
+    if not context.as_batch:
+        op.if_not_exists = True
     return op
 
 
 @writer.rewrites(ops.DropTableOp)
 @writer.rewrites(ops.DropIndexOp)
 def add_if_exists(context, revision, op):
-    op.if_exists = True
+    if not context.as_batch:
+        op.if_exists = True
     return op
 
 

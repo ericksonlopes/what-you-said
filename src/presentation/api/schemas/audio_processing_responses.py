@@ -15,7 +15,7 @@ class AudioSegmentSchema(BaseModel):
 class AudioProcessingResponse(BaseModel):
     """Schema de resposta para o pipeline de processamento completo."""
 
-    title: str
+    name: str
     folder: str
     segments: List[AudioSegmentSchema]
     recognition: Optional[Dict] = None

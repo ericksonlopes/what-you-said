@@ -52,6 +52,8 @@ class ContentSourceModel(Base):
     total_tokens = Column(Integer, nullable=True)
     max_tokens_per_chunk = Column(Integer, nullable=True)
     chunks = Column(Integer, nullable=False, server_default=text("0"))
+    status_message = Column(Text, nullable=True)
+    error_message = Column(Text, nullable=True)
     source_metadata = Column(JSON, nullable=True)
     subject = relationship("KnowledgeSubjectModel", back_populates="content_sources")
     ingestion_jobs = relationship(

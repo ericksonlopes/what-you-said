@@ -6,15 +6,22 @@ from sqlalchemy.orm import Session
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
+from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.repositories.storage.storage import StorageService
 
 logger = logging.getLogger(__name__)
 
 
 class DeleteDiarizationUseCase:
-    def __init__(self, db: Session, storage_service: StorageService | None = None):
+    def __init__(
+        self,
+        db: Session,
+        cs_service: ContentSourceService,
+        storage_service: StorageService | None = None,
+    ):
         self.db = db
         self.repo = DiarizationRepository(db)
+        self.cs_service = cs_service
         self.storage = storage_service or StorageService()
 
     def execute(self, diarization_id: str) -> bool:
@@ -27,6 +34,19 @@ class DeleteDiarizationUseCase:
         if not record:
             logger.warning("Diarization record not found: %s", diarization_id)
             return False
+
+        # 0. Delete associated ContentSource (Cascading deletion)
+        try:
+            source = self.cs_service.get_by_diarization_id(diarization_id)
+            if source:
+                logger.info("Found associated ContentSource %s. Deleting...", source.id)
+                self.cs_service.delete_source(source.id)
+        except Exception as e:
+            logger.error(
+                "Failed to delete associated ContentSource for diarization %s: %s",
+                diarization_id,
+                str(e),
+            )
 
         # 1. Delete from S3
         if record.storage_path:

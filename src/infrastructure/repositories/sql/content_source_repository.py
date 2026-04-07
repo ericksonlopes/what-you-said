@@ -102,6 +102,39 @@ class ContentSourceSQLRepository:
                 )
                 raise
 
+    def get_by_diarization_id(
+        self, diarization_id: str
+    ) -> Optional[ContentSourceModel]:
+        """Find a ContentSource that has this diarization_id in its source_metadata JSON."""
+        with Connector() as session:
+            try:
+                logger.debug(
+                    "Fetching ContentSource by diarization_id in metadata",
+                    context={"diarization_id": diarization_id},
+                )
+                # Search within JSON field (syntax works for SQLite and Postgres)
+                # Using string comparison for the diarization_id in the JSON object
+                result = (
+                    session.query(ContentSourceModel)
+                    .filter(
+                        ContentSourceModel.source_metadata["diarization_id"].astext
+                        == diarization_id
+                        if session.bind.dialect.name == "postgresql"
+                        else ContentSourceModel.source_metadata.op("->>")(
+                            "diarization_id"
+                        )
+                        == diarization_id
+                    )
+                    .first()
+                )
+                return result
+            except Exception as e:
+                logger.error(
+                    "Error fetching ContentSource by diarization_id",
+                    context={"diarization_id": diarization_id, "error": str(e)},
+                )
+                return None
+
     def get_by_source_info(
         self, source_type: str, external_source: str, subject_id: Optional[Any] = None
     ) -> List[ContentSourceModel]:
@@ -213,7 +246,13 @@ class ContentSourceSQLRepository:
                 )
                 raise
 
-    def update_status(self, content_source_id: UUID, status: str) -> None:
+    def update_status(
+        self,
+        content_source_id: UUID,
+        status: str,
+        status_message: Optional[str] = None,
+        error_message: Optional[str] = None,
+    ) -> None:
         with Connector() as session:
             try:
                 extra = {"content_source_id": content_source_id, "status": status}
@@ -225,6 +264,10 @@ class ContentSourceSQLRepository:
                     logger.warning("ContentSource not found for update", context=extra)
                     return
                 cs.processing_status = status
+                if status_message is not None:
+                    cs.status_message = status_message
+                if error_message is not None:
+                    cs.error_message = error_message
                 session.commit()
                 logger.debug("Processing status updated successfully", context=extra)
             except Exception as e:
@@ -289,6 +332,8 @@ class ContentSourceSQLRepository:
 
                 # Explicitly update processing_status to 'done'
                 cs.processing_status = "done"
+                cs.status_message = None
+                cs.error_message = None
                 cs.ingested_at = datetime.now(timezone.utc)
                 cs.embedding_model = embedding_model
                 cs.dimensions = dimensions
@@ -306,6 +351,58 @@ class ContentSourceSQLRepository:
             except Exception as e:
                 logger.error(
                     "Error finishing ingestion for ContentSource",
+                    context={**extra, "error": str(e)},
+                )
+                session.rollback()
+                raise
+
+    def list_external_sources_by_subject(
+        self, subject_id: Any, source_type: str
+    ) -> List[str]:
+        """Return all external_source values for a given subject and source_type.
+
+        Optimized query that only fetches the external_source column.
+        """
+        subject_id = ensure_uuid(subject_id, INVALID_UUID_MSG)
+        with Connector() as session:
+            try:
+                rows = (
+                    session.query(ContentSourceModel.external_source)
+                    .filter_by(subject_id=subject_id, source_type=source_type)
+                    .all()
+                )
+                return [row[0] for row in rows if row[0]]
+            except Exception as e:
+                logger.error(
+                    "Error listing external sources by subject",
+                    context={
+                        "subject_id": subject_id,
+                        "source_type": source_type,
+                        "error": str(e),
+                    },
+                )
+                raise
+
+    def update_metadata(self, content_source_id: UUID, metadata: dict) -> None:
+        with Connector() as session:
+            try:
+                extra = {"content_source_id": content_source_id}
+                logger.debug("Updating metadata for ContentSource", context=extra)
+                cs = session.get(ContentSourceModel, content_source_id)
+                if cs is None:
+                    logger.warning(
+                        "ContentSource not found for metadata update", context=extra
+                    )
+                    return
+                # Merge existing metadata with new metadata
+                current = dict(cs.source_metadata or {})
+                current.update(metadata)
+                cs.source_metadata = current
+                session.commit()
+                logger.debug("Metadata updated successfully", context=extra)
+            except Exception as e:
+                logger.error(
+                    "Error updating metadata for ContentSource",
                     context={**extra, "error": str(e)},
                 )
                 session.rollback()

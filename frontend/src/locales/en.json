@@ -18,7 +18,12 @@
       "go_to_source": "Go to Source",
       "upload": "Upload",
       "none_found": "No results found",
-      "clear_filters": "Try adjusting your search or clear filters"
+      "clear_filters": "Try adjusting your search or clear filters",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all"
+    },
+    "errors": {
+      "general": "An unexpected error occurred. Please try again."
     },
     "status": {
       "pending": "PENDING",
@@ -35,10 +40,15 @@
       "duplicate": "DUPLICATE",
       "cancelled": "CANCELLED",
       "reprocessed": "REPROCESSED",
+      "awaiting_verification": "AWA. REVIEW",
       "na": "n/a"
     },
     "labels": {
       "preview": "Preview"
+    },
+    "hints": {
+      "select_subject": "Select a Knowledge Base to enable",
+      "no_subjects": "Create a Knowledge Base first"
     }
   },
   "sidebar": {
@@ -60,10 +70,16 @@
       "chat": "RAG Chat (Locked)",
       "search": "Semantic Search",
       "diarization": "Speech Recognition",
+      "recognizeVoices": "Speaker Recognition",
+      "fetchChannelVideos": "Fetch Channel Videos",
+      "selectVideos": "Select Videos",
+      "previewingChannel": "Previewing Channel",
+      "videosSelected": "Video(s) selected",
       "voices": "Voice Profiles",
       "sources": "Content Sources",
       "chunks": "Sources > Chunks",
       "activity": "Activity Monitor",
+      "queue": "Task Queue (Redis)",
       "knowledge_contexts": "Knowledge Bases",
       "database": "Source Details",
       "voice_profiles": "Voice Profiles"
@@ -71,7 +87,7 @@
     "groups": {
       "search": "Searches",
       "contexts": "Contexts",
-      "data": "Data",
+      "data": "Data Ingestion",
       "tools": "Diarization & Recognition",
       "monitor": "Monitor"
     },
@@ -404,8 +420,22 @@
         "css_selector_placeholder": ".main-content or #article",
         "exclude_links": "Exclude links",
         "exclude_links_desc": "Remove links from extracted content to improve RAG quality.",
-        "web_url": "Page URL"
+        "web_url": "Page URL",
+        "channel": "Channel",
+        "channel_url": "Channel URL",
+        "channel_desc": "Lists all videos from the channel so you can select which ones to ingest."
       }
+    },
+    "channel": {
+      "fetch_btn": "Fetch Videos",
+      "fetching": "Fetching...",
+      "select_all_new": "Select new",
+      "deselect_all": "Deselect all",
+      "selected_count": "{{count}} of {{total}} selected",
+      "already_ingested": "Already ingested",
+      "no_videos": "No videos found in this channel.",
+      "no_new_videos": "All videos from this channel have already been ingested.",
+      "no_selection": "Please select at least one video to ingest."
     },
     "messages": {
       "success": "Content successfully added to Knowledge Base!",
@@ -518,10 +548,12 @@
       "delete": "Delete"
     },
     "status": {
+      "all": "All Status",
       "completed": "Completed",
       "waiting": "Waiting",
       "failed": "Failed",
       "in_queue": "In Queue",
+      "awaiting_verification": "Awai. Review",
       "processing_default": "Analyzing audio and separating voices on server...",
       "check_status": "Check Status",
       "still_processing": "Still processing...",
@@ -545,7 +577,7 @@
       "id_speakers_help": "Identify the speakers to finalize the transcription.",
       "id_speakers_title": "Speaker Identification",
       "id_speakers_desc": "We heard {{count}} distinct voices in the file. Listen to the extracted snippets and confirm each person's identity before generating the final transcript.",
-      "auto_identify": "Auto-Identify",
+      "auto_identify": "Verify Names",
       "voice_label": "Voice {{index}}",
       "confidence": "Confidence",
       "unknown_speaker": "Unknown",
@@ -555,12 +587,20 @@
       "generate_transcript": "Generate Final Transcript",
       "final_transcript": "Final Transcript",
       "segments_count": "{{count}} segments generated",
-      "index_base": "Index in Base"
+      "index_base": "Index in Base",
+      "original_source": "Original Source",
+      "unique_id": "Unique ID",
+      "detected_language": "Detected Language",
+      "model_size": "Model Size",
+      "quick_actions": "Quick Actions",
+      "open": "Open",
+      "close_details": "Close details",
+      "view_metadata": "View metadata"
     },
     "identification": {
       "title": "Speaker Identification",
       "subtitle": "Assign names to recognized voices",
-      "auto_id": "Auto-ID",
+      "auto_id": "Suggest IDs",
       "unknown": "Unknown",
       "use_label": "Use Label ({{label}})",
       "known_profiles": "Known Profiles",
@@ -579,13 +619,16 @@
     },
     "voice_training": {
       "title": "Train Voice Profile",
+      "reinforce_title": "Reinforce Voice Profile",
       "sample_label": "Speaker Sample",
       "playing": "Playing...",
-      "listen_sample": "Listen to Sample",
+      "listen_sample": "Listen Sample",
       "profile_name_label": "Profile Name",
       "profile_name_placeholder": "Ex: John Doe",
-      "description": "This will create a new voice profile that can be identified automatically in other files.",
-      "submit_btn": "Create Profile"
+      "description": "This will create a new voice profile that can be automatically identified in other files.",
+      "reinforce_description": "This sample will be added to the existing profile to improve recognition accuracy.",
+      "submit_btn": "Create Profile",
+      "reinforce_submit_btn": "Reinforce Profile"
     },
     "modal": {
       "new_title": "New Diarization",
@@ -610,7 +653,9 @@
         "pt": "Portuguese",
         "en": "English",
         "es": "Spanish"
-      }
+      },
+      "fetchChannelVideos": "Fetch Channel Videos",
+      "selectVideos": "Select Videos"
     },
     "train_modal": {
       "title": "Voice Training",
@@ -631,14 +676,18 @@
       "save_success": "Transcription indexed successfully",
       "save_error": "Failed to save transcription",
       "train_success": "Voice profile \"{{name}}\" saved successfully!",
+      "reinforce_success": "Voice profile \"{{name}}\" reinforced successfully!",
       "train_error": "Failed to train voice profile",
       "no_selection_error": "No transcription or context selected",
       "youtube_link_error": "Insert a YouTube link",
       "file_selection_error": "Select a file",
       "playback_error": "Failed to play audio",
       "audio_fetch_error": "Failed to fetch speaker audio",
-      "load_error": "Failed to load diarizations"
-    }
+      "load_error": "Failed to load diarizations",
+      "reprocess_success": "Reprocessing started successfully!",
+      "reprocess_error": "Failed to start reprocessing"
+    },
+    "reprocess_confirmation": "Are you sure you want to reprocess this diarization? All current segments and identifications will be permanently lost."
   },
   "voices": {
     "title": "Recognized Voices",
@@ -667,6 +716,22 @@
     },
     "card": {
       "created_at": "Created"
+    }
+  },
+  "queue": {
+    "title": "Processing Queue",
+    "subtitle": "Raw technical state of the Redis task queue.",
+    "empty": "No tasks currently waiting in the queue.",
+    "task": {
+      "function": "Function",
+      "enqueued": "Enqueued at",
+      "arguments": "Arguments",
+      "kwargs": "Named Parameters",
+      "metadata": "Metadata",
+      "raw_data": "Raw Data (JSON)"
+    },
+    "stats": {
+      "total": "Total in Queue"
     }
   }
 }

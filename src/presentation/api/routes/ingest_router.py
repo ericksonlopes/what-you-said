@@ -9,18 +9,22 @@ from fastapi import UploadFile, File, Form
 
 from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
+from src.application.dtos.enums.youtube_data_type import YoutubeDataType
 from src.application.use_cases.file_ingestion_use_case import FileIngestionUseCase
 from src.application.use_cases.web_scraping_use_case import WebScrapingUseCase
 from src.application.use_cases.youtube_ingestion_use_case import YoutubeIngestionUseCase
+from src.infrastructure.services.content_source_service import ContentSourceService
 from src.application.use_cases.diarization_ingestion_use_case import (
     DiarizationIngestionUseCase,
 )
 from src.application.workers import (
     run_file_ingestion_worker,
     run_youtube_ingestion_worker,
+    run_youtube_dispatcher_worker,
     run_web_ingestion_worker,
     run_diarization_ingestion_worker,
 )
+
 from src.config.logger import Logger
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
 from src.presentation.api.dependencies import (
@@ -29,13 +33,19 @@ from src.presentation.api.dependencies import (
     get_web_scraping_use_case,
     get_diarization_ingestion_use_case,
     get_task_queue_service,
+    get_cs_service,
+    get_current_user,
 )
+from src.domain.entities.user import User
 from src.presentation.api.schemas.ingest_schemas import (
     IngestResponse,
     YoutubeIngestRequest,
     FileUrlIngestRequest,
     WebIngestRequest,
     DiarizationIngestRequest,
+    ChannelPreviewRequest,
+    ChannelPreviewResponse,
+    ChannelVideoItem,
 )
 
 logger = Logger()
@@ -78,11 +88,50 @@ def ingest_youtube(
         reprocess=request.reprocess,
     )
 
-    # If it's a reprocess request, we always run it in background
-    if request.reprocess:
-        logger.info("Running reprocessing in background via queue")
+    # If it's a reprocess request or multiple videos, we always run it in background
+    is_bulk = request.video_urls and len(request.video_urls) > 0
+    is_playlist = request.data_type == "playlist"
+    is_channel = request.data_type == "channel" or (
+        request.video_url
+        and any(x in request.video_url for x in ["/channel/", "/c/", "/user/", "@"])
+    )
+
+    if is_channel:
+        cmd.data_type = YoutubeDataType.CHANNEL
+
+    if request.reprocess or is_bulk or is_playlist or is_channel:
+        logger.info(
+            "Running ingestion in background via queue",
+            context={
+                "reason": "reprocess"
+                if request.reprocess
+                else ("bulk/playlist" if not is_channel else "channel")
+            },
+        )
+
+    # Determine which worker to use: dispatcher for playlists/channels/bulk, ingestion for single
+    is_bulk_processing = is_bulk or is_playlist or is_channel
+    worker = (
+        run_youtube_dispatcher_worker
+        if is_bulk_processing
+        else run_youtube_ingestion_worker
+    )
+
+    if request.reprocess or is_bulk_processing:
+        # Determine the reason for background processing
+        if request.reprocess:
+            reason = "reprocess"
+        elif is_channel:
+            reason = "channel"
+        else:
+            reason = "bulk/playlist"
+
+        logger.info(
+            "Running ingestion in background via queue", context={"reason": reason}
+        )
+
         task_queue.enqueue(
-            run_youtube_ingestion_worker,
+            worker,
             cmd,
             task_title=request.title or request.video_url or "YouTube Ingestion",
             metadata={"job_id": str(request.ingestion_job_id)}
@@ -90,7 +139,8 @@ def ingest_youtube(
             else {},
         )
         return IngestResponse(
-            skipped=False, reason="Reprocessing started in background queue."
+            skipped=False,
+            reason="Ingestion started in background queue.",
         )
 
     try:
@@ -364,7 +414,7 @@ async def ingest_diarization(
             diarization_id=UUID(request.diarization_id),
             subject_id=UUID(request.subject_id),
             subject_name=request.subject_name,
-            title=request.title,
+            name=request.name,
             language=request.language,
             tokens_per_chunk=request.tokens_per_chunk,
             tokens_overlap=request.tokens_overlap,
@@ -376,7 +426,7 @@ async def ingest_diarization(
     task_queue.enqueue(
         run_diarization_ingestion_worker,
         cmd,
-        task_title=request.title or "Diarization Ingestion",
+        task_title=request.name or "Diarization Ingestion",
         metadata={"diarization_id": request.diarization_id},
     )
 
@@ -384,3 +434,92 @@ async def ingest_diarization(
         "message": "Diarization ingestion started in background.",
         "diarization_id": request.diarization_id,
     }
+
+
+@router.post(
+    "/youtube/channel/preview",
+    response_model=ChannelPreviewResponse,
+    responses={
+        400: {"description": "Invalid channel URL"},
+        500: {"description": "Failed to extract channel videos"},
+    },
+)
+def preview_youtube_channel(
+    request: Annotated[ChannelPreviewRequest, Body()],
+    cs_service: Annotated[
+        ContentSourceService,
+        Depends(get_cs_service),
+    ],
+    user: Annotated[User, Depends(get_current_user)],
+):
+    """List all videos from a YouTube channel with deduplication info.
+
+    Returns video metadata and marks which ones are already ingested.
+    """
+    logger.info(
+        "API request to preview YouTube channel",
+        context={"channel_url": request.channel_url},
+    )
+
+    if not request.channel_url or not request.channel_url.strip():
+        raise HTTPException(status_code=400, detail="channel_url is required")
+
+    try:
+        from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+        from src.domain.entities.enums.source_type_enum_entity import SourceType
+
+        extractor = YoutubeExtractor()
+        videos, channel_name = extractor.extract_channel_videos(
+            request.channel_url.strip()
+        )
+
+        if not videos:
+            return ChannelPreviewResponse(
+                channel_name=channel_name or "",
+                total_videos=0,
+                videos=[],
+            )
+
+        # Bulk deduplication: check which videos already exist
+        existing_sources: set[str] = set()
+        if request.subject_id:
+            try:
+                from uuid import UUID as _UUID
+
+                subject_uuid = _UUID(request.subject_id)
+                existing_sources = cs_service.get_existing_external_sources(
+                    subject_id=subject_uuid,
+                    source_type=SourceType.YOUTUBE,
+                )
+            except ValueError as e:
+                logger.warning(
+                    "Could not check existing sources for dedup",
+                    context={"error": str(e)},
+                )
+
+        video_items = [
+            ChannelVideoItem(
+                video_id=v["video_id"],
+                title=v["title"],
+                url=v["url"],
+                duration=v.get("duration"),
+                thumbnail=v.get("thumbnail"),
+                already_ingested=v["video_id"] in existing_sources,
+            )
+            for v in videos
+        ]
+
+        return ChannelPreviewResponse(
+            channel_name=channel_name or "",
+            total_videos=len(video_items),
+            videos=video_items,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(e, context={"action": "preview_youtube_channel"})
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to extract channel videos: {str(e)}",
+        )

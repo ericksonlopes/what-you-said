@@ -484,8 +484,9 @@ def get_list_s3_files_use_case(
 
 def get_delete_diarization_use_case(
     db: Session = Depends(get_db),
+    cs_svc: ContentSourceService = Depends(get_cs_service),
 ) -> DeleteDiarizationUseCase:
-    return DeleteDiarizationUseCase(db)
+    return DeleteDiarizationUseCase(db, cs_service=cs_svc)
 
 
 def get_generate_speaker_url_use_case(

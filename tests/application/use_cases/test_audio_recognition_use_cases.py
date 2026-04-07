@@ -48,7 +48,7 @@ class TestAudioRecognitionUseCases:
             yield
 
     def test_retrieve_history(self, sqlite_memory):
-        record = DiarizationRecord(id="1", title="Test", segments=[])
+        record = DiarizationRecord(id="1", name="Test", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
@@ -61,7 +61,7 @@ class TestAudioRecognitionUseCases:
         assert len(history) == 1
 
     def test_generate_speaker_url(self, sqlite_memory):
-        record = DiarizationRecord(id="1", title="T", storage_path="p", segments=[])
+        record = DiarizationRecord(id="1", name="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
@@ -78,7 +78,7 @@ class TestAudioRecognitionUseCases:
             use_case.execute("non-existent", "S0")
 
     def test_generate_speaker_url_no_storage_path(self, sqlite_memory):
-        record = DiarizationRecord(id="2", title="T", storage_path=None, segments=[])
+        record = DiarizationRecord(id="2", name="T", storage_path=None, segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
@@ -87,7 +87,7 @@ class TestAudioRecognitionUseCases:
             use_case.execute("2", "S0")
 
     def test_list_s3_files(self, sqlite_memory):
-        record = DiarizationRecord(id="1", title="T", storage_path="p", segments=[])
+        record = DiarizationRecord(id="1", name="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
@@ -111,7 +111,7 @@ class TestAudioRecognitionUseCases:
 
     @patch("shutil.rmtree")
     def test_identify_speakers(self, mock_rm, sqlite_memory):
-        record = DiarizationRecord(id="1", title="T", storage_path="p", segments=[])
+        record = DiarizationRecord(id="1", name="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
@@ -140,7 +140,7 @@ class TestAudioRecognitionUseCases:
             use_case.execute("non-existent")
 
     def test_identify_speakers_empty_db(self, sqlite_memory):
-        record = DiarizationRecord(id="3", title="T", storage_path="p", segments=[])
+        record = DiarizationRecord(id="3", name="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
@@ -154,7 +154,7 @@ class TestAudioRecognitionUseCases:
                 use_case.execute("3")
 
     def test_identify_speakers_no_storage_path(self, sqlite_memory):
-        record = DiarizationRecord(id="4", title="T", storage_path=None, segments=[])
+        record = DiarizationRecord(id="4", name="T", storage_path=None, segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
@@ -169,7 +169,7 @@ class TestAudioRecognitionUseCases:
 
     @patch("shutil.rmtree")
     def test_identify_speakers_cleanup_error(self, mock_rm, sqlite_memory):
-        record = DiarizationRecord(id="5", title="T", storage_path="p", segments=[])
+        record = DiarizationRecord(id="5", name="T", storage_path="p", segments=[])
         sqlite_memory.add(record)
         sqlite_memory.commit()
         mock_rm.side_effect = Exception("Cleanup failed")

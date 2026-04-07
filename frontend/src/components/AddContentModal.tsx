@@ -63,7 +63,19 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
     const [tokensOverlap, setTokensOverlap] = useState(50);
     const [activeStrategy, setActiveStrategy] = useState<string>('balanced');
     const [activeTab, setActiveTab] = useState<'source' | 'settings'>('source');
-    const [youtubeDataType, setYoutubeDataType] = useState<'video' | 'playlist'>('video');
+    const [youtubeDataType, setYoutubeDataType] = useState<'video' | 'playlist' | 'channel'>('video');
+
+    // Channel state
+    interface ChannelVideo {
+      video_id: string;
+      title: string;
+      url: string;
+      duration: number | null;
+      thumbnail: string | null;
+      already_ingested: boolean;
+    }
+    const [channelVideos, setChannelVideos] = useState<ChannelVideo[]>([]);
+    const [selectedVideoIds, setSelectedVideoIds] = useState<Set<string>>(new Set());
     const [fileInputMode, setFileInputMode] = useState<'upload' | 'url'>('upload');
     const [doOcr, setDoOcr] = useState(false);
     const [webDepth, setWebDepth] = useState(1);
@@ -86,6 +98,9 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
             if (subject && (selectedSubjects.length !== 1 || selectedSubjects[0].id !== targetSubjectId)) {
                 selectOnlySubject(subject);
             }
+            // Clear channel preview when subject changes to avoid stale 'already ingested' status
+            setChannelVideos([]);
+            setSelectedVideoIds(new Set());
         }
     }, [targetSubjectId, isOpen, subjects, selectedSubjects, selectOnlySubject]);
 
@@ -100,13 +115,31 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
 
         try {
             if (contentType === 'youtube') {
-                startIngestion('youtube', {
-                    url: inputValue,
-                    subject: targetSubject,
-                    tokensPerChunk,
-                    tokensOverlap,
-                    youtubeDataType
-                });
+                if (youtubeDataType === 'channel') {
+                    // Channel mode: send selected video URLs
+                    const selectedUrls = channelVideos
+                        .filter(v => selectedVideoIds.has(v.video_id))
+                        .map(v => v.url);
+                    if (selectedUrls.length === 0) {
+                        addToast(t('ingestion.channel.no_selection'), 'error');
+                        return;
+                    }
+                    startIngestion('youtube', {
+                        videoUrls: selectedUrls,
+                        subject: targetSubject,
+                        tokensPerChunk,
+                        tokensOverlap,
+                        youtubeDataType: 'video', // Send as individual videos
+                    });
+                } else {
+                    startIngestion('youtube', {
+                        url: inputValue,
+                        subject: targetSubject,
+                        tokensPerChunk,
+                        tokensOverlap,
+                        youtubeDataType
+                    });
+                }
             } else if (contentType === 'web') {
                 setUploadStatus('chunking');
                 setProgress(30);
@@ -149,6 +182,8 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
             setSelectedFile(null);
             setUploadStatus('idle');
             setProgress(0);
+            setChannelVideos([]);
+            setSelectedVideoIds(new Set());
         } catch (err) {
             console.error('Ingestion failed:', err);
             setUploadStatus('idle');
@@ -164,7 +199,9 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
     const selectedSource = SOURCES.find(s => s.id === contentType);
 
     const isSubmitDisabled = !selectedSource?.enabled || 
-        (contentType === 'youtube' && !inputValue.trim()) || 
+        !targetSubjectId ||
+        (contentType === 'youtube' && youtubeDataType !== 'channel' && !inputValue.trim()) || 
+        (contentType === 'youtube' && youtubeDataType === 'channel' && selectedVideoIds.size === 0) ||
         (contentType === 'web' && !inputValue.trim()) ||
         (contentType === 'pdf' && fileInputMode === 'upload' && !selectedFile) || 
         (contentType === 'pdf' && fileInputMode === 'url' && !inputValue.trim()) ||
@@ -287,6 +324,11 @@ export function AddContentModal({isOpen, onClose}: AddContentModalProps) {
                                                                 setYoutubeDataType={setYoutubeDataType}
                                                                 inputValue={inputValue}
                                                                 setInputValue={setInputValue}
+                                                                targetSubjectId={targetSubjectId}
+                                                                channelVideos={channelVideos}
+                                                                setChannelVideos={setChannelVideos}
+                                                                selectedVideoIds={selectedVideoIds}
+                                                                setSelectedVideoIds={setSelectedVideoIds}
                                                             />
                                                         )}
                                                         {contentType === 'web' && (

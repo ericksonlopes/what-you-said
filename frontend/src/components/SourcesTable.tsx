@@ -53,17 +53,19 @@ const getIcon = (type: string) => {
   }
 };
 
-const getStatusIconBgClass = (isDone: boolean, isFailed: boolean, isCancelled: boolean) => {
+const getStatusIconBgClass = (isDone: boolean, isFailed: boolean, isCancelled: boolean, isAwaiting: boolean) => {
   if (isDone) return 'bg-emerald-500/10 text-emerald-400/80 group-hover:text-emerald-400';
   if (isFailed) return 'bg-rose-500/10 text-rose-400/80 group-hover:text-rose-400';
   if (isCancelled) return 'bg-zinc-500/10 text-zinc-500 group-hover:text-zinc-400';
+  if (isAwaiting) return 'bg-blue-500/10 text-blue-400/80 group-hover:text-blue-400';
   return 'bg-amber-500/10 text-amber-400/80 group-hover:text-amber-400';
 };
 
-const getStatusBadgeClass = (isDone: boolean, isFailed: boolean, isCancelled: boolean) => {
+const getStatusBadgeClass = (isDone: boolean, isFailed: boolean, isCancelled: boolean, isAwaiting: boolean) => {
   if (isDone) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10 shadow-[0_4px_12px_rgba(16,185,129,0.1)]';
   if (isFailed) return 'bg-rose-500/10 text-rose-400 border-rose-500/10';
   if (isCancelled) return 'bg-zinc-500/10 text-zinc-500 border-zinc-500/10';
+  if (isAwaiting) return 'bg-blue-500/10 text-blue-400 border-blue-500/10 animate-pulse animate-glow';
   return 'bg-amber-500/10 text-amber-400 border-amber-500/10 animate-pulse animate-glow';
 };
 
@@ -160,7 +162,7 @@ export function SourcesTable({
               <th className="w-14 pl-5 py-4 text-center">{t('sources.table.headers.icon')}</th>
               <th className="w-[32%] pl-2 pr-4 py-4 text-left">{t('sources.table.title')}</th>
               <th className="w-32 px-4 py-4 text-left">{t('sources.table.headers.type_date')}</th>
-              <th className="w-24 px-4 py-4 text-center">{t('sources.table.status')}</th>
+              <th className="w-32 px-4 py-4 text-center">{t('sources.table.status')}</th>
               <th className="w-auto px-4 py-4 text-left">{t('sources.table.headers.model_dims')}</th>
               <th className="w-28 px-4 py-4 text-right">{t('sources.table.headers.volume')}</th>
               <th className="w-36 px-6 py-4 text-center">{t('sources.table.actions')}</th>
@@ -194,6 +196,7 @@ export function SourcesTable({
                   const isFailed = ['failed', 'error'].includes(source.processingStatus.toLowerCase());
                   const isDone = ['done', 'finished', 'active', 'ingested'].includes(source.processingStatus.toLowerCase());
                   const isCancelled = source.processingStatus.toLowerCase() === 'cancelled';
+                  const isAwaiting = source.processingStatus.toLowerCase() === 'awaiting_verification';
 
                   return (
                     <motion.tr
@@ -205,7 +208,7 @@ export function SourcesTable({
                       className="hover:bg-white/5 cursor-pointer transition-all group relative border-b border-transparent hover:border-white/5"
                     >
                       <td className="pl-5 pr-2 py-3">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${getStatusIconBgClass(isDone, isFailed, isCancelled)}`}>
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${getStatusIconBgClass(isDone, isFailed, isCancelled, isAwaiting)}`}>
                            <Icon className="w-4 h-4 transition-transform group-hover:scale-110" />
                         </div>
                       </td>
@@ -230,10 +233,22 @@ export function SourcesTable({
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-center">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${getStatusBadgeClass(isDone, isFailed, isCancelled)}`}>
-                            {source.processingStatus.toUpperCase()}
+                        <div className="flex flex-col items-center gap-1">
+                           <span 
+                            title={source.errorMessage || source.statusMessage || source.processingStatus}
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-wider whitespace-nowrap border transition-all ${getStatusBadgeClass(isDone, isFailed, isCancelled, isAwaiting)}`}
+                          >
+                            {isAwaiting ? t('common.status.awaiting_verification') : 
+                             isDone ? t('common.status.done') :
+                             isFailed ? t('common.status.failed') :
+                             isCancelled ? t('common.status.cancelled') :
+                             source.processingStatus.toUpperCase()}
                           </span>
+                          {(isFailed || source.statusMessage) && (
+                            <span className={`text-[8px] font-black uppercase tracking-tight text-center max-w-[100px] truncate ${isFailed ? 'text-rose-500' : 'text-blue-400'}`}>
+                              {source.errorMessage || source.statusMessage}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 min-w-0 overflow-hidden">

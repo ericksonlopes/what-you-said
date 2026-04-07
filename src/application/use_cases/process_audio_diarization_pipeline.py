@@ -31,10 +31,18 @@ logger = logging.getLogger(__name__)
 
 
 class ProcessAudioDiarizationPipelineUseCase:
-    def __init__(self, db: Session, event_bus: IEventBus | None = None):
+    REINFORCEMENT_THRESHOLD = 0.92
+
+    def __init__(
+        self,
+        db: Session,
+        event_bus: IEventBus | None = None,
+        cs_service: Any | None = None,
+    ):
         self.db = db
         self.repo = DiarizationRepository(db)
         self.event_bus = event_bus
+        self.cs_service = cs_service
         logger.info("Connecting to storage (MinIO)...")
         self.storage = StorageService()
         logger.info("Storage connection established, bucket=%s", self.storage.bucket)
@@ -100,22 +108,20 @@ class ProcessAudioDiarizationPipelineUseCase:
                 DiarizationStep.STARTING.value,
             )
 
-        audio_path, video_folder = (
-            None,
-            os.path.join(settings.audio.output_base, process_id),
-        )
+        video_folder = os.path.join(settings.audio.output_base, process_id)
+        audio_path = None
 
         try:
             # 1. Resolve audio and metadata
-            audio_path, external_source, yt_metadata = self._resolve_audio_source(
+            audio_raw_path, external_source, yt_metadata = self._resolve_audio_source(
                 source_type, source, language, process_id, diarization_id
             )
 
-            # 2. Prepare folders and move audio
-            clean_title = self._sanitize_folder_name(Path(audio_path).stem)
+            # 2. Prepare folders and workspace
+            display_name = self._resolve_display_name(audio_raw_path, yt_metadata)
             recognition_folder = os.path.join(video_folder, "recognition")
             audio_path = self._prepare_local_workspace(
-                audio_path, video_folder, process_id
+                audio_raw_path, video_folder, process_id
             )
 
             # 3. Diarization
@@ -133,27 +139,20 @@ class ProcessAudioDiarizationPipelineUseCase:
             )
 
             # 4. Export samples and Persist to DB
-            self._notify(
+            db_record = self._persist_results(
+                diarization_result,
+                recognition_folder,
+                display_name,
+                source_type,
+                external_source,
+                video_folder,
                 diarization_id,
-                DiarizationStatus.PROCESSING.value,
-                DiarizationStep.EXPORTING.value,
-            )
-            diarization_result.export_speaker_audio(output_dir=recognition_folder)
-            db_record = self.repo.save(
-                result=diarization_result,
-                title=clean_title,
-                source_type=source_type,
-                external_source=external_source,
-                folder=video_folder,
-                storage_path=None,
-                diarization_id=diarization_id,
             )
             diarization_id = cast(str, db_record.id)
 
             # 5. Upload & Recognition
             storage_prefix = f"processed/{diarization_id}/recognition"
             self.storage.upload_directory(recognition_folder, storage_prefix)
-
             self._update_record_metadata(db_record, storage_prefix, yt_metadata)
 
             recognition_data = {}
@@ -166,18 +165,17 @@ class ProcessAudioDiarizationPipelineUseCase:
                     self.db.commit()
 
             # 6. Finalize
-            self._notify(
+            self._finalize_pipeline(
                 diarization_id,
-                DiarizationStatus.COMPLETED.value,
-                f"Diarização de {clean_title} concluída!",
-            )
-            # Clear status_message for completed jobs
-            self.repo.update_status(
-                diarization_id, DiarizationStatus.COMPLETED.value, status_message=""
+                display_name,
+                source_type,
+                external_source,
+                language,
+                db_record,
             )
 
             return {
-                "title": clean_title,
+                "name": display_name,
                 "storage_path": storage_prefix,
                 "diarization_result": diarization_result,
                 "recognition": recognition_data,
@@ -185,6 +183,122 @@ class ProcessAudioDiarizationPipelineUseCase:
 
         finally:
             self._cleanup_local_files(video_folder, audio_path)
+
+    def _resolve_display_name(
+        self, audio_raw_path: str, yt_metadata: Optional[Any]
+    ) -> str:
+        original_title = Path(audio_raw_path).stem
+        if yt_metadata and hasattr(yt_metadata, "title") and yt_metadata.title:
+            return yt_metadata.title
+        return original_title
+
+    def _persist_results(
+        self,
+        result: Any,
+        recognition_folder: str,
+        display_name: str,
+        source_type: str,
+        external_source: str,
+        video_folder: str,
+        diarization_id: str | None,
+    ) -> Any:
+        self._notify(
+            diarization_id,
+            DiarizationStatus.PROCESSING.value,
+            DiarizationStep.EXPORTING.value,
+        )
+        # Export individual speaker samples (optimized with min_duration filter in Segment entity)
+        result.export_speaker_audio(output_dir=recognition_folder)
+
+        db_record = self.repo.save(
+            result=result,
+            name=display_name,
+            source_type=source_type,
+            external_source=external_source,
+            folder=video_folder,
+            storage_path=None,
+            diarization_id=diarization_id,
+        )
+        return db_record
+
+    def _finalize_pipeline(
+        self,
+        diarization_id: str,
+        display_name: str,
+        source_type: str,
+        external_source: str,
+        language: str | None,
+        db_record: Any,
+    ):
+        self._notify(
+            diarization_id,
+            DiarizationStatus.AWAITING_VERIFICATION.value,
+            f"Diarização de {display_name} concluída!",
+        )
+        # Update status for the job
+        self.repo.update_status(
+            diarization_id,
+            DiarizationStatus.AWAITING_VERIFICATION.value,
+            status_message="Aguardando revisão dos falantes",
+        )
+
+        # Create/Update ContentSource in AWAITING_VERIFICATION status
+        if self.cs_service:
+            try:
+                from src.domain.entities.enums.source_type_enum_entity import SourceType
+                from src.domain.entities.enums.content_source_status_enum import (
+                    ContentSourceStatus,
+                )
+
+                cs_source_type = (
+                    SourceType.YOUTUBE if source_type == "youtube" else SourceType.AUDIO
+                )
+                subject_id = getattr(db_record, "subject_id", None)
+
+                # Check if source already exists to avoid duplication
+                existing_source = self.cs_service.get_by_source_info(
+                    source_type=cs_source_type,
+                    external_source=external_source,
+                    subject_id=subject_id,
+                )
+
+                source_metadata = {
+                    **(cast(dict, db_record.source_metadata) or {}),
+                    "diarization_id": diarization_id,
+                }
+
+                if existing_source:
+                    logger.info(
+                        "Found existing ContentSource %s. Updating for diarization %s",
+                        existing_source.id,
+                        diarization_id,
+                    )
+                    self.cs_service.update_processing_status(
+                        content_source_id=existing_source.id,
+                        status=ContentSourceStatus.AWAITING_VERIFICATION,
+                        status_message="Aguardando revisão dos falantes",
+                    )
+                    # Merge metadata
+                    self.cs_service.update_metadata(
+                        content_source_id=existing_source.id, metadata=source_metadata
+                    )
+                else:
+                    self.cs_service.create_source(
+                        subject_id=subject_id,
+                        source_type=cs_source_type,
+                        external_source=external_source,
+                        status=ContentSourceStatus.ACTIVE,
+                        processing_status=ContentSourceStatus.AWAITING_VERIFICATION.value,
+                        title=display_name,
+                        language=language,
+                        source_metadata=source_metadata,
+                    )
+                    logger.info(
+                        "Created shallow ContentSource for diarization %s",
+                        diarization_id,
+                    )
+            except Exception as e:
+                logger.error("Failed to create/update ContentSource: %s", e)
 
     def _resolve_audio_source(
         self,
@@ -203,12 +317,17 @@ class ProcessAudioDiarizationPipelineUseCase:
 
         yt_metadata = None
         if source_type == "youtube":
-            video_id = self._extract_video_id(source)
+            video_id = YoutubeExtractor.get_video_id(source)
+            if not video_id:
+                raise ValueError(f"Invalid YouTube source: {source}")
+
             yt_extractor = YoutubeExtractor(
                 video_id=video_id, language=language or "pt"
             )
+            # Use the full URL for downloading to be safe
+            download_url = f"https://www.youtube.com/watch?v={video_id}"
             audio_path = yt_extractor.download_audio(
-                source, output_dir=settings.audio.temp_download_dir
+                download_url, output_dir=settings.audio.temp_download_dir
             )
             if not audio_path:
                 raise RuntimeError("YouTube download failed")
@@ -217,7 +336,9 @@ class ProcessAudioDiarizationPipelineUseCase:
                 yt_metadata = yt_extractor.extract_metadata()
             except Exception as e:
                 logger.warning("Failed to extract YouTube metadata: %s", e)
-            return audio_path, source, yt_metadata
+
+            # Return normalized ID as external_source
+            return audio_path, video_id, yt_metadata
 
         if source_type == "upload":
             s3_key = unquote(source.replace(f"s3://{self.storage.bucket}/", ""))
@@ -282,12 +403,15 @@ class ProcessAudioDiarizationPipelineUseCase:
         reinforced_paths = {}
         for spk, match in batch.results.items():
             best_match = match.best_match
-            if best_match:
+            best_score = match.best_score or 0.0
+
+            if best_match and best_score >= self.REINFORCEMENT_THRESHOLD:
                 try:
                     logger.info(
-                        "Auto-reinforcing voice profile '%s' with segment '%s'",
+                        "Auto-reinforcing voice profile '%s' with segment '%s' (score: %.4f)",
                         best_match,
                         spk,
+                        best_score,
                     )
                     _, s3_path = voice_db.add(
                         name=best_match, audio_path=match.audio_path
@@ -300,6 +424,14 @@ class ProcessAudioDiarizationPipelineUseCase:
                         best_match,
                         e,
                     )
+            elif best_match:
+                logger.info(
+                    "Skipping reinforcement for '%s' (match: %s) - score %.4f below threshold %.2f",
+                    spk,
+                    best_match,
+                    best_score,
+                    self.REINFORCEMENT_THRESHOLD,
+                )
 
         return {
             "mapping": batch.mapping,

@@ -14,10 +14,11 @@ class RetrieveProcessedAudioHistoryUseCase:
         self, limit: int = 10, offset: int = 0, subject_id: str | None = None
     ) -> list[dict]:
         records = self.repo.get_all(limit=limit, offset=offset, subject_id=subject_id)
+
         return [
             {
                 "id": r.id,
-                "title": r.title,
+                "name": r.name,
                 "subject_id": r.subject_id,
                 "source_type": r.source_type,
                 "external_source": r.external_source,

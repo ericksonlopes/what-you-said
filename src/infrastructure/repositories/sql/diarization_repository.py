@@ -1,4 +1,5 @@
 from typing import List, Optional, cast
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
@@ -15,7 +16,7 @@ class DiarizationRepository:
 
     def create_pending(
         self,
-        title: str,
+        name: str,
         source_type: str,
         external_source: str,
         language: str,
@@ -23,13 +24,15 @@ class DiarizationRepository:
         subject_id: str | None = None,
     ) -> DiarizationRecord:
         record = DiarizationRecord(
-            title=title,
+            name=name,
             source_type=source_type,
             external_source=external_source,
             language=language,
             status=DiarizationStatus.PENDING.value,
             model_size=model_size,
-            subject_id=subject_id,
+            subject_id=UUID(subject_id)
+            if subject_id and isinstance(subject_id, str)
+            else subject_id,
         )
         self.db.add(record)
         self.db.commit()
@@ -39,7 +42,7 @@ class DiarizationRepository:
     def save(
         self,
         result: DiarizationResult,
-        title: str,
+        name: str,
         source_type: str,
         external_source: str,
         folder: str,
@@ -49,7 +52,7 @@ class DiarizationRepository:
         if diarization_id:
             db_diarization = self.get_by_id(diarization_id)
             if db_diarization:
-                db_diarization.title = title  # type: ignore
+                db_diarization.name = name  # type: ignore
                 db_diarization.language = result.language  # type: ignore
                 db_diarization.duration = result.duration  # type: ignore
                 db_diarization.folder_path = folder  # type: ignore
@@ -61,7 +64,7 @@ class DiarizationRepository:
                 return db_diarization
 
         db_diarization = DiarizationRecord(
-            title=title,
+            name=name,
             source_type=source_type,
             external_source=external_source,
             language=result.language,
@@ -96,11 +99,16 @@ class DiarizationRepository:
         return record
 
     def get_all(
-        self, limit: int = 10, offset: int = 0, subject_id: str | None = None
+        self,
+        limit: int = 10,
+        offset: int = 0,
+        subject_id: str | object | None = None,
     ) -> List[DiarizationRecord]:
+
         query = self.db.query(DiarizationRecord)
         if subject_id:
-            query = query.filter(DiarizationRecord.subject_id == subject_id)
+            parsed_id = UUID(subject_id) if isinstance(subject_id, str) else subject_id
+            query = query.filter(DiarizationRecord.subject_id == parsed_id)
 
         result = (
             query.order_by(DiarizationRecord.created_at.desc())
@@ -137,6 +145,25 @@ class DiarizationRepository:
         if not record:
             return None
         record.recognition_results = recognition_results  # type: ignore
+        self.db.commit()
+        self.db.refresh(record)
+        return record
+
+    def reset_for_reprocessing(
+        self, diarization_id: str
+    ) -> Optional[DiarizationRecord]:
+        """Resets the record for a new diarization run."""
+        record = self.get_by_id(diarization_id)
+        if not record:
+            return None
+
+        record.status = DiarizationStatus.PENDING.value  # type: ignore
+        record.error_message = None  # type: ignore
+        record.status_message = "Pronto para reprocessamento"  # type: ignore
+        record.segments = None  # type: ignore
+        record.recognition_results = None  # type: ignore
+        record.duration = 0.0  # type: ignore
+
         self.db.commit()
         self.db.refresh(record)
         return record

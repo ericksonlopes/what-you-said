@@ -27,6 +27,8 @@ class ContentSourceEntity(BaseModel):
     max_tokens_per_chunk: Optional[int] = Field(default=None)
     status: str = Field(default="active")
     chunks: int = Field(default=0)
+    status_message: Optional[str] = Field(default=None)
+    error_message: Optional[str] = Field(default=None)
     source_metadata: Optional[dict] = Field(
         default=None, description="Source-specific metadata in JSON format"
     )

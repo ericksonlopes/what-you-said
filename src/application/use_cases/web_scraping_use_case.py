@@ -266,7 +266,7 @@ class WebScrapingUseCase:
 
             self.cs_service.finish_ingestion(
                 content_source_id=source.id,
-                embedding_model=self.model_loader_service.model_name,
+                embedding_model=self.model_loader_service.model_name or "unknown",
                 dimensions=int(dims) if dims is not None else 0,
                 chunks=len(chunks),
                 total_tokens=total_tokens,
@@ -311,7 +311,9 @@ class WebScrapingUseCase:
                 )
             if source:
                 self.cs_service.update_processing_status(
-                    content_source_id=source.id, status=ContentSourceStatus.FAILED
+                    content_source_id=source.id,
+                    status=ContentSourceStatus.FAILED,
+                    error_message=str(e),
                 )
             raise
 

@@ -65,7 +65,7 @@ export const TranscriptPanel: React.FC<TranscriptPanelProps> = ({
                     <button
                         onClick={onSave}
                         disabled={isSaving || !hasContextSelected}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!hasContextSelected ? 'bg-zinc-800 text-zinc-500 opacity-50' : 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${(!hasContextSelected || isSaving) ? 'bg-zinc-800 text-zinc-500 opacity-50 cursor-not-allowed' : 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]'}`}
                         title={!hasContextSelected ? t('diarization.transcript.select_context_hint') : ''}
                     >
                         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 stroke-[3px]" />}

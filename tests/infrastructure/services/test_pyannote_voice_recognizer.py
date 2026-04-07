@@ -80,11 +80,11 @@ class TestVoiceRecognizer:
                         assert res.results["s1"].best_match == "A"
 
     def test_get_inference_internal(self):
-        with patch("pyannote.audio.Model") as mock_model_cls:
-            with patch("pyannote.audio.Inference") as mock_inf_cls:
-                with patch("torch.device"):
-                    recognizer = VoiceRecognizer(MagicMock(), hf_token="f")
-                    inf = recognizer._get_inference()
-                    assert inf is not None
-                    mock_model_cls.from_pretrained.assert_called_once()
-                    mock_inf_cls.assert_called_once()
+        with patch("src.infrastructure.services.pyannote_voice_recognizer.model_loader") as mock_loader:
+            mock_loader.get_voice_inference.return_value = MagicMock()
+            recognizer = VoiceRecognizer(MagicMock(), hf_token="f")
+            inf = recognizer._get_inference()
+            assert inf is not None
+            mock_loader.get_voice_inference.assert_called_once_with(
+                hf_token="f", device=recognizer._device
+            )

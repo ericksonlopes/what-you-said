@@ -18,7 +18,12 @@
       "go_to_source": "Ver na fonte",
       "upload": "Fazer Upload",
       "none_found": "Nenhum resultado encontrado",
-      "clear_filters": "Tente ajustar sua busca ou limpar os filtros"
+      "clear_filters": "Tente ajustar sua busca ou limpar os filtros",
+      "selectAll": "Selecionar todos",
+      "deselectAll": "Desmarcar todos"
+    },
+    "errors": {
+      "general": "Ocorreu um erro inesperado. Tente novamente."
     },
     "status": {
       "pending": "PENDENTE",
@@ -35,10 +40,15 @@
       "duplicate": "DUPLICADO",
       "cancelled": "CANCELADO",
       "reprocessed": "REPROCESSADO",
+      "awaiting_verification": "AGUARDANDO REVISÃO",
       "na": "n/d"
     },
     "labels": {
       "preview": "Prévia"
+    },
+    "hints": {
+      "select_subject": "Selecione uma Base de Conhecimento para habilitar",
+      "no_subjects": "Crie uma Base de Conhecimento primeiro"
     }
   },
   "sidebar": {
@@ -64,14 +74,16 @@
       "sources": "Fontes de Conteúdo",
       "chunks": "Fontes > Chunks",
       "activity": "Monitor de Atividade",
+      "queue": "Fila de Tarefas (Redis)",
       "knowledge_contexts": "Bases de Conhecimento",
+
       "database": "Detalhes da Fonte",
       "voice_profiles": "Perfis de Voz"
     },
     "groups": {
       "search": "Pesquisas",
       "contexts": "Contextos",
-      "data": "Dados",
+      "data": "Ingestão de Dados",
       "tools": "Diarização & Reconhecimento",
       "monitor": "Monitor"
     },
@@ -404,8 +416,22 @@
         "css_selector_placeholder": ".conteudo-principal ou #artigo",
         "exclude_links": "Excluir links",
         "exclude_links_desc": "Remove os links do conteúdo extraído para reduzir o ruído e melhorar a qualidade do RAG.",
-        "web_url": "URL da Página"
+        "web_url": "URL da Página",
+        "channel": "Canal",
+        "channel_url": "URL do Canal",
+        "channel_desc": "Lista todos os vídeos do canal para você selecionar quais deseja ingerir."
       }
+    },
+    "channel": {
+      "fetch_btn": "Buscar Vídeos",
+      "fetching": "Buscando...",
+      "select_all_new": "Selecionar novos",
+      "deselect_all": "Desmarcar todos",
+      "selected_count": "{{count}} de {{total}} selecionados",
+      "already_ingested": "Já ingerido",
+      "no_videos": "Nenhum vídeo encontrado neste canal.",
+      "no_new_videos": "Todos os vídeos deste canal já foram ingeridos.",
+      "no_selection": "Selecione pelo menos um vídeo para ingerir."
     },
     "messages": {
       "success": "Ingestão iniciada com sucesso!",
@@ -517,10 +543,12 @@
       "delete": "Excluir"
     },
     "status": {
+      "all": "Todos os Status",
       "completed": "Concluído",
       "waiting": "Aguardando",
       "failed": "Falhou",
       "in_queue": "Na fila",
+      "awaiting_verification": "Aguardando Revisão",
       "processing_default": "Analisando áudio e separando as vozes no servidor...",
       "check_status": "Verificar Status",
       "still_processing": "Ainda processando...",
@@ -530,7 +558,11 @@
         "downloading": "Baixando...",
         "diarizing": "Diarizando...",
         "exporting": "Exportando...",
-        "recognizing": "Reconhecendo..."
+        "recognizeVoices": "Reconhecimento Vocal",
+        "fetchChannelVideos": "Buscar Vídeos do Canal",
+        "selectVideos": "Selecionar Vídeos",
+        "previewingChannel": "Visualizando Canal",
+        "videosSelected": "Vídeo(s) selecionado(s)"
       }
     },
     "detail": {
@@ -544,7 +576,7 @@
       "id_speakers_help": "Identifique os locutores para finalizar a transcrição.",
       "id_speakers_title": "Identificação de Locutores",
       "id_speakers_desc": "Ouvimos {{count}} vozes distintas no arquivo. Ouça os trechos extraídos e confirme a identidade de cada pessoa antes de gerar a transcrição final.",
-      "auto_identify": "Auto-Identificar",
+      "auto_identify": "Verificar Nomes",
       "voice_label": "Voz {{index}}",
       "confidence": "Confiança",
       "unknown_speaker": "Desconhecido",
@@ -554,12 +586,20 @@
       "generate_transcript": "Gerar Transcrição Final",
       "final_transcript": "Transcrição Final",
       "segments_count": "{{count}} segmentos gerados",
-      "index_base": "Indexar na Base"
+      "index_base": "Indexar na Base",
+      "original_source": "Fonte Original",
+      "unique_id": "ID Único",
+      "detected_language": "Idioma Detectado",
+      "model_size": "Tamanho do Modelo",
+      "quick_actions": "Ações Rápidas",
+      "open": "Abrir",
+      "close_details": "Fechar Detalhes",
+      "view_metadata": "Ver Metadados"
     },
     "identification": {
       "title": "Identificação de Oradores",
       "subtitle": "Atribua nomes às vozes reconhecidas",
-      "auto_id": "Auto-ID",
+      "auto_id": "Sugerir IDs",
       "unknown": "Desconhecido",
       "use_label": "Usar Label ({{label}})",
       "known_profiles": "Perfis Conhecidos",
@@ -578,13 +618,16 @@
     },
     "voice_training": {
       "title": "Treinar Perfil de Voz",
+      "reinforce_title": "Reforçar Perfil de Voz",
       "sample_label": "Amostra do Orador",
       "playing": "Reproduzindo...",
       "listen_sample": "Ouvir Amostra",
       "profile_name_label": "Nome do Perfil",
       "profile_name_placeholder": "Ex: João da Silva",
       "description": "Isso criará um novo perfil de voz que poderá ser identificado automaticamente em outros arquivos.",
-      "submit_btn": "Criar Perfil"
+      "reinforce_description": "Esta amostra será adicionada ao perfil existente para melhorar a precisão do reconhecimento.",
+      "submit_btn": "Criar Perfil",
+      "reinforce_submit_btn": "Reforçar Perfil"
     },
     "modal": {
       "new_title": "Nova Diarização",
@@ -592,7 +635,7 @@
       "youtube_tab": "Link do YouTube",
       "drag_drop": "Clique para procurar ou arraste o arquivo aqui",
       "supported_formats": "Suporta MP3, WAV, MP4, WebM",
-      "video_url_label": "URL do Vídeo",
+      "video_url_label": "URL do Vídeo, Playlist ou Canal",
       "language_label": "Idioma",
       "model_label": "Modelo",
       "target_context": "Contexto de Destino",
@@ -609,7 +652,9 @@
         "pt": "Português",
         "en": "English",
         "es": "Español"
-      }
+      },
+      "fetchChannelVideos": "Buscar Vídeos do Canal",
+      "selectVideos": "Selecionar Vídeos"
     },
     "train_modal": {
       "title": "Treinamento de Voz",
@@ -630,14 +675,18 @@
       "save_success": "Transcrição indexada na base com sucesso",
       "save_error": "Falha ao salvar transcrição",
       "train_success": "Perfil de voz \"{{name}}\" salvo com sucesso!",
+      "reinforce_success": "Perfil de voz \"{{name}}\" reforçado com sucesso!",
       "train_error": "Falha ao treinar perfil de voz",
       "no_selection_error": "Nenhuma transcrição ou contexto selecionado",
       "youtube_link_error": "Insira um link do YouTube",
       "file_selection_error": "Selecione um arquivo",
       "playback_error": "Falha ao reproduzir áudio",
       "audio_fetch_error": "Falha ao obter áudio do locutor",
-      "load_error": "Falha ao carregar diarizações"
-    }
+      "load_error": "Falha ao carregar diarizações",
+      "reprocess_success": "Reprocessamento iniciado com sucesso!",
+      "reprocess_error": "Falha ao iniciar reprocessamento"
+    },
+    "reprocess_confirmation": "Tem certeza que deseja reprocessar esta diarização? Todos os segmentos e identificações atuais serão perdidos permanentemente."
   },
   "voices": {
     "title": "Vozes Reconhecidas",
@@ -667,5 +716,21 @@
     "card": {
       "created_at": "Criado em"
     }
+  },
+  "queue": {
+    "title": "Fila de Processamento",
+    "subtitle": "Estado técnico bruto da fila de tarefas no Redis.",
+    "empty": "Nenhuma tarefa aguardando na fila no momento.",
+    "task": {
+      "function": "Função",
+      "enqueued": "Entrou em",
+      "arguments": "Argumentos",
+      "kwargs": "Parâmetros Nomeados",
+      "metadata": "Metadados",
+      "raw_data": "Dados Brutos (JSON)"
+    },
+    "stats": {
+      "total": "Total na Fila"
+    }
   }
-}
+}

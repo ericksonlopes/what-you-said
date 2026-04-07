@@ -2,7 +2,7 @@ import json
 import threading
 import time
 from dataclasses import asdict, is_dataclass
-from typing import Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, cast
 from uuid import UUID
 
 from src.config.logger import Logger
@@ -114,6 +114,63 @@ class RedisTaskQueueService(ITaskQueue):
                 "queue": self._queue_name,
             },
         )
+
+    def peek_queue(self, limit: int = 50) -> list[dict]:
+        """Fetch pending tasks from the Redis queue without removing them.
+
+        Returns a list of task data dictionaries.
+        """
+        try:
+            # Fetch raw JSON payloads from the list
+            # Redis list is LPUSH (front is index 0)
+            raw_tasks = cast(list[bytes], self._redis.lrange(self._queue_name, 0, limit - 1))
+            tasks = []
+            for payload in raw_tasks:
+                try:
+                    task_data = json.loads(payload.decode("utf-8"))
+                    tasks.append(task_data)
+                except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                    logger.warning(
+                        "Failed to decode task from Redis queue",
+                        context={"error": str(e)},
+                    )
+            return tasks
+        except Exception as e:
+            logger.error("Error peeking at Redis queue", context={"error": str(e)})
+            return []
+
+    def clear_queue(self):
+        """Remove all pending tasks from the Redis list."""
+        try:
+            self._redis.delete(self._queue_name)
+            logger.info("Redis task queue cleared", context={"queue": self._queue_name})
+        except Exception as e:
+            logger.error("Failed to clear Redis queue", context={"error": str(e)})
+
+    def remove_task_by_index(self, index: int) -> Optional[dict]:
+        """Remove a specific task from the Redis list by its index and return its data."""
+        try:
+            # 1. Get the payload at the specified index
+            payload = cast(Optional[bytes], self._redis.lindex(self._queue_name, index))
+            if payload:
+                # 2. Remove exactly ONE instance of this payload
+                self._redis.lrem(self._queue_name, 1, cast(Any, payload))
+                logger.info(
+                    "Task removed from Redis queue",
+                    context={"index": index, "queue": self._queue_name},
+                )
+                # 3. Return the deserialized task data
+                try:
+                    return json.loads(payload.decode("utf-8"))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    return None
+            return None
+        except Exception as e:
+            logger.error(
+                "Failed to remove task from Redis queue",
+                context={"index": index, "error": str(e)},
+            )
+            return None
 
     def _deserialize_args(self, raw_args: list) -> list:
         """Reconstruct dataclass command objects from serialized dicts."""

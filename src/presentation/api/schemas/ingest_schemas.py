@@ -60,8 +60,28 @@ class DiarizationIngestRequest(BaseModel):
     diarization_id: str
     subject_id: str
     subject_name: Optional[str] = None
-    title: Optional[str] = None
+    name: Optional[str] = None
     language: str = "pt"
     tokens_per_chunk: int = 512
     tokens_overlap: int = 50
     reprocess: bool = False
+
+
+class ChannelPreviewRequest(BaseModel):
+    channel_url: str
+    subject_id: Optional[str] = None
+
+
+class ChannelVideoItem(BaseModel):
+    video_id: str
+    title: str
+    url: str
+    duration: Optional[int] = None
+    thumbnail: Optional[str] = None
+    already_ingested: bool = False
+
+
+class ChannelPreviewResponse(BaseModel):
+    channel_name: str
+    total_videos: int
+    videos: List[ChannelVideoItem]

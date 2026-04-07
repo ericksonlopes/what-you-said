@@ -14,6 +14,8 @@ from src.domain.entities.enums.source_type_enum_entity import SourceType
 from src.infrastructure.repositories.sql.diarization_repository import (
     DiarizationRepository,
 )
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
+from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.content_source_service import ContentSourceService
 from src.infrastructure.services.embedding_service import EmbeddingService
@@ -109,9 +111,9 @@ class DiarizationIngestionUseCase:
             if not full_text:
                 raise ValueError("No segments found in diarization record")
 
-            display_title = cmd.title or cast(str, record.title) or "Transcrição"
+            display_name = cmd.name or cast(str, record.name) or "Transcrição"
             source = self._get_or_create_source(
-                source_type, external_source, subject.id, display_title, cmd, record
+                source_type, external_source, subject.id, display_name, cmd, record
             )
 
             # Generate chunks and Embeddings
@@ -125,7 +127,7 @@ class DiarizationIngestionUseCase:
             )
 
             split_docs = self._generate_split_docs(
-                full_text, display_title, external_source, source_type, cmd, record
+                full_text, display_name, external_source, source_type, cmd, record
             )
 
             # Persist Chunks
@@ -147,6 +149,25 @@ class DiarizationIngestionUseCase:
             # Finalize
             self._finalize_ingestion(ingestion, source, chunks, cmd)
 
+            # Update Diarization record status to COMPLETED
+            self.diarization_repo.update_status(
+                diarization_id=str(cmd.diarization_id),
+                status=DiarizationStatus.COMPLETED.value,
+                status_message="Ingestão concluída com sucesso",
+                error_message="",  # Clear any previous error
+            )
+
+            # Notify frontend that diarization is fully done
+            self.event_bus.publish(
+                "ingestion_status",
+                {
+                    "type": "diarization",
+                    "id": str(cmd.diarization_id),
+                    "status": "done",
+                    "message": "Diarização indexada com sucesso",
+                },
+            )
+
             return {
                 "diarization_id": str(cmd.diarization_id),
                 "created_chunks": len(chunks),
@@ -160,6 +181,12 @@ class DiarizationIngestionUseCase:
                 self.ingestion_service.update_job(
                     job_id=ingestion.id,
                     status=IngestionJobStatus.FAILED,
+                    error_message=str(e),
+                )
+            if source:
+                self.cs_service.update_processing_status(
+                    content_source_id=source.id,
+                    status=ContentSourceStatus.FAILED,
                     error_message=str(e),
                 )
             raise
@@ -179,6 +206,12 @@ class DiarizationIngestionUseCase:
             original = record.source_metadata.get("original_url")
             if original:
                 external_source = original
+
+        # Normalize YouTube IDs to prevent duplicates (Short URLs, Full URLs vs 11-char IDs)
+        if source_type == SourceType.YOUTUBE:
+            normalized_vid = YoutubeExtractor.get_video_id(external_source)
+            if normalized_vid:
+                external_source = normalized_vid
 
         return source_type, external_source
 
@@ -225,6 +258,10 @@ class DiarizationIngestionUseCase:
             self.cs_service.update_processing_status(
                 source.id, ContentSourceStatus.PROCESSING
             )
+            # Update title if it has changed
+            if cmd.name and source.title != cmd.name:
+                self.cs_service.update_title(source.id, cmd.name)
+
             if cmd.reprocess:
                 self.chunk_service.delete_by_content_source(source.id)
                 self.vector_service.delete(
@@ -292,7 +329,7 @@ class DiarizationIngestionUseCase:
 
         self.cs_service.finish_ingestion(
             content_source_id=source.id,
-            embedding_model=self.model_loader_service.model_name,
+            embedding_model=self.model_loader_service.model_name or "unknown",
             dimensions=int(dims) if dims else 0,
             chunks=len(chunks),
             total_tokens=total_tokens,

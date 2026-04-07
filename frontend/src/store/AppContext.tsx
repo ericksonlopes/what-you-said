@@ -1,5 +1,6 @@
 import React, {createContext, ReactNode, useCallback, useContext, useEffect, useState} from 'react';
-import {ContentSource, IngestionTask, ModelInfo, Subject, Toast, ToastType, ViewState} from '../types';
+import {ContentSource, IngestionTask, ModelInfo, RawQueueTask, Subject, Toast, ToastType, ViewState} from '../types';
+
 import {api} from '../services/api';
 import {useTranslation} from 'react-i18next';
 import {useAuth} from './AuthContext';
@@ -56,7 +57,11 @@ interface AppState {
   isAddSubjectModalOpen: boolean;
   setIsAddSubjectModalOpen: (isOpen: boolean) => void;
   lastEvent: Record<string, any> | null;
+  queueTasks: RawQueueTask[];
+  isQueueLoaded: boolean;
+  refreshQueue: (limit?: number) => Promise<void>;
 }
+
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
@@ -86,6 +91,9 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddSubjectModalOpen, setIsAddSubjectModalOpen] = useState(false);
   const [lastEvent, setLastEvent] = useState<Record<string, unknown> | null>(null);
+  const [queueTasks, setQueueTasks] = useState<RawQueueTask[]>([]);
+  const [isQueueLoaded, setIsQueueLoaded] = useState(false);
+
   
   // Activity Monitor state
   const [jobPage, setJobPage] = useState(1);
@@ -260,14 +268,28 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     }
   }, [isAuthEnabled, isAuthenticated]);
 
+  const refreshQueue = useCallback(async (limit: number = 50) => {
+    if (isAuthEnabled && !isAuthenticated) return;
+    try {
+      const data = await api.fetchRawQueue(limit);
+      setQueueTasks(data);
+    } catch (err) {
+      console.error('Error fetching raw queue:', err);
+    } finally {
+      setIsQueueLoaded(true);
+    }
+  }, [isAuthEnabled, isAuthenticated]);
+
   // Initial load
+
   useEffect(() => {
     refreshSubjects();
     refreshSources();
-    refreshJobs();
     refreshModelInfo();
     refreshVoices();
-  }, [refreshSubjects, refreshSources, refreshJobs, refreshModelInfo, refreshVoices, isAuthEnabled, isAuthenticated]);
+    refreshQueue();
+  }, [refreshSubjects, refreshSources, refreshJobs, refreshModelInfo, refreshVoices, refreshQueue, isAuthEnabled, isAuthenticated]);
+
 
   // Ref to store current filters for use in polling intervals without triggering re-renders
   const jobFiltersRef = React.useRef({ 
@@ -313,7 +335,7 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
                 // Dispatch refreshes based on event type
                 if (data.type === 'ingestion' || data.type === 'diarization') {
                     refreshJobs(jobFiltersRef.current);
-                    if (data.status === 'done' || data.status === 'ingested') {
+                    if (['done', 'ingested', 'completed', 'awaiting_verification', 'failed', 'cancelled'].includes(data.status)) {
                         refreshSources();
                     }
                 } else if (data.type === 'source') {
@@ -356,6 +378,18 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
         clearInterval(safetyInterval);
     };
   }, [refreshJobs, refreshSources, refreshSubjects, isAuthEnabled, isAuthenticated]);
+
+  // Polling for raw queue when in queue view
+  useEffect(() => {
+    if (currentView !== 'queue' || (isAuthEnabled && !isAuthenticated)) return;
+
+    const interval = setInterval(() => {
+      refreshQueue();
+    }, 10000); // 10s polling for technical view
+
+    return () => clearInterval(interval);
+  }, [currentView, refreshQueue, isAuthEnabled, isAuthenticated]);
+
 
   // Persist currentView
   useEffect(() => {
@@ -501,7 +535,11 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     isAddSubjectModalOpen,
     setIsAddSubjectModalOpen,
     lastEvent,
+    queueTasks,
+    isQueueLoaded,
+    refreshQueue,
   }), [
+
     selectedSubjects,
     setSelectedSubjects,
     toggleSubjectSelection,
@@ -545,7 +583,11 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
     isAddSubjectModalOpen,
     setIsAddSubjectModalOpen,
     lastEvent,
+    queueTasks,
+    isQueueLoaded,
+    refreshQueue,
   ]);
+
 
   return (
     <AppContext.Provider value={contextValue}>

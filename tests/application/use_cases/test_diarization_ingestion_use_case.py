@@ -46,7 +46,7 @@ class TestDiarizationIngestionUseCase:
         diarization_id = str(uuid4())
         record = DiarizationRecord(
             id=diarization_id,
-            title="Test Video",
+            name="Test Video",
             source_type="youtube",
             external_source="https://youtube.com/watch?v=test",
             status="completed",
@@ -97,7 +97,7 @@ class TestDiarizationIngestionUseCase:
         diarization_id = str(uuid4())
         record = DiarizationRecord(
             id=diarization_id,
-            title="T",
+            name="T",
             status="completed",
             source_type="youtube",
             segments=[],
@@ -120,7 +120,7 @@ class TestDiarizationIngestionUseCase:
         diarization_id = str(uuid4())
         record = DiarizationRecord(
             id=diarization_id,
-            title="Test",
+            name="Test",
             status="completed",
             source_type="youtube",
             external_source="https://youtube.com/watch?v=123",
@@ -152,7 +152,7 @@ class TestDiarizationIngestionUseCase:
         diarization_id = str(uuid4())
         record = DiarizationRecord(
             id=diarization_id,
-            title="Test",
+            name="Test",
             status="completed",
             source_type="youtube",
             external_source="https://youtube.com/watch?v=123",
@@ -179,7 +179,7 @@ class TestDiarizationIngestionUseCase:
         diarization_id = str(uuid4())
         record = DiarizationRecord(
             id=diarization_id,
-            title="Test",
+            name="Test",
             status="completed",
             source_type="youtube",
             external_source="https://youtube.com/watch?v=123",
@@ -241,7 +241,7 @@ class TestDiarizationIngestionUseCase:
         diarization_id = str(uuid4())
         record = DiarizationRecord(
             id=diarization_id,
-            title="T",
+            name="T",
             segments=[],
             source_type="youtube",
             status="completed",
@@ -308,7 +308,7 @@ class TestDiarizationIngestionUseCase:
         diarization_id = str(uuid4())
         record = DiarizationRecord(
             id=diarization_id,
-            title="T",
+            name="T",
             source_type="youtube",
             segments=[{"text": "h", "start": 0, "end": 1}],
             status="completed",

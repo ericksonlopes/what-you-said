@@ -59,3 +59,11 @@ class YoutubeNetworkException(YoutubeException):
     def __init__(self, video_id: str, error_msg: str):
         message = f"Network error while accessing video {video_id}. Please check your connection. Details: {error_msg}"
         super().__init__(message, video_id=video_id)
+
+
+class YoutubeIPBlockedException(YoutubeException):
+    """Raised when YouTube is blocking requests from the server's IP."""
+
+    def __init__(self, video_id: str, error_msg: str):
+        message = f"YouTube is blocking our requests for video {video_id}. Likely IP ban or temporary block. Details: {error_msg}"
+        super().__init__(message, video_id=video_id)

@@ -52,8 +52,10 @@ export function Sidebar() {
       label: t('sidebar.groups.monitor'),
       items: [
         { id: 'activity', label: t('sidebar.operations.activity'), icon: ActivityIcon },
+        { id: 'queue', label: t('sidebar.operations.queue', 'Task Queue (Redis)'), icon: Layers },
       ]
     }
+
   ] as const;
 
   const getItemClass = (isActive: boolean, isDisabled: boolean) => {

@@ -30,17 +30,14 @@ echo "📂 UV Cache Dir: $UV_CACHE_DIR"
 
 if [ -n "$EXTRAS" ]; then
     echo "📦 Installing: $EXTRAS"
-    uv sync --frozen --no-dev $EXTRAS || {
-        echo "❌ Runtime 'uv sync' failed. This might be due to network issues or missing system dependencies in the container."
-        echo "⚠️ Attempting to continue anyway, but the application might fail if extras are required."
-    }
+    uv sync --frozen --no-dev $EXTRAS
 else
     echo "✅ No extras needed, ensuring core dependencies are synchronized."
-    uv sync --frozen --no-dev || echo "⚠️ Core sync failed, but environment might already be prepared from build stage."
+    uv sync --frozen --no-dev
 fi
 
 echo "🔄 Running migrations..."
-uv run --no-dev alembic upgrade head || echo "⚠️ Migration failed, but trying to start app..."
+uv run --no-dev alembic upgrade head
 
 echo "🎬 Starting application..."
 exec uv run --no-dev uvicorn main:app --host 0.0.0.0 --port ${PORT:-5000}

@@ -13,3 +13,4 @@ class ProcessAudioCommand:
     model_size: str = "large-v2"
     recognize_voices: bool = True
     diarization_id: Optional[str] = None
+    subject_id: Optional[str] = None

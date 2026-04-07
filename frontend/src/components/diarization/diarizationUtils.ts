@@ -19,12 +19,12 @@ export function mapBackendJob(r: any): DiarizationJob {
         const allGeneric = r.segments.every((s: any) => 
             !s.speaker || s.speaker.startsWith('SPEAKER_')
         );
-        status = allGeneric ? 'ready' : 'completed';
+        status = allGeneric ? 'awaiting_verification' : 'completed';
     }
 
     return {
         id: r.id,
-        title: r.title || 'Untitled',
+        name: r.name || 'Untitled',
         date: r.created_at ? r.created_at.split('T')[0].split(' ')[0] : '',
         status,
         duration: formatDuration(r.duration),

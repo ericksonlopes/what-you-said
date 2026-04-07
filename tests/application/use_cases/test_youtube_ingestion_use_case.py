@@ -170,12 +170,10 @@ def test_ingest_single_url_processes_chunks(monkeypatch):
         DummyDoc("chunk1", {"start": 0, "end": 10}),
         DummyDoc("chunk2", {"start": 10, "end": 20}),
     ]
-    # patch instance methods
-    monkeypatch.setattr(
-        use_case, "_extract_video_id_from_url", lambda url: "dQw4w9WgXcQ"
-    )
     from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
-
+    monkeypatch.setattr(
+        YoutubeExtractor, "get_video_id", lambda url: "dQw4w9WgXcQ"
+    )
     monkeypatch.setattr(
         YoutubeExtractor, "extract_metadata", lambda *args, **kwargs: MockMetadata()
     )
@@ -216,8 +214,9 @@ def test_ingest_skips_existing_source(monkeypatch):
         "weaviate",
         MagicMock(),
     )
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
     monkeypatch.setattr(
-        use_case, "_extract_video_id_from_url", lambda url: "dQw4w9WgXcQ"
+        YoutubeExtractor, "get_video_id", lambda url: "dQw4w9WgXcQ"
     )
     cmd = IngestYoutubeCommand(video_url="dQw4w9WgXcQ", subject_name="s")
     result = use_case.execute(cmd)
@@ -251,7 +250,8 @@ def test_ingest_multi_video_one_fails_others_continue(monkeypatch):
             return None
         return "valid_id_" + url[-5:]
 
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", mock_extract_id)
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+    monkeypatch.setattr(YoutubeExtractor, "get_video_id", mock_extract_id)
     monkeypatch.setattr(
         use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("content")]
     )
@@ -271,8 +271,15 @@ def test_ingest_multi_video_one_fails_others_continue(monkeypatch):
     result = use_case.execute(cmd)
 
     assert len(result.video_results) == 2
-    assert "error" in result.video_results[0]
-    assert result.video_results[1].get("video_id") == "valid_id_work1"
+    
+    # Sort results by video_url or video_id if available to ensure deterministic check
+    # or just check both exist
+    fails = [r for r in result.video_results if "error" in r]
+    successes = [r for r in result.video_results if "error" not in r]
+    
+    assert len(fails) == 1
+    assert len(successes) == 1
+    assert successes[0].get("video_id") == "valid_id_work1"
     assert result.created_chunks == 1
 
 
@@ -304,7 +311,8 @@ def test_ingest_playlist(monkeypatch):
         "extract_playlist_videos",
         lambda *args, **kwargs: ["url1", "url2"],
     )
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: url)
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+    monkeypatch.setattr(YoutubeExtractor, "get_video_id", lambda url: url)
     monkeypatch.setattr(
         use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("content")]
     )
@@ -350,11 +358,9 @@ def test_ingest_playlist_empty_raises(monkeypatch):
 
 
 def test_url_extraction_logic():
-    from src.application.use_cases.youtube_ingestion_use_case import (
-        YoutubeIngestionUseCase,
-    )
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
-    extract = YoutubeIngestionUseCase._extract_video_id_from_url
+    extract = YoutubeExtractor.get_video_id
 
     assert extract("https://www.youtube.com/watch?v=dQw4w9WgXcQ") == "dQw4w9WgXcQ"
     assert extract("https://youtu.be/dQw4w9WgXcQ") == "dQw4w9WgXcQ"
@@ -404,7 +410,10 @@ def test_ingest_fails_to_create_job(monkeypatch):
     use_case = YoutubeIngestionUseCase(
         ks, cs, isvc, model_loader, None, chunk_svc, vec_svc, "weaviate", MagicMock()
     )
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: "vid")
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+    monkeypatch.setattr(
+        YoutubeExtractor, "get_video_id", lambda url: "vid"
+    )
 
     cmd = IngestYoutubeCommand(video_url="vid", subject_name="s")
     with pytest.raises(ValueError, match="Failed to create or retrieve ingestion job"):
@@ -424,7 +433,10 @@ def test_ingest_fails_no_transcript(monkeypatch):
 
     from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: "vid")
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+    monkeypatch.setattr(
+        YoutubeExtractor, "get_video_id", lambda url: "vid"
+    )
     monkeypatch.setattr(use_case, "_extract_and_split", lambda *args, **kwargs: [])
     monkeypatch.setattr(
         YoutubeExtractor,
@@ -454,7 +466,10 @@ def test_ingest_with_pre_created_job(monkeypatch):
     use_case = YoutubeIngestionUseCase(
         ks, cs, isvc, model_loader, None, chunk_svc, vec_svc, "weaviate", MagicMock()
     )
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: "vid")
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+    monkeypatch.setattr(
+        YoutubeExtractor, "get_video_id", lambda url: "vid"
+    )
     monkeypatch.setattr(
         use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("content")]
     )
@@ -540,7 +555,10 @@ def test_process_single_video_with_existing_but_not_done_source(monkeypatch):
         ks, cs, isvc, model_loader, None, chunk_svc, vec_svc, "weaviate", MagicMock()
     )
 
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: "vid")
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+    monkeypatch.setattr(
+        YoutubeExtractor, "get_video_id", lambda url: "vid"
+    )
     monkeypatch.setattr(
         use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("content")]
     )
@@ -552,11 +570,9 @@ def test_process_single_video_with_existing_but_not_done_source(monkeypatch):
 
 
 def test_url_extraction_edge_cases():
-    from src.application.use_cases.youtube_ingestion_use_case import (
-        YoutubeIngestionUseCase,
-    )
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
-    extract = YoutubeIngestionUseCase._extract_video_id_from_url
+    extract = YoutubeExtractor.get_video_id
 
     # Test regex fallback for 11 chars
     assert extract("Some random text with dQw4w9WgXcQ inside") == "dQw4w9WgXcQ"
@@ -595,7 +611,10 @@ def test_execute_job_recovery_success(monkeypatch):
         "weaviate",
         MagicMock(),
     )
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: "vid")
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+    monkeypatch.setattr(
+        YoutubeExtractor, "get_video_id", lambda url: "vid"
+    )
     monkeypatch.setattr(
         use_case, "_extract_and_split", lambda *args, **kwargs: [DummyDoc("c")]
     )

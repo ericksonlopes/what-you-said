@@ -9,3 +9,4 @@ class ContentSourceStatus(Enum):
     DONE = "done"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    AWAITING_VERIFICATION = "awaiting_verification"

@@ -1,9 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Loader2, UserPlus, User, Mic } from 'lucide-react';
-import { Speaker } from './types';
+import { Speaker, DiarizationJob } from './types';
 
 interface SpeakerIdentificationPanelProps {
+    readonly job?: DiarizationJob | null;
     readonly speakers: Speaker[];
     readonly availableVoices: any[];
     readonly isRecognizing: boolean;
@@ -15,6 +16,7 @@ interface SpeakerIdentificationPanelProps {
 }
 
 export const SpeakerIdentificationPanel: React.FC<SpeakerIdentificationPanelProps> = ({
+    job,
     speakers,
     availableVoices,
     isRecognizing,
@@ -87,10 +89,14 @@ export const SpeakerIdentificationPanel: React.FC<SpeakerIdentificationPanelProp
 
                             <button
                                 onClick={() => onTrainVoice(speaker)}
-                                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/10 text-blue-400 text-[9px] font-black uppercase tracking-widest transition-all"
+                                className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
+                                    (speaker.assigned.toUpperCase().startsWith('SPEAKER_') || speaker.assigned.toUpperCase() === 'UNKNOWN')
+                                        ? 'bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/10 text-emerald-400'
+                                        : 'bg-blue-500/5 hover:bg-blue-500/10 border-blue-500/10 text-blue-400'
+                                }`}
                             >
                                 <Mic className="w-3 h-3" />
-                                {(!speaker.label.toUpperCase().startsWith('SPEAKER_') || speaker.confidence > 50) ? t('diarization.identification.reinforce_voice') : t('diarization.identification.train_voice')}
+                                {(speaker.assigned.toUpperCase().startsWith('SPEAKER_') || speaker.assigned.toUpperCase() === 'UNKNOWN') ? t('diarization.identification.train_voice') : t('diarization.identification.reinforce_voice')}
                                 {speaker.confidence > 0 && <span className="ml-auto opacity-50">{t('diarization.identification.match_pct', { count: speaker.confidence })}</span>}
                             </button>
                         </div>

@@ -290,7 +290,7 @@ class FileIngestionUseCase:
         dims = getattr(self.model_loader_service, "dimensions", 0)
         self.cs_service.finish_ingestion(
             source.id,
-            self.model_loader_service.model_name,
+            self.model_loader_service.model_name or "unknown",
             int(dims or 0),
             len(chunks),
             tokens,

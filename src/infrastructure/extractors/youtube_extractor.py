@@ -1,6 +1,8 @@
 import os
+import re
 import time
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import imageio_ffmpeg
 from youtube_transcript_api import (
@@ -20,6 +22,7 @@ from src.domain.exception.youtube_exceptions import (
     YoutubeVideoPrivateException,
     YoutubeVideoUnplayableException,
     YoutubeNetworkException,
+    YoutubeIPBlockedException,
 )
 from src.domain.interfaces.extractors.youtube_extractor_interface import (
     IYoutubeExtractor,
@@ -105,6 +108,14 @@ class YoutubeExtractor(IYoutubeExtractor):
                     logger.error(f"Fatal YouTube error: {e}")
                     raise
 
+                # Check for IP blockings
+                if (
+                    "blocking requests from your IP" in err_msg
+                    or "IP is blocked" in err_msg
+                ):
+                    logger.error("YouTube IP Block detected in extractor retry loop")
+                    raise YoutubeIPBlockedException(self.video_id or "unknown", err_msg)
+
                 delay = initial_delay * (2**attempt)
                 logger.warning(
                     f"YouTube action failed (attempt {attempt + 1}/{max_retries}). Retrying in {delay}s...",
@@ -112,6 +123,35 @@ class YoutubeExtractor(IYoutubeExtractor):
                 )
                 time.sleep(delay)
         raise last_exception
+
+    def _get_proxy_config(self):
+        """Setup Proxy for YouTubeTranscriptApi."""
+        if not settings.youtube.proxy_enabled:
+            logger.debug("Proxy usage is disabled in settings for transcript fetch.")
+            return None
+
+        if settings.youtube.proxy_url:
+            logger.debug(
+                "Using GenericProxyConfig for transcript fetch",
+                context={"proxy": settings.youtube.proxy_url},
+            )
+            return GenericProxyConfig(
+                http_url=settings.youtube.proxy_url,
+                https_url=settings.youtube.proxy_url,
+            )
+
+        if (
+            settings.youtube.webshare_username
+            and settings.youtube.webshare_username.strip()
+            and settings.youtube.webshare_password
+            and settings.youtube.webshare_password.strip()
+        ):
+            logger.debug("Using WebshareProxyConfig for transcript fetch")
+            return WebshareProxyConfig(
+                proxy_username=settings.youtube.webshare_username,
+                proxy_password=settings.youtube.webshare_password,
+            )
+        return None
 
     def extract_metadata(self, url: str | None = None) -> YoutubeMetadataDTO:
         """Extracts metadata from the video using yt_dlp with retries."""
@@ -179,7 +219,6 @@ class YoutubeExtractor(IYoutubeExtractor):
 
     def extract_playlist_videos(self, playlist_url: str) -> list[str]:
         """Extracts all video URLs from a YouTube playlist using yt_dlp."""
-        from urllib.parse import urlparse, parse_qs
 
         # Normalize the URL: if it contains a list=ID, use the standard playlist URL
         try:
@@ -204,35 +243,16 @@ class YoutubeExtractor(IYoutubeExtractor):
 
         def _extract():
             ydl_opts = self._get_common_ydl_opts()
-            ydl_opts.update(
-                {
-                    "extract_flat": True,
-                    "ignore_unavailable": True,
-                }
-            )
+            ydl_opts.update({"extract_flat": True, "ignore_unavailable": True})
             with YoutubeDL(ydl_opts) as ydl:
                 playlist_info = ydl.extract_info(playlist_url, download=False)
                 if not playlist_info or "entries" not in playlist_info:
                     return []
 
-                # Extract original URLs or IDs from entries
-                urls = []
-                for entry in playlist_info["entries"]:
-                    if not entry:
-                        continue
-                    url = entry.get("url") or entry.get("webpage_url")
-                    if not url and entry.get("id"):
-                        url = f"https://www.youtube.com/watch?v={entry.get('id')}"
-                    if url:
-                        urls.append(url)
-                return urls
+                return self._parse_playlist_entries(playlist_info["entries"])
 
         try:
             urls = self._run_with_retry(_extract)
-            logger.info(
-                "Playlist successfully extracted",
-                context={"playlist_url": playlist_url, "count": len(urls)},
-            )
             return urls
         except Exception as e:
             logger.error(
@@ -241,12 +261,142 @@ class YoutubeExtractor(IYoutubeExtractor):
             )
             return []
 
+    def extract_channel_videos(self, channel_url: str) -> tuple[list[dict], str]:
+        """Extracts all videos from a YouTube channel with metadata.
+
+        Returns a list of dicts with keys: id, title, url, duration, thumbnail.
+        Uses extract_flat to avoid downloading any video content.
+        """
+        logger.info(
+            "Starting channel video extraction",
+            context={"channel_url": channel_url},
+        )
+
+        # Normalize: ensure URL ends with /videos for complete listing
+        normalized_url = channel_url.rstrip("/")
+        if not normalized_url.endswith("/videos"):
+            normalized_url = f"{normalized_url}/videos"
+
+        def _extract():
+            ydl_opts = self._get_common_ydl_opts()
+            ydl_opts.update({"extract_flat": "in_playlist", "ignore_unavailable": True})
+            with YoutubeDL(ydl_opts) as ydl:
+                channel_info = ydl.extract_info(normalized_url, download=False)
+                if not channel_info or "entries" not in channel_info:
+                    chan = channel_info.get("channel", "") if channel_info else ""
+                    return [], chan
+
+                videos = self._parse_channel_entries(channel_info["entries"])
+                channel_name = (
+                    channel_info.get("channel") or channel_info.get("uploader") or ""
+                )
+                return videos, channel_name
+
+        try:
+            videos, channel_name = self._run_with_retry(_extract)
+
+            logger.info(
+                "Channel videos extracted successfully",
+                context={
+                    "channel_url": channel_url,
+                    "channel_name": channel_name,
+                    "count": len(videos),
+                },
+            )
+            return videos, channel_name
+        except Exception as e:
+            logger.error(
+                f"Channel extraction failed: {e}",
+                context={"channel_url": channel_url},
+            )
+            raise
+
+    def _fetch_transcript_with_fallback(
+        self, api: YouTubeTranscriptApi, preferred_languages: list[str]
+    ) -> FetchedTranscript:
+        """Internal logic to fetch transcript with preferred languages and fallback."""
+        if not self.video_id:
+            raise ValueError("video_id is required to fetch transcript")
+
+        try:
+            # First attempt: Try preferred languages in order
+            transcript = api.fetch(
+                video_id=self.video_id, languages=preferred_languages
+            )
+            logger.debug(
+                "Transcript fetched successfully (preferred).",
+                context={
+                    "video_id": self.video_id,
+                    "language": preferred_languages,
+                },
+            )
+            return transcript
+
+        except NoTranscriptFound:
+            # Second attempt: Fallback to ANY available transcript
+            transcript_list = api.list_transcripts(self.video_id)  # type: ignore[attr-defined]
+            fallback_transcript = next(iter(transcript_list))
+
+            logger.warning(
+                "Preferred languages not found. Falling back to available language",
+                context={
+                    "video_id": self.video_id,
+                    "preferred_languages": preferred_languages,
+                    "fallback_lang": fallback_transcript.language_code,
+                },
+            )
+            return fallback_transcript.fetch()
+
+    def _handle_transcript_error(self, error: Exception):
+        """Classify and raise specific exceptions for transcript fetch errors."""
+        error_msg = str(error)
+
+        if "This video is private" in error_msg:
+            raise YoutubeVideoPrivateException(self.video_id or "unknown")
+        if "unplayable" in error_msg.lower():
+            raise YoutubeVideoUnplayableException(
+                self.video_id or "unknown", reason=error_msg
+            )
+
+        # Hard Stop on IP Block
+        if (
+            "blocking requests from your IP" in error_msg
+            or "IP is blocked" in error_msg
+        ):
+            logger.error("YouTube IP Block detected during transcript fetch")
+            raise YoutubeIPBlockedException(self.video_id or "unknown", error_msg)
+
+        if isinstance(error, TranscriptsDisabled):
+            logger.warning(
+                "Transcripts are disabled for video",
+                context={"video_id": self.video_id},
+            )
+            raise YoutubeTranscriptsDisabledException(self.video_id or "unknown")
+
+        if (
+            isinstance(error, NoTranscriptFound)
+            or "No transcript available" in error_msg
+        ):
+            logger.error(
+                "No transcript available for video in ANY language",
+                context={"video_id": self.video_id, "error": error_msg},
+            )
+            raise YoutubeTranscriptNotFoundException(
+                self.video_id or "unknown", self.language
+            )
+
+        msg = f"Unexpected error while fetching transcript for video {self.video_id}: {error_msg}"
+        logger.error(
+            error,
+            context={"video_id": self.video_id, "action": "fetch_transcript"},
+        )
+        raise ValueError(msg)
+
     def extract_transcript(self) -> FetchedTranscript:
         """Fetches the transcript for a given video with fallback support and retries."""
         if not self.video_id:
             raise ValueError("video_id is required to extract transcript")
 
-        # Define preferred languages: requested first, then common Portuguese variants
         preferred_languages = [self.language]
         for lang in ["pt", "pt-BR", "ptbr"]:
             if lang not in preferred_languages:
@@ -257,122 +407,31 @@ class YoutubeExtractor(IYoutubeExtractor):
             context={"video_id": self.video_id, "preference": preferred_languages},
         )
 
-        # Setup Proxy for YouTubeTranscriptApi
-        proxy_config = None
-
-        if settings.youtube.proxy_enabled:
-            if settings.youtube.proxy_url:
-                logger.debug(
-                    "Using GenericProxyConfig for transcript fetch",
-                    context={"proxy": settings.youtube.proxy_url},
-                )
-                proxy_config = GenericProxyConfig(
-                    http_url=settings.youtube.proxy_url,
-                    https_url=settings.youtube.proxy_url,
-                )
-            elif (
-                settings.youtube.webshare_username
-                and settings.youtube.webshare_username.strip()
-                and settings.youtube.webshare_password
-                and settings.youtube.webshare_password.strip()
-            ):
-                logger.debug("Using WebshareProxyConfig for transcript fetch")
-                proxy_config = WebshareProxyConfig(
-                    proxy_username=settings.youtube.webshare_username,
-                    proxy_password=settings.youtube.webshare_password,
-                )
-        else:
-            logger.debug("Proxy usage is disabled in settings for transcript fetch.")
-
+        proxy_config = self._get_proxy_config()
         retries = 3
         last_error = None
 
         for attempt in range(retries):
             try:
-                # Initialize API with proxy config if available
                 api = YouTubeTranscriptApi(proxy_config=proxy_config)
+                return self._fetch_transcript_with_fallback(api, preferred_languages)
 
-                # First attempt: Try preferred languages in order
-                transcript = api.fetch(
-                    video_id=self.video_id, languages=preferred_languages
-                )
-                logger.debug(
-                    "Transcript fetched successfully (preferred).",
-                    context={
-                        "video_id": self.video_id,
-                        "language": preferred_languages,
-                    },
-                )
-                return transcript
-
-            except NoTranscriptFound:
-                # Second attempt: Fallback to ANY available transcript
-                try:
-                    transcript_list = api.list_transcripts(self.video_id)  # type: ignore[attr-defined]
-                    # Pick the first one available (this will prefer manual over generated usually)
-                    fallback_transcript = next(iter(transcript_list))
-
-                    logger.warning(
-                        "Preferred languages not found. Falling back to available language",
-                        context={
-                            "video_id": self.video_id,
-                            "preferred_languages": preferred_languages,
-                            "fallback_lang": fallback_transcript.language_code,
-                        },
-                    )
-
-                    return fallback_transcript.fetch()
-                except Exception as e:
-                    # If listing fails with network error, we might want to retry
-                    if "getaddrinfo failed" in str(
-                        e
-                    ) or "Failed to establish a new connection" in str(e):
-                        last_error = e
-                        logger.warning(
-                            "Network error during transcript listing. Retrying",
-                            context={
-                                "attempt": attempt + 1,
-                                "max_retries": retries,
-                                "wait_time": 2**attempt,
-                                "video_id": self.video_id,
-                            },
-                        )
-                        time.sleep(2**attempt)
-                        continue
-
-                    # If even listing fails or no transcripts at all exist
-                    logger.error(
-                        "No transcript available for video in ANY language",
-                        context={"video_id": self.video_id, "error": str(e)},
-                    )
-                    raise YoutubeTranscriptNotFoundException(
-                        self.video_id, self.language
-                    )
-
-            except TranscriptsDisabled:
-                logger.warning(
-                    "Transcripts are disabled for video",
-                    context={"video_id": self.video_id},
-                )
-                raise YoutubeTranscriptsDisabledException(self.video_id)
-
+            except (NoTranscriptFound, TranscriptsDisabled) as e:
+                # These are terminal for the current video logic usually, or handled by fallback
+                self._handle_transcript_error(e)
             except Exception as error:
                 error_msg = str(error)
                 last_error = error
 
-                if "This video is private" in error_msg:
-                    raise YoutubeVideoPrivateException(self.video_id)
-                if "unplayable" in error_msg.lower():
-                    raise YoutubeVideoUnplayableException(
-                        self.video_id, reason=error_msg
-                    )
-
-                # Connection/DNS/Proxy errors
-                if (
-                    "getaddrinfo failed" in error_msg
-                    or "Failed to establish a new connection" in error_msg
-                    or "Proxy Authentication Required" in error_msg
-                    or "Tunnel connection failed" in error_msg
+                # Connection/DNS/Proxy errors - Retryable
+                if any(
+                    x in error_msg
+                    for x in [
+                        "getaddrinfo failed",
+                        "Failed to establish a new connection",
+                        "Proxy Authentication Required",
+                        "Tunnel connection failed",
+                    ]
                 ):
                     logger.warning(
                         "Network error during transcript fetch. Retrying",
@@ -386,12 +445,109 @@ class YoutubeExtractor(IYoutubeExtractor):
                     time.sleep(2**attempt)
                     continue
 
-                msg = f"Unexpected error while fetching transcript for video {self.video_id}: {error_msg}"
-                logger.error(
-                    error,
-                    context={"video_id": self.video_id, "action": "fetch_transcript"},
-                )
-                raise ValueError(msg)
+                self._handle_transcript_error(error)
 
-        # If we reached here, all retries failed due to network errors
         raise YoutubeNetworkException(self.video_id, str(last_error))
+
+    def _parse_playlist_entries(self, entries: list) -> list[str]:
+        """Extract valid URLs from playlist entries."""
+        urls = []
+        for entry in entries:
+            if not entry:
+                continue
+            url = entry.get("url") or entry.get("webpage_url")
+            if not url and entry.get("id"):
+                url = f"https://www.youtube.com/watch?v={entry.get('id')}"
+            if url:
+                urls.append(url)
+        return urls
+
+    def _parse_channel_entries(self, entries: list) -> list[dict]:
+        """Extract video metadata from channel entries."""
+        videos = []
+        for entry in entries:
+            video_id = entry.get("id") if entry else None
+            if not video_id:
+                continue
+            videos.append(
+                {
+                    "video_id": video_id,
+                    "title": entry.get("title") or f"Video {video_id}",
+                    "url": f"https://www.youtube.com/watch?v={video_id}",
+                    "duration": entry.get("duration"),
+                    "thumbnail": (
+                        entry.get("thumbnails", [{}])[-1].get("url")
+                        if entry.get("thumbnails")
+                        else f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+                    ),
+                }
+            )
+        return videos
+
+    @staticmethod
+    def get_video_id(url: str) -> str | None:
+        """Extracts the 11-char YouTube video ID from various URL formats.
+
+        Supports:
+        - Plain 11-char ID (e.g. RM3FVX6-UA4)
+        - Watch URL (e.g. youtube.com/watch?v=...)
+        - Short URL (e.g. youtu.be/...)
+        - Shorts URL (e.g. youtube.com/shorts/...)
+        - Embed URL (e.g. youtube.com/embed/...)
+        """
+        if not url:
+            return None
+
+        # 1. Quick check for plain 11-char ID
+        if len(url) == 11 and re.match(r"^[A-Za-z0-9_-]{11}$", url):
+            return url
+
+        try:
+            parsed = urlparse(url)
+            netloc = parsed.netloc.lower()
+
+            # Handle youtu.be/ID
+            if "youtu.be" in netloc:
+                vid = parsed.path.lstrip("/")
+                return vid if len(vid) == 11 else None
+
+            # Handle youtube.com/...
+            if "youtube" in netloc:
+                q = parse_qs(parsed.query)
+                if "v" in q:
+                    vid = q["v"][0]
+                    if len(vid) == 11:
+                        return vid
+
+                path_parts = [p for p in parsed.path.split("/") if p]
+                # /embed/ID, /v/ID, /shorts/ID
+                for i, part in enumerate(path_parts):
+                    if part in ("embed", "v", "shorts") and i + 1 < len(path_parts):
+                        vid = path_parts[i + 1]
+                        if len(vid) == 11:
+                            return vid
+
+                # /path/ID fallback
+                if path_parts:
+                    potential_id = path_parts[-1]
+                    if len(potential_id) == 11 and potential_id not in (
+                        "videos",
+                        "shorts",
+                        "about",
+                        "featured",
+                        "playlists",
+                    ):
+                        return potential_id
+
+            # 2. Broader search: look for 11-char ID preceded by common prefixes
+            m = re.search(
+                r"(?:v=|be/|embed/|shorts/|^|[^A-Za-z0-9_-])([A-Za-z0-9_-]{11})(?:$|[^A-Za-z0-9_-])",
+                url,
+            )
+            if m:
+                return m.group(1)
+
+        except Exception:
+            return None
+
+        return None

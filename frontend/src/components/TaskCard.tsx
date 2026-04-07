@@ -72,10 +72,10 @@ const getLocalizedError = (error: string | undefined, t: any) => {
 
 const TaskProcessingState = ({task, t}: {task: IngestionTask, t: any}) => (
   <div className="space-y-3">
-    <div className="flex justify-between items-center text-[10px] font-bold text-zinc-400">
+    <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500/80 mb-1">
       <div className="flex items-center gap-1.5">
         <Activity className="w-3 h-3 text-amber-500 animate-pulse" />
-        <span className="uppercase tracking-wide">{task.statusMessage || t('common.status.processing')}</span>
+        <span className="uppercase tracking-widest">{t('activity.status.live')}</span>
       </div>
       <span className="text-amber-400 font-mono">{task.progress}%</span>
     </div>
@@ -330,11 +330,12 @@ export function TaskCard({ task }: TaskCardProps) {
                   {task.ingestionType || 'Unknown'}
                 </span>
                 {task.subjectName && (
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-tighter ${
+                  <span className={`flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md border uppercase tracking-tighter ${
                     isReprocessed 
                       ? 'bg-zinc-800/50 text-zinc-500 border-zinc-700/30' 
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-zinc-800/50 text-zinc-400 border-white/5'
                   }`}>
+                    <Database className="w-2.5 h-2.5 opacity-50" />
                     {task.subjectName}
                   </span>
                 )}
@@ -349,7 +350,7 @@ export function TaskCard({ task }: TaskCardProps) {
               <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${config.border} ${config.bg} ${config.color} text-[9px] font-black uppercase tracking-widest shadow-sm`}>
                 {config.animate && <config.icon className="w-2.5 h-2.5 animate-spin" />}
                 {!config.animate && <config.icon className="w-2.5 h-2.5" />}
-                {config.label}
+                {isProcessing && task.statusMessage ? task.statusMessage : config.label}
               </div>
             </div>
           </div>

@@ -19,7 +19,7 @@ class DiarizationRecord(Base):
     __tablename__ = "diarizations"
 
     id = Column(String, primary_key=True, default=_generate_uuid)
-    title = Column(String, index=True)
+    name = Column(String, index=True)
     subject_id = Column(
         UUID, ForeignKey("knowledge_subjects.id"), nullable=True, index=True
     )
