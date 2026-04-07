@@ -5,24 +5,31 @@ from typing import Annotated
 import anyio
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
+from src.application.dtos.commands.train_voice_command import TrainVoiceCommand
 from src.application.use_cases.manage_voice_profiles import (
     DeleteVoiceAudioFileUseCase,
     DeleteVoiceProfileUseCase,
     ListRegisteredVoiceProfilesUseCase,
     ListVoiceAudioFilesUseCase,
     RegisterNewVoiceProfileUseCase,
-    TrainVoiceProfileFromSpeakerSegmentUseCase,
 )
+from src.application.workers import run_voice_training_worker
+from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
 from src.domain.interfaces.services.i_event_bus import IEventBus
+from src.domain.interfaces.services.i_task_queue import ITaskQueue
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
+)
 from src.infrastructure.repositories.storage.storage import StorageService
 from src.presentation.api.dependencies import (
     get_delete_voice_audio_file_use_case,
     get_delete_voice_profile_use_case,
+    get_diarization_repo,
     get_event_bus,
     get_list_voice_audio_files_use_case,
     get_list_voice_profiles_use_case,
     get_register_voice_profile_use_case,
-    get_train_voice_from_speaker_use_case,
+    get_task_queue_service,
 )
 from src.presentation.api.schemas.voice_profile_requests import (
     VoiceProfileRegistrationRequest,
@@ -88,7 +95,9 @@ async def upload_and_register_new_voice_profile(
 
 @router.post(
     "/train-from-speaker",
+    status_code=202,
     responses={
+        202: {"description": "Accepted - Training started in background"},
         400: {"description": "Bad Request"},
         404: {"description": "Not Found"},
         500: {"description": "Internal Server Error"},
@@ -97,27 +106,55 @@ async def upload_and_register_new_voice_profile(
 async def train_voice_profile_from_existing_speaker_segment(
     request: VoiceProfileTrainingFromSpeakerRequest,
     event_bus: Annotated[IEventBus, Depends(get_event_bus)],
-    use_case: Annotated[
-        TrainVoiceProfileFromSpeakerSegmentUseCase,
-        Depends(get_train_voice_from_speaker_use_case),
-    ],
+    task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
+    repo: Annotated[DiarizationRepository, Depends(get_diarization_repo)],
 ):
     try:
-        voice_id = use_case.execute(
+        # 1. Verification
+        record = repo.get_by_id(request.diarization_id)
+        if not record:
+            raise HTTPException(
+                status_code=404, detail=f"Diarization not found: {request.diarization_id}"
+            )
+
+        # 2. Update status to TRAINING immediately
+        repo.update_status(
+            request.diarization_id,
+            DiarizationStatus.TRAINING.value,
+            status_message=f"Preparando treinamento de voz: {request.name}",
+        )
+
+        # 3. Notify frontend
+        event_bus.publish(
+            "ingestion_status",
+            {
+                "type": "diarization",
+                "id": request.diarization_id,
+                "status": DiarizationStatus.TRAINING.value,
+                "message": f"Iniciando treinamento de voz '{request.name}'...",
+            },
+        )
+
+        # 4. Enqueue background task
+        cmd = TrainVoiceCommand(
             diarization_id=request.diarization_id,
             speaker_label=request.speaker_label,
             name=request.name,
         )
-        # Notify
-        event_bus.publish(
-            "ingestion_status",
-            {"type": "voice", "action": "train", "name": request.name},
+
+        task_queue.enqueue(
+            run_voice_training_worker,
+            cmd,
+            task_title=f"Treino de Voz: {request.name}",
         )
-        return {"status": "success", "voice_id": voice_id, "name": request.name}
-    except ValueError as e:
-        raise HTTPException(
-            status_code=404 if "not found" in str(e) else 400, detail=str(e)
-        )
+
+        return {
+            "status": "success",
+            "message": "Treinamento de voz iniciado em segundo plano",
+            "name": request.name,
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

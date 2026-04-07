@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4

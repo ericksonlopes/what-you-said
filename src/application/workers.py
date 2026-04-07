@@ -8,6 +8,7 @@ from src.application.dtos.commands.ingest_file_command import IngestFileCommand
 from src.application.dtos.commands.ingest_web_command import IngestWebCommand
 from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
 from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
+from src.application.dtos.commands.train_voice_command import TrainVoiceCommand
 from src.application.service_registry import registry
 from src.infrastructure.loggers.std_logger import (
     clear_global_context,
@@ -593,6 +594,46 @@ def run_audio_diarization_worker(cmd: ProcessAudioCommand):
     except Exception as e:
         logger.error(
             f"Worker Error: Failed to execute audio diarization: {e}", exc_info=True
+        )
+    finally:
+        clear_global_context()
+
+
+def run_voice_training_worker(cmd: TrainVoiceCommand):
+    """Background worker function for voice profile training from speaker segment."""
+    set_global_context({"correlation_id": f"worker-voice-train-{cmd.name}"})
+
+    if isinstance(cmd, dict):
+        cmd = TrainVoiceCommand(**cmd)
+
+    app = _get_app()
+    if not app:
+        clear_global_context()
+        return
+
+    try:
+        from src.application.use_cases.manage_voice_profiles import (
+            TrainVoiceProfileFromSpeakerSegmentUseCase,
+        )
+        from src.infrastructure.repositories.sql.connector import Session as DBSession
+        from src.presentation.api.dependencies import resolve_ingestion_context
+
+        ctx = resolve_ingestion_context(app)
+        db = DBSession()
+        try:
+            use_case = TrainVoiceProfileFromSpeakerSegmentUseCase(
+                db, event_bus=ctx.event_bus
+            )
+            use_case.execute(
+                diarization_id=cmd.diarization_id,
+                speaker_label=cmd.speaker_label,
+                name=cmd.name,
+            )
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(
+            f"Worker Error: Failed to execute voice training: {e}", exc_info=True
         )
     finally:
         clear_global_context()

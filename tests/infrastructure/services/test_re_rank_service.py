@@ -1,3 +1,4 @@
+# ruff: noqa: E402
 import sys
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -26,7 +27,7 @@ class TestReRankService:
 
         assert service._ranker is not None
         # Verify that it was called with the correct model and a cache_dir containing flashrank_cache
-        args, kwargs = mock_ranker_class.call_args
+        _, kwargs = mock_ranker_class.call_args
         assert kwargs["model_name"] == "test-model"
         assert "flashrank_cache" in kwargs["cache_dir"]
 

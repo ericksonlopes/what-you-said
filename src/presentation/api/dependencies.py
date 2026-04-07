@@ -50,6 +50,9 @@ from src.infrastructure.repositories.sql.connector import Session as DBSessionFa
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
 )
+from src.infrastructure.repositories.sql.diarization_repository import (
+    DiarizationRepository,
+)
 from src.infrastructure.repositories.sql.ingestion_job_repository import (
     IngestionJobSQLRepository,
 )
@@ -96,6 +99,14 @@ def get_source_repo() -> ContentSourceSQLRepository:
 
 def get_job_repo() -> IngestionJobSQLRepository:
     return IngestionJobSQLRepository()
+
+
+def get_diarization_repo(db: Session = Depends(get_db)) -> DiarizationRepository:
+    from src.infrastructure.repositories.sql.diarization_repository import (
+        DiarizationRepository,
+    )
+
+    return DiarizationRepository(db)
 
 
 def get_subject_repo() -> KnowledgeSubjectSQLRepository:
@@ -229,7 +240,10 @@ def get_vector_repository(
     except ImportError as e:
         from fastapi import HTTPException
 
-        error_msg = f"Vector driver for {settings.vector.store_type} is not installed: {e}. Please run 'pip install qdrant-client' (or the appropriate driver)."
+        error_msg = (
+            f"Vector driver for {settings.vector.store_type} is not installed: {e}. "
+            f"Please run 'pip install qdrant-client' (or the appropriate driver)."
+        )
         from src.config.logger import Logger
 
         Logger().error(error_msg, context={"store_type": settings.vector.store_type})

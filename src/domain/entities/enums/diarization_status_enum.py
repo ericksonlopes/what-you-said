@@ -7,6 +7,7 @@ class DiarizationStatus(Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     AWAITING_VERIFICATION = "awaiting_verification"
+    TRAINING = "training"
 
 
 class DiarizationStep(Enum):

@@ -90,39 +90,10 @@ def migrate_vector_db(batch_size: int = 100, clear: bool = False) -> None:
                 break
 
             # Capture keyset cursors from the last row of this batch
-            last_created_at = chunk_models_sql[-1].created_at
-            last_id = chunk_models_sql[-1].id
+            last_created_at = cast(datetime, chunk_models_sql[-1].created_at)
+            last_id = cast(UUID, chunk_models_sql[-1].id)
 
-            documents = []
-            for chunk_sql in chunk_models_sql:
-                extra_data: Dict[str, Any] = (
-                    # Shallow copy is sufficient: we only add a top-level key below
-                    dict(chunk_sql.extra)
-                    if isinstance(chunk_sql.extra, dict)
-                    else {}
-                )
-                if chunk_sql.vector_store_type:
-                    extra_data["original_vector_store_type"] = (
-                        chunk_sql.vector_store_type
-                    )
-
-                doc = ChunkModel(
-                    id=cast(UUID, chunk_sql.id),
-                    job_id=cast(UUID, chunk_sql.job_id),
-                    content_source_id=cast(UUID, chunk_sql.content_source_id),
-                    source_type=str(chunk_sql.source_type or "UNKNOWN"),
-                    external_source=cast(str, chunk_sql.external_source),
-                    subject_id=cast(UUID, chunk_sql.subject_id),
-                    index=cast(int, chunk_sql.index),
-                    content=cast(str, chunk_sql.content),
-                    tokens_count=cast(int, chunk_sql.tokens_count),
-                    language=cast(str, chunk_sql.language),
-                    embedding_model=embedding_model_name,
-                    created_at=cast(datetime, chunk_sql.created_at),
-                    version_number=cast(int, chunk_sql.version_number),
-                    extra=extra_data,
-                )
-                documents.append(doc)
+            documents = _process_batch(chunk_models_sql, embedding_model_name)
 
             total_migrated += len(documents)
             logger.info(
@@ -144,6 +115,38 @@ def migrate_vector_db(batch_size: int = 100, clear: bool = False) -> None:
         sys.exit(1)
     finally:
         db.close()
+
+
+def _process_batch(
+    chunks_sql: list[ChunkIndexModel], embedding_model_name: str
+) -> list[ChunkModel]:
+    """Helper to convert SQL chunks to vector domain models."""
+    documents = []
+    for chunk_sql in chunks_sql:
+        extra_data: Dict[str, Any] = (
+            dict(chunk_sql.extra) if isinstance(chunk_sql.extra, dict) else {}
+        )
+        if chunk_sql.vector_store_type:
+            extra_data["original_vector_store_type"] = chunk_sql.vector_store_type
+
+        doc = ChunkModel(
+            id=cast(UUID, chunk_sql.id),
+            job_id=cast(UUID, chunk_sql.job_id),
+            content_source_id=cast(UUID, chunk_sql.content_source_id),
+            source_type=str(chunk_sql.source_type or "UNKNOWN"),
+            external_source=cast(str, chunk_sql.external_source),
+            subject_id=cast(UUID, chunk_sql.subject_id),
+            index=cast(int, chunk_sql.index),
+            content=cast(str, chunk_sql.content),
+            tokens_count=cast(int, chunk_sql.tokens_count),
+            language=cast(str, chunk_sql.language),
+            embedding_model=embedding_model_name,
+            created_at=cast(datetime, chunk_sql.created_at),
+            version_number=cast(int, chunk_sql.version_number),
+            extra=extra_data,
+        )
+        documents.append(doc)
+    return documents
 
 
 if __name__ == "__main__":

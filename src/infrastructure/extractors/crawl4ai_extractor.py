@@ -21,7 +21,11 @@ class Crawl4AIExtractor(IBaseExtractor):
 
     def __init__(self, headless: bool = True):
         # Using a realistic user agent to bypass anti-bot protection
-        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        self.user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0.0.0 Safari/537.36"
+        )
         self.browser_config = BrowserConfig(
             headless=headless,
             viewport_width=1280,

@@ -368,7 +368,9 @@ class DiarizationIngestionUseCase:
                     curr_texts.append(text)
             else:
                 if curr_speaker is not None:
-                    ts = f"[{self._format_seconds(cast(float, curr_start))} - {self._format_seconds(cast(float, curr_end))}]"
+                    start_str = self._format_seconds(cast(float, curr_start))
+                    end_str = self._format_seconds(cast(float, curr_end))
+                    ts = f"[{start_str} - {end_str}]"
                     merged_lines.append(f"{ts} {curr_speaker}: {' '.join(curr_texts)}")
 
                 curr_speaker, curr_start, curr_end, curr_texts = (

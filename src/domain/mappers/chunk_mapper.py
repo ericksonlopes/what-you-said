@@ -129,7 +129,8 @@ class ChunkMapper:
     def _normalize_source_type(source: str) -> str:
         """Normalize the source type to the canonical string value used for persistence.
 
-        Tries to map by enum member name (case-insensitive) or by enum value. If mapping fails, returns the input string.
+        Tries to map by enum member name (case-insensitive) or by enum value.
+        If mapping fails, returns the input string.
         """
         s = source.strip()
         # try by name (case-insensitive)
