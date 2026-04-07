@@ -1,5 +1,9 @@
 from contextlib import asynccontextmanager
 import warnings
+import os
+
+# Suppress NNPACK warnings (Unsupported hardware)
+os.environ["NNPACK_CPU_FAST_8x8_CONV"] = "0"
 
 # Silence torchcodec loading warnings since it's a beta component and often
 # causes DLL discovery issues on Windows that don't affect the core app.

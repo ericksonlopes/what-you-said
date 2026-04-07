@@ -114,15 +114,19 @@ class ContentSourceSQLRepository:
                 )
                 # Search within JSON field (syntax works for SQLite and Postgres)
                 # Using string comparison for the diarization_id in the JSON object
+                from sqlalchemy import cast, String
+                # Search within JSON field in a way that works for SQLite and Postgres
+                # Using cast to String to ensure we can compare with the diarization_id
+                # The ->> operator or json_extract both return values that can be cast or compared.
                 result = (
                     session.query(ContentSourceModel)
                     .filter(
-                        ContentSourceModel.source_metadata["diarization_id"].astext
-                        == diarization_id
-                        if session.bind.dialect.name == "postgresql"
-                        else ContentSourceModel.source_metadata.op("->>")(
-                            "diarization_id"
+                        cast(
+                            ContentSourceModel.source_metadata["diarization_id"], String
                         )
+                        == f'"{diarization_id}"'
+                        if session.bind.dialect.name == "sqlite"
+                        else ContentSourceModel.source_metadata["diarization_id"].astext
                         == diarization_id
                     )
                     .first()

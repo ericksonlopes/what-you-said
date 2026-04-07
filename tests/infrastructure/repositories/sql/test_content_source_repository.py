@@ -172,3 +172,29 @@ class TestContentSourceSQLRepository:
         ):
             with pytest.raises(Exception, match="Finish Error"):
                 repo.finish_ingestion(cid, "m", 1, 1)
+
+    def test_get_by_diarization_id_success(self, sqlite_memory):
+        repo = ContentSourceSQLRepository()
+        did = str(uuid4())
+        cid = repo.create(
+            uuid4(),
+            "youtube",
+            "vid1",
+            source_metadata={"diarization_id": did, "other": "data"},
+        )
+
+        # Success
+        result = repo.get_by_diarization_id(did)
+        assert result is not None
+        assert result.id == cid
+        assert result.source_metadata["diarization_id"] == did
+
+        # Not found
+        assert repo.get_by_diarization_id(str(uuid4())) is None
+
+    def test_get_by_diarization_id_error(self, sqlite_memory):
+        repo = ContentSourceSQLRepository()
+        with patch("sqlalchemy.orm.Query.first", side_effect=Exception("Query Error")):
+            # It should log error and return None according to implementation
+            result = repo.get_by_diarization_id("any")
+            assert result is None

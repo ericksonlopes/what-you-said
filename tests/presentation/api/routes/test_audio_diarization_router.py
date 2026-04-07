@@ -29,23 +29,46 @@ class TestAudioDiarizationRouter:
     def mock_task_queue(self):
         return MagicMock()
 
-    def test_update_diarization_segments_success(self, mock_db):
+    def test_update_diarization_segments_success(self, mock_db, mock_task_queue):
         app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_task_queue_service] = lambda: mock_task_queue
 
         record_mock = MagicMock(spec=DiarizationRecord)
-        record_mock.id = "123"
+        record_mock.id = "daced256-b5b0-4916-980e-3428a87eb737"
+        record_mock.status = "pending"
 
-        with patch(
-            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_id",
-            return_value=record_mock,
+        # Mock ContentSource to cover the additional logic
+        mock_cs = MagicMock()
+        mock_cs.id = "cs-123"
+        mock_cs.subject_id = "subj-123"
+        mock_cs.title = "Test Audio"
+        mock_cs.language = "pt"
+        mock_cs.source_type = "youtube"
+        mock_cs.external_source = "vid-123"
+        mock_cs.source_metadata = {"diarization_id": record_mock.id}
+
+        with (
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_id",
+                return_value=record_mock,
+            ),
+            patch(
+                "src.infrastructure.repositories.sql.content_source_repository.ContentSourceSQLRepository"
+            ) as mock_cs_repo_cls,
         ):
+            mock_cs_repo = mock_cs_repo_cls.return_value
+            mock_cs_repo.get_by_diarization_id.return_value = mock_cs
+
             response = client.patch(
-                "/rest/audio/123", json={"segments": [{"text": "hello"}]}
+                f"/rest/audio/{record_mock.id}", json={"segments": [{"text": "hello"}]}
             )
 
             assert response.status_code == 200
             assert response.json()["status"] == "success"
             assert record_mock.status == "completed"
+
+            # Verify ingestion was triggered
+            assert mock_task_queue.enqueue.called
 
         app.dependency_overrides.clear()
 
@@ -68,6 +91,9 @@ class TestAudioDiarizationRouter:
         record_mock = MagicMock(id="new-uuid")
 
         with patch(
+            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_external_source",
+            return_value=None,
+        ), patch(
             "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.create_pending",
             return_value=record_mock,
         ):
@@ -81,6 +107,33 @@ class TestAudioDiarizationRouter:
             assert response.status_code == 200
             assert response.json()["id"] == "new-uuid"
             assert mock_task_queue.enqueue.called
+
+        app.dependency_overrides.clear()
+
+    def test_start_audio_processing_pipeline_duplicate(self, mock_db, mock_task_queue):
+        app.dependency_overrides[get_db] = lambda: mock_db
+        app.dependency_overrides[get_task_queue_service] = lambda: mock_task_queue
+
+        existing_record = MagicMock(id="existing-uuid", status="processing")
+
+        with patch(
+            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_external_source",
+            return_value=existing_record,
+        ), patch(
+            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.create_pending"
+        ) as mock_create:
+            payload = {
+                "source_type": "youtube",
+                "source": "https://youtube.com/watch?v=test",
+                "language": "pt",
+            }
+            response = client.post("/rest/audio", json=payload)
+
+            assert response.status_code == 200
+            assert response.json()["id"] == "existing-uuid"
+            assert "already processed" in response.json()["message"]
+            assert not mock_create.called
+            assert not mock_task_queue.enqueue.called
 
         app.dependency_overrides.clear()
 

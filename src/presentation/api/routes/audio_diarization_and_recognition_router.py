@@ -191,8 +191,26 @@ async def start_audio_processing_pipeline(
         )
 
         repo = DiarizationRepository(db)
+
+        # Check if already exists
+        existing = repo.get_by_external_source(
+            source_type=request.source_type.value,
+            external_source=normalized_source,
+            subject_id=request.subject_id,
+        )
+
+        if existing and existing.status != DiarizationStatus.FAILED.value:
+            logger.info("Found existing diarization %s for source %s. Skipping creation.", existing.id, normalized_source)
+            return {
+                "id": existing.id,
+                "message": "Content already processed or processing.",
+                "source_type": request.source_type.value,
+                "source": request.source,
+                "status": existing.status,
+            }
+
         record = repo.create_pending(
-            name=request.source,  # We keep URL as name initially or we could use normalized? Let's use normalized as identifier
+            name=request.source,
             source_type=request.source_type.value,
             external_source=normalized_source,
             language=request.language or "pt",

@@ -1,4 +1,8 @@
 from unittest.mock import MagicMock, patch
+import os
+
+# Suppress NNPACK warnings (Unsupported hardware)
+os.environ["NNPACK_CPU_FAST_8x8_CONV"] = "0"
 
 import pytest
 from sqlalchemy import create_engine

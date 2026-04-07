@@ -98,6 +98,25 @@ class DiarizationRepository:
         self.db.refresh(record)
         return record
 
+    def get_by_external_source(
+        self,
+        source_type: str,
+        external_source: str,
+        subject_id: str | object | None = None,
+    ) -> Optional[DiarizationRecord]:
+        query = self.db.query(DiarizationRecord).filter(
+            DiarizationRecord.source_type == source_type,
+            DiarizationRecord.external_source == external_source,
+        )
+        if subject_id:
+            parsed_id = UUID(subject_id) if isinstance(subject_id, str) else subject_id
+            query = query.filter(DiarizationRecord.subject_id == parsed_id)
+        else:
+            query = query.filter(DiarizationRecord.subject_id.is_(None))
+
+        result = query.first()
+        return cast(Optional[DiarizationRecord], result)
+
     def get_all(
         self,
         limit: int = 10,

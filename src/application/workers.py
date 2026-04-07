@@ -470,6 +470,23 @@ def run_audio_diarization_dispatcher_worker(cmd: ProcessAudioCommand):
             return
 
         for url in video_list:
+            # Check for duplicates before creation
+            existing = repo.get_by_external_source(
+                source_type=cmd.source_type,
+                external_source=url,
+                subject_id=cmd.subject_id,
+            )
+
+            if (
+                existing
+                and existing.status
+                != "failed"  # DiarizationStatus is not imported here as Enum yet
+            ):
+                logger.info(
+                    "Skipping duplicate video for diarization dispatcher: %s", url
+                )
+                continue
+
             # 1. Create a pending record
             pending = repo.create_pending(
                 name=url,
