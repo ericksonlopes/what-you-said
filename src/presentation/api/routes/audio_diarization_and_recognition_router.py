@@ -200,7 +200,11 @@ async def start_audio_processing_pipeline(
         )
 
         if existing and existing.status != DiarizationStatus.FAILED.value:
-            logger.info("Found existing diarization %s for source %s. Skipping creation.", existing.id, normalized_source)
+            logger.info(
+                "Found existing diarization %s for source %s. Skipping creation.",
+                existing.id,
+                normalized_source,
+            )
             return {
                 "id": existing.id,
                 "message": "Content already processed or processing.",

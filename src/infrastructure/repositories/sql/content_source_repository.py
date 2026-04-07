@@ -115,6 +115,7 @@ class ContentSourceSQLRepository:
                 # Search within JSON field (syntax works for SQLite and Postgres)
                 # Using string comparison for the diarization_id in the JSON object
                 from sqlalchemy import cast, String
+
                 # Search within JSON field in a way that works for SQLite and Postgres
                 # Using cast to String to ensure we can compare with the diarization_id
                 # The ->> operator or json_extract both return values that can be cast or compared.

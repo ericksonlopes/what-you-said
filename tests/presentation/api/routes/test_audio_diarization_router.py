@@ -90,12 +90,15 @@ class TestAudioDiarizationRouter:
 
         record_mock = MagicMock(id="new-uuid")
 
-        with patch(
-            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_external_source",
-            return_value=None,
-        ), patch(
-            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.create_pending",
-            return_value=record_mock,
+        with (
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_external_source",
+                return_value=None,
+            ),
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.create_pending",
+                return_value=record_mock,
+            ),
         ):
             payload = {
                 "source_type": "youtube",
@@ -116,12 +119,15 @@ class TestAudioDiarizationRouter:
 
         existing_record = MagicMock(id="existing-uuid", status="processing")
 
-        with patch(
-            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_external_source",
-            return_value=existing_record,
-        ), patch(
-            "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.create_pending"
-        ) as mock_create:
+        with (
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.get_by_external_source",
+                return_value=existing_record,
+            ),
+            patch(
+                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository.create_pending"
+            ) as mock_create,
+        ):
             payload = {
                 "source_type": "youtube",
                 "source": "https://youtube.com/watch?v=test",
