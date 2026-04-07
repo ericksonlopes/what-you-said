@@ -22,14 +22,10 @@ class TestVoiceProfileRouter:
     def test_register_voice_profile_success(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_register_voice_profile_use_case] = lambda: (
-            mock_use_case
-        )
+        app.dependency_overrides[get_register_voice_profile_use_case] = lambda: mock_use_case
 
         mock_use_case.execute.return_value = "v-123"
-        response = client.post(
-            "/rest/voices", json={"name": "Alice", "audio_path": "s3://path"}
-        )
+        response = client.post("/rest/voices", json={"name": "Alice", "audio_path": "s3://path"})
         assert response.status_code == 200
         assert response.json()["voice_id"] == "v-123"
 
@@ -66,14 +62,52 @@ class TestVoiceProfileRouter:
 
         app.dependency_overrides.clear()
 
+    def test_train_from_speaker_not_found(self):
+        # 1. Mock dependencies
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        mock_repo = MagicMock()
+        app.dependency_overrides[get_diarization_repo] = lambda: mock_repo
+        mock_repo.get_by_id.return_value = None
+
+        # 2. Execute request
+        payload = {
+            "diarization_id": "non-existent",
+            "speaker_label": "SPEAKER_00",
+            "name": "Bob",
+        }
+        response = client.post("/rest/voices/train-from-speaker", json=payload)
+
+        # 3. Assert status and body
+        assert response.status_code == 404
+        assert "Diarization not found" in response.json()["detail"]
+
+        app.dependency_overrides.clear()
+
+    def test_train_from_speaker_error(self):
+        # 1. Mock dependencies
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        mock_repo = MagicMock()
+        app.dependency_overrides[get_diarization_repo] = lambda: mock_repo
+        mock_repo.get_by_id.side_effect = Exception("System failure")
+
+        # 2. Execute request
+        payload = {
+            "diarization_id": "d-1",
+            "speaker_label": "SPEAKER_00",
+            "name": "Bob",
+        }
+        response = client.post("/rest/voices/train-from-speaker", json=payload)
+
+        # 3. Assert status and body
+        assert response.status_code == 500
+        assert "System failure" in response.json()["detail"]
+
         app.dependency_overrides.clear()
 
     def test_list_voices(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_list_voice_profiles_use_case] = lambda: (
-            mock_use_case
-        )
+        app.dependency_overrides[get_list_voice_profiles_use_case] = lambda: mock_use_case
 
         mock_use_case.execute.return_value = [{"name": "Alice"}]
         response = client.get("/rest/voices")
@@ -85,9 +119,7 @@ class TestVoiceProfileRouter:
     def test_delete_voice_success(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: (
-            mock_use_case
-        )
+        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: mock_use_case
 
         mock_use_case.execute.return_value = None
         response = client.delete("/rest/voices/Alice")
@@ -99,9 +131,7 @@ class TestVoiceProfileRouter:
     def test_delete_voice_not_found(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: (
-            mock_use_case
-        )
+        app.dependency_overrides[get_delete_voice_profile_use_case] = lambda: mock_use_case
 
         mock_use_case.execute.side_effect = KeyError("not found")
         response = client.delete("/rest/voices/Unknown")
@@ -112,9 +142,7 @@ class TestVoiceProfileRouter:
     def test_upload_voice_profile_success(self):
         app.dependency_overrides[get_db] = lambda: MagicMock()
         mock_use_case = MagicMock()
-        app.dependency_overrides[get_register_voice_profile_use_case] = lambda: (
-            mock_use_case
-        )
+        app.dependency_overrides[get_register_voice_profile_use_case] = lambda: mock_use_case
 
         mock_use_case.execute.return_value = "v-123"
 
@@ -139,11 +167,100 @@ class TestVoiceProfileRouter:
 
         app.dependency_overrides.clear()
 
+    def test_upload_voice_profile_no_filename(self):
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+
+        from io import BytesIO
+
+        file_content = b"fake audio content"
+        # Create a file object with an empty filename
+        # Using None as filename can sometimes bypass FastAPI/HTTPX validation
+        # and result in an UploadFile with filename=None or ""
+        files = {"file": (" ", BytesIO(file_content), "audio/wav")}
+        data = {"name": "Alice"}
+
+        response = client.post("/rest/voices/upload", data=data, files=files)
+
+        assert response.status_code == 400
+        assert "No filename provided" in response.json()["detail"]
+
+        app.dependency_overrides.clear()
+
+    def test_upload_voice_profile_error(self):
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        mock_use_case = MagicMock()
+        app.dependency_overrides[get_register_voice_profile_use_case] = lambda: mock_use_case
+
+        mock_use_case.execute.side_effect = Exception("Processing error")
+
+        from io import BytesIO
+
+        file_content = b"fake audio content"
+        files = {"file": ("test.wav", BytesIO(file_content), "audio/wav")}
+        data = {"name": "Alice"}
+
+        with (
+            patch("tempfile.mkdtemp", return_value="/tmp/test"),
+            patch("os.path.exists", return_value=True),
+            patch("os.remove"),
+            patch("os.rmdir"),
+            patch("anyio.open_file", side_effect=Exception("Async write error")),
+        ):
+            response = client.post("/rest/voices/upload", data=data, files=files)
+
+        assert response.status_code == 400
+        assert "Async write error" in response.json()["detail"]
+
+        app.dependency_overrides.clear()
+
+    def test_list_voice_audio_files(self):
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        mock_use_case = MagicMock()
+        from src.presentation.api.dependencies import get_list_voice_audio_files_use_case
+
+        app.dependency_overrides[get_list_voice_audio_files_use_case] = lambda: mock_use_case
+        mock_use_case.execute.return_value = ["audio1.wav", "audio2.wav"]
+
+        response = client.get("/rest/voices/v-123/audios")
+        assert response.status_code == 200
+        assert len(response.json()) == 2
+
+        app.dependency_overrides.clear()
+
+    def test_delete_voice_audio_file_success(self):
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        mock_use_case = MagicMock()
+        from src.presentation.api.dependencies import (
+            get_delete_voice_audio_file_use_case,
+        )
+
+        app.dependency_overrides[get_delete_voice_audio_file_use_case] = lambda: mock_use_case
+
+        response = client.delete("/rest/voices/audios/path/to/audio.wav")
+        assert response.status_code == 200
+        assert response.json()["message"] == "Audio file deleted"
+
+        app.dependency_overrides.clear()
+
+    def test_delete_voice_audio_file_error(self):
+        app.dependency_overrides[get_db] = lambda: MagicMock()
+        mock_use_case = MagicMock()
+        from src.presentation.api.dependencies import (
+            get_delete_voice_audio_file_use_case,
+        )
+
+        app.dependency_overrides[get_delete_voice_audio_file_use_case] = lambda: mock_use_case
+        mock_use_case.execute.side_effect = Exception("File not found in S3")
+
+        response = client.delete("/rest/voices/audios/path/to/missing.wav")
+        assert response.status_code == 404
+        assert "File not found in S3" in response.json()["detail"]
+
+        app.dependency_overrides.clear()
+
     def test_get_voice_audio_url_success(self):
         # Patch the StorageService class inside the router module
-        with patch(
-            "src.presentation.api.routes.voice_profile_management_router.StorageService"
-        ) as mock_storage_cls:
+        with patch("src.presentation.api.routes.voice_profile_management_router.StorageService") as mock_storage_cls:
             mock_storage = mock_storage_cls.return_value
             mock_storage.get_presigned_url.return_value = "http://presigned-url"
 
@@ -151,3 +268,14 @@ class TestVoiceProfileRouter:
 
             assert response.status_code == 200
             assert response.json()["url"] == "http://presigned-url"
+
+    def test_get_voice_audio_url_error(self):
+        # Patch the StorageService class inside the router module
+        with patch("src.presentation.api.routes.voice_profile_management_router.StorageService") as mock_storage_cls:
+            mock_storage = mock_storage_cls.return_value
+            mock_storage.get_presigned_url.side_effect = Exception("S3 access denied")
+
+            response = client.get("/rest/voices/audios/path/to/voice.wav")
+
+            assert response.status_code == 404
+            assert "S3 access denied" in response.json()["detail"]
