@@ -67,6 +67,4 @@ def downgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("voice_samples", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_voice_samples_voice_id"), ["voice_id"], unique=False
-        )
+        batch_op.create_index(batch_op.f("ix_voice_samples_voice_id"), ["voice_id"], unique=False)

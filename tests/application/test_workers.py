@@ -27,61 +27,41 @@ class TestWorkers:
 
     def test_run_file_ingestion_worker_success(self):
         with (
-            patch(
-                "src.presentation.api.dependencies.resolve_ingestion_context"
-            ) as mock_ctx,
+            patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx,
             patch("src.presentation.api.dependencies.resolve_vector_repository"),
             patch("src.presentation.api.dependencies.resolve_rerank_service"),
-            patch(
-                "src.infrastructure.services.chunk_vector_service.ChunkVectorService"
-            ),
-            patch(
-                "src.application.use_cases.file_ingestion_use_case.FileIngestionUseCase"
-            ) as mock_use_case_cls,
+            patch("src.infrastructure.services.chunk_vector_service.ChunkVectorService"),
+            patch("src.application.use_cases.file_ingestion_use_case.FileIngestionUseCase") as mock_use_case_cls,
         ):
             mock_use_case = MagicMock()
             mock_use_case_cls.return_value = mock_use_case
             mock_ctx.return_value = MagicMock()
 
-            cmd = IngestFileCommand(
-                file_path="test.pdf", file_name="test.pdf", subject_name="test"
-            )
+            cmd = IngestFileCommand(file_path="test.pdf", file_name="test.pdf", subject_name="test")
             run_file_ingestion_worker(cmd)
             mock_use_case.execute.assert_called_once_with(cmd)
 
     def test_run_file_ingestion_worker_no_app(self):
         registry._services = {}  # Remove app
-        cmd = IngestFileCommand(
-            file_path="test.pdf", file_name="test.pdf", subject_name="test"
-        )
+        cmd = IngestFileCommand(file_path="test.pdf", file_name="test.pdf", subject_name="test")
         with patch("src.application.workers.logger") as mock_logger:
             run_file_ingestion_worker(cmd)
             mock_logger.error.assert_called_once()
 
     def test_run_file_ingestion_worker_exception(self):
-        with patch(
-            "src.presentation.api.dependencies.resolve_ingestion_context"
-        ) as mock_ctx:
+        with patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx:
             mock_ctx.side_effect = Exception("Test error")
-            cmd = IngestFileCommand(
-                file_path="test.pdf", file_name="test.pdf", subject_name="test"
-            )
+            cmd = IngestFileCommand(file_path="test.pdf", file_name="test.pdf", subject_name="test")
             with patch("src.application.workers.logger") as mock_logger:
                 run_file_ingestion_worker(cmd)
                 mock_logger.error.assert_called_once()
 
     def test_run_youtube_ingestion_worker_success(self):
         with (
-            patch(
-                "src.presentation.api.dependencies.resolve_ingestion_context"
-            ) as mock_ctx,
+            patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx,
             patch("src.presentation.api.dependencies.resolve_vector_repository"),
-            patch(
-                "src.infrastructure.services.youtube_vector_service.YouTubeVectorService"
-            ),
-            patch(
-                "src.application.use_cases.youtube_ingestion_use_case.YoutubeIngestionUseCase"
-            ) as mock_use_case_cls,
+            patch("src.infrastructure.services.youtube_vector_service.YouTubeVectorService"),
+            patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeIngestionUseCase") as mock_use_case_cls,
         ):
             mock_use_case = MagicMock()
             mock_use_case_cls.return_value = mock_use_case
@@ -106,9 +86,7 @@ class TestWorkers:
         # Should return silently
 
     def test_run_youtube_ingestion_worker_exception(self):
-        with patch(
-            "src.presentation.api.dependencies.resolve_ingestion_context"
-        ) as mock_ctx:
+        with patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx:
             mock_ctx.side_effect = Exception("Test error")
             cmd = IngestYoutubeCommand(
                 video_url="https://youtube.com/watch?v=123",
@@ -121,18 +99,12 @@ class TestWorkers:
 
     def test_run_web_ingestion_worker_success(self):
         with (
-            patch(
-                "src.presentation.api.dependencies.resolve_ingestion_context"
-            ) as mock_ctx,
+            patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx,
             patch("src.presentation.api.dependencies.resolve_vector_repository"),
             patch("src.presentation.api.dependencies.resolve_rerank_service"),
-            patch(
-                "src.infrastructure.services.chunk_vector_service.ChunkVectorService"
-            ),
+            patch("src.infrastructure.services.chunk_vector_service.ChunkVectorService"),
             patch("src.presentation.api.dependencies.get_web_extractor"),
-            patch(
-                "src.application.use_cases.web_scraping_use_case.WebScrapingUseCase"
-            ) as mock_use_case_cls,
+            patch("src.application.use_cases.web_scraping_use_case.WebScrapingUseCase") as mock_use_case_cls,
             patch("asyncio.run") as mock_asyncio_run,
         ):
             mock_use_case = MagicMock()
@@ -164,9 +136,7 @@ class TestWorkers:
 
     def test_run_web_ingestion_worker_exception(self):
         with (
-            patch(
-                "src.presentation.api.dependencies.resolve_ingestion_context"
-            ) as mock_ctx,
+            patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx,
             patch("asyncio.run") as mock_asyncio_run,
         ):
             mock_ctx.side_effect = Exception("Test error")
@@ -197,20 +167,12 @@ class TestWorkers:
         from src.application.workers import run_diarization_ingestion_worker
 
         with (
-            patch(
-                "src.presentation.api.dependencies.resolve_ingestion_context"
-            ) as mock_ctx,
+            patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx,
             patch("src.presentation.api.dependencies.resolve_vector_repository"),
             patch("src.presentation.api.dependencies.resolve_rerank_service"),
-            patch(
-                "src.infrastructure.services.chunk_vector_service.ChunkVectorService"
-            ),
-            patch(
-                "src.infrastructure.repositories.sql.connector.Session"
-            ) as mock_session_cls,
-            patch(
-                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"
-            ),
+            patch("src.infrastructure.services.chunk_vector_service.ChunkVectorService"),
+            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_cls,
+            patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"),
             patch(
                 "src.application.use_cases.diarization_ingestion_use_case.DiarizationIngestionUseCase"
             ) as mock_use_case_cls,
@@ -238,9 +200,7 @@ class TestWorkers:
     def test_run_diarization_ingestion_worker_exception(self):
         from src.application.workers import run_diarization_ingestion_worker
 
-        with patch(
-            "src.presentation.api.dependencies.resolve_ingestion_context"
-        ) as mock_ctx:
+        with patch("src.presentation.api.dependencies.resolve_ingestion_context") as mock_ctx:
             mock_ctx.side_effect = Exception("Test error")
             cmd = MagicMock()
             with patch("src.application.workers.logger") as mock_logger:
@@ -251,9 +211,7 @@ class TestWorkers:
         from src.application.workers import _audio_diarization_subprocess
 
         with (
-            patch(
-                "src.infrastructure.repositories.sql.connector.Session"
-            ) as mock_session_cls,
+            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_cls,
             patch("src.infrastructure.services.redis_event_bus.RedisEventBus"),
             patch(
                 "src.application.use_cases.process_audio_diarization_pipeline.ProcessAudioDiarizationPipelineUseCase"
@@ -308,12 +266,8 @@ class TestWorkers:
 
         with (
             patch("multiprocessing.get_context") as mock_get_ctx,
-            patch(
-                "src.infrastructure.repositories.sql.connector.Session"
-            ) as mock_session_factory,
-            patch(
-                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"
-            ) as mock_repo_cls,
+            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_factory,
+            patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository") as mock_repo_cls,
             patch("src.infrastructure.services.redis_event_bus.RedisEventBus"),
         ):
             mock_ctx = MagicMock()
@@ -327,11 +281,7 @@ class TestWorkers:
             mock_repo = MagicMock()
             mock_repo_cls.return_value = mock_repo
 
-            cmd = ProcessAudioCommand(
-                source_type="youtube", source="url", diarization_id="test-id"
-            )
+            cmd = ProcessAudioCommand(source_type="youtube", source="url", diarization_id="test-id")
             run_audio_diarization_worker(cmd)
 
-            mock_repo.update_status.assert_called_with(
-                "test-id", "failed", error_message=ANY, status_message=ANY
-            )
+            mock_repo.update_status.assert_called_with("test-id", "failed", error_message=ANY, status_message=ANY)

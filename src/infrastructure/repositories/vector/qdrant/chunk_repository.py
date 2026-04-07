@@ -39,9 +39,7 @@ class ChunkQdrantRepository(IVectorRepository):
                         context={"collection": self._collection_name},
                     )
                     # Get vector size from embedding service
-                    vector_size = (
-                        self._embedding_service.model_loader_service.dimensions
-                    )
+                    vector_size = self._embedding_service.model_loader_service.dimensions
 
                     client.create_collection(
                         collection_name=self._collection_name,
@@ -70,9 +68,7 @@ class ChunkQdrantRepository(IVectorRepository):
             )
 
     def create_documents(self, documents: List[ChunkModel]) -> List[str]:
-        logger.debug(
-            "Creating documents in Qdrant", context={"num_documents": len(documents)}
-        )
+        logger.debug("Creating documents in Qdrant", context={"num_documents": len(documents)})
 
         try:
             self._ensure_collection_exists()
@@ -158,9 +154,7 @@ class ChunkQdrantRepository(IVectorRepository):
             )
             raise
 
-    def _semantic_search(
-        self, query: str, top_kn: int, filters: Optional[rest.Filter]
-    ) -> List[ChunkModel]:
+    def _semantic_search(self, query: str, top_kn: int, filters: Optional[rest.Filter]) -> List[ChunkModel]:
         query_vector = self._embedding_service.embed_query(query)
 
         with self._connector as client:
@@ -174,9 +168,7 @@ class ChunkQdrantRepository(IVectorRepository):
 
         return self._transform_hits(search_result)
 
-    def _bm25_search(
-        self, query: str, top_kn: int, filters: Optional[rest.Filter]
-    ) -> List[ChunkModel]:
+    def _bm25_search(self, query: str, top_kn: int, filters: Optional[rest.Filter]) -> List[ChunkModel]:
         """Qdrant full-text search as a proxy for BM25."""
         # Create a text match filter for the content
         text_filter = rest.Filter(
@@ -233,9 +225,7 @@ class ChunkQdrantRepository(IVectorRepository):
 
         return self._transform_hits(search_result)
 
-    def _hybrid_search(
-        self, query: str, top_kn: int, filters: Optional[rest.Filter]
-    ) -> List[ChunkModel]:
+    def _hybrid_search(self, query: str, top_kn: int, filters: Optional[rest.Filter]) -> List[ChunkModel]:
         """Hybrid search combining semantic and text match."""
         # Simple implementation: get top results from both and merge
         semantic_results = self._semantic_search(query, top_kn * 2, filters)
@@ -262,9 +252,7 @@ class ChunkQdrantRepository(IVectorRepository):
                 fused_scores[chunk_id] = fused_scores.get(chunk_id, 0.0) + score
 
         # Sort by fused score
-        sorted_ids = sorted(
-            fused_scores.keys(), key=lambda x: fused_scores[x], reverse=True
-        )
+        sorted_ids = sorted(fused_scores.keys(), key=lambda x: fused_scores[x], reverse=True)
 
         final_results = []
         for chunk_id in sorted_ids[:top_n]:
@@ -296,9 +284,7 @@ class ChunkQdrantRepository(IVectorRepository):
             for k, v in filters.items():
                 if k == "id":
                     if isinstance(v, list):
-                        must_conditions.append(
-                            rest.HasIdCondition(has_id=[str(id_val) for id_val in v])
-                        )
+                        must_conditions.append(rest.HasIdCondition(has_id=[str(id_val) for id_val in v]))
                     else:
                         must_conditions.append(rest.HasIdCondition(has_id=[str(v)]))
                 else:
@@ -311,9 +297,7 @@ class ChunkQdrantRepository(IVectorRepository):
                             )
                         )
                     else:
-                        must_conditions.append(
-                            rest.FieldCondition(key=k, match=rest.MatchValue(value=v))
-                        )
+                        must_conditions.append(rest.FieldCondition(key=k, match=rest.MatchValue(value=v)))
 
             if must_conditions:
                 return rest.Filter(must=must_conditions)
@@ -331,9 +315,7 @@ class ChunkQdrantRepository(IVectorRepository):
             # Convert string dates back to datetime objects
             if "created_at" in payload and isinstance(payload["created_at"], str):
                 try:
-                    payload["created_at"] = datetime.fromisoformat(
-                        payload["created_at"]
-                    )
+                    payload["created_at"] = datetime.fromisoformat(payload["created_at"])
                 except ValueError:
                     pass
 
@@ -353,9 +335,7 @@ class ChunkQdrantRepository(IVectorRepository):
     def delete(self, filters: Optional[Any]) -> int:
         qdrant_filters = self._convert_filters(filters)
         if not qdrant_filters:
-            logger.warning(
-                "Delete called without filters in Qdrant, skipping for safety."
-            )
+            logger.warning("Delete called without filters in Qdrant, skipping for safety.")
             return 0
 
         self._ensure_collection_exists()
@@ -374,9 +354,7 @@ class ChunkQdrantRepository(IVectorRepository):
             logger.error("Error deleting from Qdrant", context={"error": str(e)})
             raise
 
-    def list_chunks(
-        self, filters: Optional[Any], limit: int = 1000
-    ) -> List[ChunkModel]:
+    def list_chunks(self, filters: Optional[Any], limit: int = 1000) -> List[ChunkModel]:
         qdrant_filters = self._convert_filters(filters)
 
         try:

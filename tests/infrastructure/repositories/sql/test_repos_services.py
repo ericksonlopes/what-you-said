@@ -30,9 +30,7 @@ from src.infrastructure.services.knowledge_subject_service import (
 def test_sql_repositories_and_services():
     # KnowledgeSubject repository CRUD
     ks_repo = KnowledgeSubjectSQLRepository()
-    ks_id = ks_repo.create_subject(
-        name="KS1", external_ref="ext-ks1", description="desc1"
-    )
+    ks_id = ks_repo.create_subject(name="KS1", external_ref="ext-ks1", description="desc1")
     assert isinstance(ks_id, UUID)
 
     ks_model = ks_repo.get_by_id(ks_id)

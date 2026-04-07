@@ -31,7 +31,5 @@ class KnowledgeSubjectMapper:
     def model_list_to_entities(
         models: List[KnowledgeSubjectModel],
     ) -> List[KnowledgeSubjectEntity]:
-        temp = [
-            KnowledgeSubjectMapper.model_to_entity(m) for m in models if m is not None
-        ]
+        temp = [KnowledgeSubjectMapper.model_to_entity(m) for m in models if m is not None]
         return [r for r in temp if r is not None]

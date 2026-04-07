@@ -21,9 +21,7 @@ def load_audio_tensor(audio_path: str) -> dict:
 
     if path.suffix.lower() not in {".wav", ".flac", ".ogg", ".opus"}:
         if not PYDUB_AVAILABLE:
-            raise ImportError(
-                f"To load '{path.suffix}' install pydub: pip install pydub"
-            )
+            raise ImportError(f"To load '{path.suffix}' install pydub: pip install pydub")
         tmp_wav = str(path.with_suffix(".tmp_utils.wav"))
         AudioSegment.from_file(audio_path).export(tmp_wav, format="wav")
         read_path = tmp_wav

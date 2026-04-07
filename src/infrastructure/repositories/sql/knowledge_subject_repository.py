@@ -43,9 +43,7 @@ class KnowledgeSubjectSQLRepository:
                 session.add(ks)
                 session.commit()
                 session.refresh(ks)
-                logger.debug(
-                    "KnowledgeSubject created successfully", context={"id": ks.id}
-                )
+                logger.debug("KnowledgeSubject created successfully", context={"id": ks.id})
 
                 return cast(UUID, ks.id)
             except Exception as e:
@@ -122,9 +120,7 @@ class KnowledgeSubjectSQLRepository:
                     .limit(limit)
                     .all()
                 )
-                logger.debug(
-                    "List successful", context={"limit": limit, "count": len(result)}
-                )
+                logger.debug("List successful", context={"limit": limit, "count": len(result)})
                 return result
             except Exception as e:
                 logger.error(
@@ -155,9 +151,7 @@ class KnowledgeSubjectSQLRepository:
                 )
                 ks = session.get(KnowledgeSubjectModel, id)
                 if ks is None:
-                    logger.warning(
-                        "KnowledgeSubject not found for update", context={"id": id}
-                    )
+                    logger.warning("KnowledgeSubject not found for update", context={"id": id})
                     return
                 if name is not None:
                     ks.name = name
@@ -168,9 +162,7 @@ class KnowledgeSubjectSQLRepository:
                 if icon is not None:
                     ks.icon = icon
                 session.commit()
-                logger.debug(
-                    "KnowledgeSubject updated successfully", context={"id": id}
-                )
+                logger.debug("KnowledgeSubject updated successfully", context={"id": id})
             except Exception as e:
                 logger.error(
                     "Error updating KnowledgeSubject",
@@ -210,18 +202,14 @@ class KnowledgeSubjectSQLRepository:
     def get_by_name(self, name) -> Optional[KnowledgeSubjectModel]:
         with Connector() as session:
             try:
-                logger.debug(
-                    "Fetching KnowledgeSubject by name", context={"name": name}
-                )
+                logger.debug("Fetching KnowledgeSubject by name", context={"name": name})
                 result = (
                     session.query(KnowledgeSubjectModel)
                     .options(selectinload(KnowledgeSubjectModel.content_sources))
                     .filter_by(name=name)
                     .first()
                 )
-                logger.debug(
-                    "Fetch successful", context={"name": name, "result": result}
-                )
+                logger.debug("Fetch successful", context={"name": name, "result": result})
                 return result
             except Exception as e:
                 logger.error(

@@ -22,9 +22,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema."""
     with op.batch_alter_table("diarizations", schema=None) as batch_op:
-        batch_op.alter_column(
-            "title", new_column_name="name", existing_type=sa.String()
-        )
+        batch_op.alter_column("title", new_column_name="name", existing_type=sa.String())
 
 
 def downgrade() -> None:

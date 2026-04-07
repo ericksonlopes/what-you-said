@@ -23,9 +23,7 @@ def upgrade() -> None:
     """Upgrade schema."""
     # Using batch mode for SQLite compatibility
     with op.batch_alter_table("content_sources", schema=None) as batch_op:
-        batch_op.drop_constraint(
-            op.f("uq_content_source_external_source"), type_="unique"
-        )
+        batch_op.drop_constraint(op.f("uq_content_source_external_source"), type_="unique")
         batch_op.create_unique_constraint(
             "uq_content_source_external_source_per_subject",
             ["external_source", "subject_id"],

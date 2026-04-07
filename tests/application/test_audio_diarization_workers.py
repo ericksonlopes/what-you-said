@@ -18,9 +18,7 @@ class TestAudioDiarizationWorker:
     def mock_db_session(self):
         return MagicMock()
 
-    def test_run_audio_diarization_dispatcher_worker_deduplication(
-        self, mock_app, mock_db_session
-    ):
+    def test_run_audio_diarization_dispatcher_worker_deduplication(self, mock_app, mock_db_session):
         # 1. Setup command
         cmd = ProcessAudioCommand(
             source_type="youtube",
@@ -40,16 +38,12 @@ class TestAudioDiarizationWorker:
 
         with (
             patch("src.application.workers.registry.get", return_value=mock_app),
-            patch(
-                "src.infrastructure.extractors.youtube_extractor.YoutubeExtractor"
-            ) as mock_extractor_cls,
+            patch("src.infrastructure.extractors.youtube_extractor.YoutubeExtractor") as mock_extractor_cls,
             patch(
                 "src.infrastructure.repositories.sql.connector.Session",
                 return_value=mock_db_session,
             ),
-            patch(
-                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"
-            ) as mock_repo_cls,
+            patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository") as mock_repo_cls,
         ):
             mock_extractor = mock_extractor_cls.return_value
             mock_extractor.extract_playlist_videos.return_value = video_urls
@@ -83,9 +77,7 @@ class TestAudioDiarizationWorker:
             single_cmd = args[1]
             assert single_cmd.source == "https://youtube.com/watch?v=v2"
 
-    def test_run_audio_diarization_dispatcher_worker_retry_failed(
-        self, mock_app, mock_db_session
-    ):
+    def test_run_audio_diarization_dispatcher_worker_retry_failed(self, mock_app, mock_db_session):
         # 1. Setup command
         cmd = ProcessAudioCommand(
             source_type="youtube",
@@ -98,22 +90,16 @@ class TestAudioDiarizationWorker:
 
         with (
             patch("src.application.workers.registry.get", return_value=mock_app),
-            patch(
-                "src.infrastructure.extractors.youtube_extractor.YoutubeExtractor"
-            ) as mock_extractor_cls,
+            patch("src.infrastructure.extractors.youtube_extractor.YoutubeExtractor") as mock_extractor_cls,
             patch(
                 "src.infrastructure.repositories.sql.connector.Session",
                 return_value=mock_db_session,
             ),
-            patch(
-                "src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"
-            ) as mock_repo_cls,
+            patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository") as mock_repo_cls,
         ):
             mock_extractor = mock_extractor_cls.return_value
             # Mock playlist extraction to return one video
-            mock_extractor.extract_playlist_videos.return_value = [
-                "https://youtube.com/watch?v=v1"
-            ]
+            mock_extractor.extract_playlist_videos.return_value = ["https://youtube.com/watch?v=v1"]
 
             mock_repo = mock_repo_cls.return_value
             mock_repo.get_by_external_source.return_value = failed_record

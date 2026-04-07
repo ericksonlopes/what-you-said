@@ -76,9 +76,7 @@ class AudioDiarizer:
         logger.info("[2/3] Word alignment starting")
         lang = language or result.get("language", "en")
         try:
-            model_a, metadata = model_loader.get_align_model(
-                language_code=lang, device=self._device
-            )
+            model_a, metadata = model_loader.get_align_model(language_code=lang, device=self._device)
             result = whisperx.align(
                 result["segments"],
                 model_a,
@@ -152,9 +150,7 @@ class AudioDiarizer:
         result_trans = self._transcribe(audio, language)
         result_aligned = self._align(result_trans, audio, language)
 
-        segments, lang = self._diarize(
-            audio, result_aligned, num_speakers, min_speakers, max_speakers
-        )
+        segments, lang = self._diarize(audio, result_aligned, num_speakers, min_speakers, max_speakers)
 
         return DiarizationResult(
             segments=segments,

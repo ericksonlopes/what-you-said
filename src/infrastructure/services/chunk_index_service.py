@@ -13,9 +13,7 @@ from src.infrastructure.repositories.sql.chunk_index_repository import (
 class ChunkIndexService:
     """Service that works with the chunk_index SQL table and returns domain ChunkEntity items where appropriate."""
 
-    def __init__(
-        self, repository: ChunkIndexSQLRepository, logger: Optional[Logger] = None
-    ) -> None:
+    def __init__(self, repository: ChunkIndexSQLRepository, logger: Optional[Logger] = None) -> None:
         self._repo = repository
         self._logger = logger or Logger()
         self._mapper = ChunkIndexMapper()
@@ -34,16 +32,12 @@ class ChunkIndexService:
                     "chars": len(e.content) if e.content is not None else 0,
                     "tokens_count": e.tokens_count,
                     "language": e.language,
-                    "source_type": e.source_type.value
-                    if isinstance(e.source_type, SourceType)
-                    else e.source_type,
+                    "source_type": e.source_type.value if isinstance(e.source_type, SourceType) else e.source_type,
                     "subject_id": e.subject_id,
                     "external_source": e.external_source,
                     "extra": e.extra,
                     "version_number": e.version_number,
-                    "vector_store_type": e.extra.get("vector_store_type")
-                    if hasattr(e, "extra")
-                    else None,
+                    "vector_store_type": e.extra.get("vector_store_type") if hasattr(e, "extra") else None,
                 }
             )
         return self._repo.create_chunks(rows)
@@ -54,9 +48,7 @@ class ChunkIndexService:
         limit: Optional[int] = None,
         offset: Optional[int] = None,
     ) -> List[ChunkEntity]:
-        models = self._repo.list_by_content_source(
-            content_source_id=content_source_id, limit=limit, offset=offset
-        )
+        models = self._repo.list_by_content_source(content_source_id=content_source_id, limit=limit, offset=offset)
         temp = [self._mapper.model_to_entity(m) for m in models]
         return [e for e in temp if e is not None]
 
@@ -71,9 +63,7 @@ class ChunkIndexService:
         """Delete from SQL by job_id. Vector store sync should happen at Use Case level."""
         return self._repo.delete_by_job_id(job_id=job_id)
 
-    def search(
-        self, query: Optional[str], top_k: int = 10, filters: Optional[Any] = None
-    ) -> List[ChunkEntity]:
+    def search(self, query: Optional[str], top_k: int = 10, filters: Optional[Any] = None) -> List[ChunkEntity]:
         models = self._repo.search(query=query, top_k=top_k, filters=filters)
         temp = [self._mapper.model_to_entity(m) for m in models]
         return [e for e in temp if e is not None]
@@ -92,9 +82,7 @@ class ChunkIndexService:
         source_id: Optional[UUID] = None,
         search_query: Optional[str] = None,
     ) -> List[ChunkEntity]:
-        models = self._repo.list_chunks(
-            limit=limit, offset=offset, source_id=source_id, search_query=search_query
-        )
+        models = self._repo.list_chunks(limit=limit, offset=offset, source_id=source_id, search_query=search_query)
         temp = [self._mapper.model_to_entity(m) for m in models]
         return [e for e in temp if e is not None]
 

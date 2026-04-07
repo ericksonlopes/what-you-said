@@ -13,9 +13,7 @@ class TestTextSplitterService:
         # For simple testing, each word is an ID
         tokenizer.encode.side_effect = lambda text, **kwargs: [ord(c) for c in text]
         # Mock decode: converts IDs back to characters
-        tokenizer.decode.side_effect = lambda ids, **kwargs: "".join(
-            chr(i) for i in ids
-        )
+        tokenizer.decode.side_effect = lambda ids, **kwargs: "".join(chr(i) for i in ids)
         return tokenizer
 
     def test_split_text_success(self, mock_tokenizer):
@@ -60,9 +58,7 @@ class TestTextSplitterService:
         service = TextSplitterService(tokenizer=mock_tokenizer)
         with pytest.raises(ValueError) as excinfo:
             service.split_text(text="some text", tokens_per_chunk=10, tokens_overlap=10)
-        assert "tokens_per_chunk must be greater than tokens_overlap" in str(
-            excinfo.value
-        )
+        assert "tokens_per_chunk must be greater than tokens_overlap" in str(excinfo.value)
 
     def test_split_text_tokenizer_type_error(self, mock_tokenizer):
         # Test the fallback in split_text if add_special_tokens=False is not supported

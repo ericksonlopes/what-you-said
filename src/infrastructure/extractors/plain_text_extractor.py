@@ -42,9 +42,7 @@ class PlainTextExtractor:
     def _extract_from_url(self, url: str) -> List[Document]:
         logger.info("Extracting plain text from URL", context={"url": url})
         try:
-            with httpx.Client(
-                follow_redirects=True, headers=self.headers, timeout=self.timeout
-            ) as client:
+            with httpx.Client(follow_redirects=True, headers=self.headers, timeout=self.timeout) as client:
                 response = client.get(url)
                 response.raise_for_status()
                 content = response.text
@@ -63,9 +61,7 @@ class PlainTextExtractor:
             raise ValueError(f"Failed to download content from {url}: {str(e)}")
 
     def _extract_from_local(self, file_path: str) -> List[Document]:
-        logger.info(
-            "Extracting plain text from local file", context={"file_path": file_path}
-        )
+        logger.info("Extracting plain text from local file", context={"file_path": file_path})
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 

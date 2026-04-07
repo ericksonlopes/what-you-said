@@ -30,9 +30,7 @@ def get_chunks(
 ):
     """Retrieve text chunks with optional filtering by source or search query"""
     try:
-        chunks = chunk_service.list_chunks(
-            limit=limit, offset=offset, source_id=source_id, search_query=q
-        )
+        chunks = chunk_service.list_chunks(limit=limit, offset=offset, source_id=source_id, search_query=q)
         return chunks
     except Exception as e:
         logger.error(e, context={"action": "list_chunks"})

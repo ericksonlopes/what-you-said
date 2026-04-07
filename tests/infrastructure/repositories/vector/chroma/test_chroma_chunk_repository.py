@@ -140,9 +140,7 @@ class TestChunkChromaRepository:
         # Mock dependencies for BM25
         mock_bm25 = MagicMock()
         monkeypatch.setitem(sys.modules, "rank_bm25", MagicMock())
-        monkeypatch.setattr(
-            "rank_bm25.BM25Okapi", MagicMock(return_value=mock_bm25), raising=False
-        )
+        monkeypatch.setattr("rank_bm25.BM25Okapi", MagicMock(return_value=mock_bm25), raising=False)
         mock_np = MagicMock()
         monkeypatch.setitem(sys.modules, "numpy", mock_np)
         mock_np.argsort.return_value = [0]

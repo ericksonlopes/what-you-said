@@ -90,8 +90,7 @@ def ingest_youtube(
     is_bulk = request.video_urls and len(request.video_urls) > 0
     is_playlist = request.data_type == "playlist"
     is_channel = request.data_type == "channel" or (
-        request.video_url
-        and any(x in request.video_url for x in ["/channel/", "/c/", "/user/", "@"])
+        request.video_url and any(x in request.video_url for x in ["/channel/", "/c/", "/user/", "@"])
     )
 
     if is_channel:
@@ -101,19 +100,13 @@ def ingest_youtube(
         logger.info(
             "Running ingestion in background via queue",
             context={
-                "reason": "reprocess"
-                if request.reprocess
-                else ("bulk/playlist" if not is_channel else "channel")
+                "reason": "reprocess" if request.reprocess else ("bulk/playlist" if not is_channel else "channel")
             },
         )
 
     # Determine which worker to use: dispatcher for playlists/channels/bulk, ingestion for single
     is_bulk_processing = is_bulk or is_playlist or is_channel
-    worker = (
-        run_youtube_dispatcher_worker
-        if is_bulk_processing
-        else run_youtube_ingestion_worker
-    )
+    worker = run_youtube_dispatcher_worker if is_bulk_processing else run_youtube_ingestion_worker
 
     if request.reprocess or is_bulk_processing:
         # Determine the reason for background processing
@@ -124,17 +117,13 @@ def ingest_youtube(
         else:
             reason = "bulk/playlist"
 
-        logger.info(
-            "Running ingestion in background via queue", context={"reason": reason}
-        )
+        logger.info("Running ingestion in background via queue", context={"reason": reason})
 
         task_queue.enqueue(
             worker,
             cmd,
             task_title=request.title or request.video_url or "YouTube Ingestion",
-            metadata={"job_id": str(request.ingestion_job_id)}
-            if request.ingestion_job_id
-            else {},
+            metadata={"job_id": str(request.ingestion_job_id)} if request.ingestion_job_id else {},
         )
         return IngestResponse(
             skipped=False,
@@ -155,9 +144,7 @@ def ingest_youtube(
     except HTTPException:
         raise
     except ValueError as ve:
-        logger.warning(
-            "Validation error in youtube ingestion", context={"error": str(ve)}
-        )
+        logger.warning("Validation error in youtube ingestion", context={"error": str(ve)})
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         logger.error(e, context={"action": "youtube_ingestion"})
@@ -361,13 +348,9 @@ async def ingest_web(
             task_title=request.title or request.url,
             metadata={"url": request.url},
         )
-        logger.info(
-            "Web ingestion task enqueued successfully", context={"url": request.url}
-        )
+        logger.info("Web ingestion task enqueued successfully", context={"url": request.url})
     except Exception as e:
-        logger.error(
-            f"Failed to enqueue web ingestion task: {e}", context={"url": request.url}
-        )
+        logger.error(f"Failed to enqueue web ingestion task: {e}", context={"url": request.url})
         raise HTTPException(status_code=500, detail=f"Failed to enqueue task: {str(e)}")
 
     return {
@@ -387,9 +370,7 @@ async def ingest_web(
 )
 async def ingest_diarization(
     request: Annotated[DiarizationIngestRequest, Body()],
-    use_case: Annotated[
-        DiarizationIngestionUseCase, Depends(get_diarization_ingestion_use_case)
-    ],
+    use_case: Annotated[DiarizationIngestionUseCase, Depends(get_diarization_ingestion_use_case)],
     task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
 ):
     """
@@ -467,9 +448,7 @@ def preview_youtube_channel(
         from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
         extractor = YoutubeExtractor()
-        videos, channel_name = extractor.extract_channel_videos(
-            request.channel_url.strip()
-        )
+        videos, channel_name = extractor.extract_channel_videos(request.channel_url.strip())
 
         if not videos:
             return ChannelPreviewResponse(

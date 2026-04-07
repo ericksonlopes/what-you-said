@@ -8,6 +8,7 @@ export interface Speaker {
     isPlaying: boolean;
     confidence: number;
     audioUrl?: string;
+    trainingStatus?: 'processing';
 }
 
 export interface DiarizationJob {

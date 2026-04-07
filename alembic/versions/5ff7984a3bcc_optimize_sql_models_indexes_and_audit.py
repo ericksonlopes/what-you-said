@@ -33,12 +33,8 @@ def upgrade() -> None:
             )
         )
         batch_op.create_index("ix_chunk_index_chunk_id", ["chunk_id"], unique=False)
-        batch_op.create_index(
-            "ix_chunk_index_content_source_id", ["content_source_id"], unique=False
-        )
-        batch_op.create_index(
-            op.f("ix_chunk_index_created_at"), ["created_at"], unique=False
-        )
+        batch_op.create_index("ix_chunk_index_content_source_id", ["content_source_id"], unique=False)
+        batch_op.create_index(op.f("ix_chunk_index_created_at"), ["created_at"], unique=False)
         batch_op.create_index("ix_chunk_index_job_id", ["job_id"], unique=False)
 
     with op.batch_alter_table("content_sources", schema=None) as batch_op:
@@ -50,24 +46,16 @@ def upgrade() -> None:
                 nullable=False,
             )
         )
-        batch_op.create_index(
-            op.f("ix_content_sources_created_at"), ["created_at"], unique=False
-        )
+        batch_op.create_index(op.f("ix_content_sources_created_at"), ["created_at"], unique=False)
         batch_op.create_index(
             op.f("ix_content_sources_processing_status"),
             ["processing_status"],
             unique=False,
         )
-        batch_op.create_index(
-            "ix_content_sources_source_type", ["source_type"], unique=False
-        )
+        batch_op.create_index("ix_content_sources_source_type", ["source_type"], unique=False)
         batch_op.create_index("ix_content_sources_status", ["status"], unique=False)
-        batch_op.create_index(
-            "ix_content_sources_subject_id", ["subject_id"], unique=False
-        )
-        batch_op.create_unique_constraint(
-            "uq_content_source_external_source", ["external_source"]
-        )
+        batch_op.create_index("ix_content_sources_subject_id", ["subject_id"], unique=False)
+        batch_op.create_unique_constraint("uq_content_source_external_source", ["external_source"])
 
     with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
         batch_op.add_column(
@@ -78,12 +66,8 @@ def upgrade() -> None:
                 nullable=False,
             )
         )
-        batch_op.create_index(
-            "ix_ingestion_jobs_content_source_id", ["content_source_id"], unique=False
-        )
-        batch_op.create_index(
-            op.f("ix_ingestion_jobs_started_at"), ["started_at"], unique=False
-        )
+        batch_op.create_index("ix_ingestion_jobs_content_source_id", ["content_source_id"], unique=False)
+        batch_op.create_index(op.f("ix_ingestion_jobs_started_at"), ["started_at"], unique=False)
         batch_op.create_index("ix_ingestion_jobs_status", ["status"], unique=False)
 
     with op.batch_alter_table("knowledge_subjects", schema=None) as batch_op:
@@ -105,9 +89,7 @@ def downgrade() -> None:
     with op.batch_alter_table("ingestion_jobs", schema=None) as batch_op:
         batch_op.drop_index("ix_ingestion_jobs_status")
         batch_op.drop_index(op.f("ix_ingestion_jobs_started_at"))
-        batch_op.create_index(
-            "ix_ingestion_jobs_content_source_id", ["content_source_id"], unique=False
-        )
+        batch_op.create_index("ix_ingestion_jobs_content_source_id", ["content_source_id"], unique=False)
         batch_op.drop_column("updated_at")
 
     with op.batch_alter_table("content_sources", schema=None) as batch_op:

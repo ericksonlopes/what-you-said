@@ -32,9 +32,7 @@ class ChunkFAISSRepository(IVectorRepository):
         from langchain_community.vectorstores import FAISS
 
         if os.path.exists(os.path.join(self._index_path, f"{self._index_name}.faiss")):
-            logger.debug(
-                "Loading existing FAISS index", context={"path": self._index_path}
-            )
+            logger.debug("Loading existing FAISS index", context={"path": self._index_path})
             try:
                 self._vector_store = FAISS.load_local(
                     folder_path=self._index_path,
@@ -43,32 +41,22 @@ class ChunkFAISSRepository(IVectorRepository):
                     allow_dangerous_deserialization=True,
                 )
             except Exception as e:
-                logger.error(
-                    e, context={"action": "load_faiss_index", "path": self._index_path}
-                )
+                logger.error(e, context={"action": "load_faiss_index", "path": self._index_path})
                 self._vector_store = None
         else:
-            logger.debug(
-                "FAISS index not found, it will be created upon first document addition"
-            )
+            logger.debug("FAISS index not found, it will be created upon first document addition")
 
     def _save(self):
         """Save the FAISS index to disk."""
         if self._vector_store:
             os.makedirs(self._index_path, exist_ok=True)
-            self._vector_store.save_local(
-                folder_path=self._index_path, index_name=self._index_name
-            )
+            self._vector_store.save_local(folder_path=self._index_path, index_name=self._index_name)
 
     def create_documents(self, documents: List[ChunkModel]) -> List[str]:
-        logger.debug(
-            "Creating documents in FAISS", context={"num_documents": len(documents)}
-        )
+        logger.debug("Creating documents in FAISS", context={"num_documents": len(documents)})
 
         try:
-            texts: List[str] = [
-                doc.content for doc in documents if doc.content is not None
-            ]
+            texts: List[str] = [doc.content for doc in documents if doc.content is not None]
             if not texts:
                 return []
 
@@ -78,9 +66,7 @@ class ChunkFAISSRepository(IVectorRepository):
 
             metadatas = []
             for doc in valid_docs:
-                meta = doc.model_dump(
-                    exclude={"content", "score"}
-                )  # No longer exclude ID
+                meta = doc.model_dump(exclude={"content", "score"})  # No longer exclude ID
 
                 # Convert UUIDs and datetimes to string for better compatibility
                 for key, value in meta.items():
@@ -168,21 +154,15 @@ class ChunkFAISSRepository(IVectorRepository):
             else:
                 return self._semantic_search(query, top_kn, filter_callable)
         except Exception as e:
-            logger.error(
-                "Error retrieving from FAISS", context={"query": query, "error": str(e)}
-            )
+            logger.error("Error retrieving from FAISS", context={"query": query, "error": str(e)})
             raise
 
-    def _semantic_search(
-        self, query: str, top_kn: int, filter_callable: Optional[Any]
-    ) -> List[ChunkModel]:
+    def _semantic_search(self, query: str, top_kn: int, filter_callable: Optional[Any]) -> List[ChunkModel]:
         """Standard FAISS vector similarity search."""
         if not self._vector_store:
             return []
 
-        docs_with_scores = self._vector_store.similarity_search_with_score(
-            query, k=top_kn, filter=filter_callable
-        )
+        docs_with_scores = self._vector_store.similarity_search_with_score(query, k=top_kn, filter=filter_callable)
         mapper = ChunkMapper()
         models: List[ChunkModel] = []
         for doc, score in docs_with_scores:
@@ -202,9 +182,7 @@ class ChunkFAISSRepository(IVectorRepository):
             all_docs = [d for d in all_docs if filter_callable(d.metadata)]
         return all_docs
 
-    def _bm25_search(
-        self, query: str, top_kn: int, filter_callable: Optional[Any]
-    ) -> List[ChunkModel]:
+    def _bm25_search(self, query: str, top_kn: int, filter_callable: Optional[Any]) -> List[ChunkModel]:
         """BM25 keyword search over the in-memory FAISS docstore using rank_bm25."""
         try:
             from rank_bm25 import BM25Okapi
@@ -213,24 +191,18 @@ class ChunkFAISSRepository(IVectorRepository):
                 "rank_bm25 is not installed",
                 context={"hint": "Run: pip install rank-bm25"},
             )
-            raise ImportError(
-                "rank-bm25 package required for BM25 search. Install with: pip install rank-bm25"
-            )
+            raise ImportError("rank-bm25 package required for BM25 search. Install with: pip install rank-bm25")
 
         all_docs = self._get_all_docs(filter_callable)
         if not all_docs:
             return []
 
-        tokenized_corpus = [
-            (doc.page_content or "").lower().split() for doc in all_docs
-        ]
+        tokenized_corpus = [(doc.page_content or "").lower().split() for doc in all_docs]
         bm25 = BM25Okapi(tokenized_corpus)
         scores = bm25.get_scores(query.lower().split())
 
         # Get top_kn indices sorted by descending score
-        ranked_indices = sorted(
-            range(len(scores)), key=lambda i: scores[i], reverse=True
-        )[:top_kn]
+        ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_kn]
 
         mapper = ChunkMapper()
         models: List[ChunkModel] = []
@@ -242,9 +214,7 @@ class ChunkFAISSRepository(IVectorRepository):
             models.append(model)
         return models
 
-    def _hybrid_search(
-        self, query: str, top_kn: int, filter_callable: Optional[Any]
-    ) -> List[ChunkModel]:
+    def _hybrid_search(self, query: str, top_kn: int, filter_callable: Optional[Any]) -> List[ChunkModel]:
         """Hybrid search: merge BM25 + semantic results using Reciprocal Rank Fusion (RRF)."""
         # Fetch more candidates per method to improve fusion quality
         fetch_k = max(top_kn * 3, 20)
@@ -280,9 +250,7 @@ class ChunkFAISSRepository(IVectorRepository):
 
             try:
                 content_str = (model.content or "").strip()
-                content_hash = hashlib.md5(
-                    content_str.encode("utf-8"), usedforsecurity=False
-                ).hexdigest()
+                content_hash = hashlib.md5(content_str.encode("utf-8"), usedforsecurity=False).hexdigest()
                 return content_hash
             except TypeError:
                 # Fallback for older python versions if needed, though 3.12+ supports it
@@ -301,9 +269,7 @@ class ChunkFAISSRepository(IVectorRepository):
 
         # Sort by RRF score descending and take top_kn
         # Use a stable sort key to avoid TypeError when comparing different key types on tie-breaks
-        ranked_keys = sorted(
-            scores.keys(), key=lambda k: (scores[k], str(k)), reverse=True
-        )[:top_kn]
+        ranked_keys = sorted(scores.keys(), key=lambda k: (scores[k], str(k)), reverse=True)[:top_kn]
 
         results = []
         for key in ranked_keys:
@@ -311,9 +277,7 @@ class ChunkFAISSRepository(IVectorRepository):
             model.score = scores[key]
             results.append(model)
 
-        logger.info(
-            "Hybrid search fusion completed", context={"total_results": len(results)}
-        )
+        logger.info("Hybrid search fusion completed", context={"total_results": len(results)})
         return results
 
     def delete(self, filters: Optional[Any]) -> int:
@@ -323,9 +287,7 @@ class ChunkFAISSRepository(IVectorRepository):
 
         try:
             if not filters:
-                logger.warning(
-                    "Delete called without filters in FAISS, skipping for safety."
-                )
+                logger.warning("Delete called without filters in FAISS, skipping for safety.")
                 return 0
 
             # If it's a simple ID filter
@@ -366,12 +328,8 @@ class ChunkFAISSRepository(IVectorRepository):
             )
             raise
 
-    def list_chunks(
-        self, filters: Optional[Any], limit: int = 1000
-    ) -> List[ChunkModel]:
-        logger.debug(
-            "Listing chunks from FAISS", context={"filters": filters, "limit": limit}
-        )
+    def list_chunks(self, filters: Optional[Any], limit: int = 1000) -> List[ChunkModel]:
+        logger.debug("Listing chunks from FAISS", context={"filters": filters, "limit": limit})
 
         if not self._vector_store:
             return []

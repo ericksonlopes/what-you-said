@@ -19,9 +19,7 @@ class KnowledgeSubjectService:
     All outputs that represent subject data are returned as KnowledgeSubjectEntity instances.
     """
 
-    def __init__(
-        self, repository: KnowledgeSubjectSQLRepository, logger: Optional[Logger] = None
-    ) -> None:
+    def __init__(self, repository: KnowledgeSubjectSQLRepository, logger: Optional[Logger] = None) -> None:
         self._repo = repository
         self._logger = logger or Logger()
 
@@ -37,9 +35,7 @@ class KnowledgeSubjectService:
             "Creating knowledge subject",
             context={"name": name, "external_ref": external_ref, "icon": icon},
         )
-        created_id = self._repo.create_subject(
-            name=name, external_ref=external_ref, description=description, icon=icon
-        )
+        created_id = self._repo.create_subject(name=name, external_ref=external_ref, description=description, icon=icon)
         model = self._repo.get_by_id(created_id)
         entity = KnowledgeSubjectMapper.model_to_entity(model)
         if entity is None:
@@ -57,9 +53,7 @@ class KnowledgeSubjectService:
         model = self._repo.get_by_id(id)
         return KnowledgeSubjectMapper.model_to_entity(model)
 
-    def get_subject_by_external_ref(
-        self, external_ref: str
-    ) -> Optional[KnowledgeSubjectEntity]:
+    def get_subject_by_external_ref(self, external_ref: str) -> Optional[KnowledgeSubjectEntity]:
         """Fetch a subject by an external reference string and return as an Entity."""
         model = self._repo.get_by_external_ref(external_ref)
         return KnowledgeSubjectMapper.model_to_entity(model)
@@ -75,9 +69,7 @@ class KnowledgeSubjectService:
         If name is not provided when creating, external_ref is used as the name.
         Returns a Domain Entity representing the subject.
         """
-        self._logger.debug(
-            "get_or_create_by_external_ref", context={"external_ref": external_ref}
-        )
+        self._logger.debug("get_or_create_by_external_ref", context={"external_ref": external_ref})
         existing = self._repo.get_by_external_ref(external_ref)
         if existing is not None:
             entity = KnowledgeSubjectMapper.model_to_entity(existing)

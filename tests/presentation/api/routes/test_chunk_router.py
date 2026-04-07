@@ -55,9 +55,7 @@ def test_update_chunk_success(mock_chunk_index_service, mock_chunk_vector_servic
     assert response.status_code == 200
     assert response.json() is True
     mock_chunk_index_service.get_by_id.assert_called_once()
-    mock_chunk_index_service.update_chunk.assert_called_once_with(
-        chunk_id, "new content"
-    )
+    mock_chunk_index_service.update_chunk.assert_called_once_with(chunk_id, "new content")
     mock_chunk_vector_service.delete_by_id.assert_called_once_with(chunk_id)
     mock_chunk_vector_service.index_documents.assert_called_once()
 

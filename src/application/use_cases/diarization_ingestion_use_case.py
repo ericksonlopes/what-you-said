@@ -93,9 +93,7 @@ class DiarizationIngestionUseCase:
                 ingestion = self.ingestion_service.get_by_id(cmd.ingestion_job_id)
 
             if ingestion is None:
-                ingestion = self._create_ingestion_job(
-                    external_source, source_type, subject.id
-                )
+                ingestion = self._create_ingestion_job(external_source, source_type, subject.id)
 
             self.ingestion_service.update_job(
                 job_id=ingestion.id,
@@ -105,16 +103,12 @@ class DiarizationIngestionUseCase:
                 total_steps=4,
             )
 
-            full_text = self._format_transcript(
-                cast(list, record.segments), cast(dict, record.recognition_results)
-            )
+            full_text = self._format_transcript(cast(list, record.segments), cast(dict, record.recognition_results))
             if not full_text:
                 raise ValueError("No segments found in diarization record")
 
             display_name = cmd.name or cast(str, record.name) or "Transcrição"
-            source = self._get_or_create_source(
-                source_type, external_source, subject.id, display_name, cmd, record
-            )
+            source = self._get_or_create_source(source_type, external_source, subject.id, display_name, cmd, record)
 
             # Generate chunks and Embeddings
             self.ingestion_service.update_job(
@@ -126,14 +120,10 @@ class DiarizationIngestionUseCase:
                 content_source_id=source.id,
             )
 
-            split_docs = self._generate_split_docs(
-                full_text, display_name, external_source, source_type, cmd, record
-            )
+            split_docs = self._generate_split_docs(full_text, display_name, external_source, source_type, cmd, record)
 
             # Persist Chunks
-            chunks = self._build_chunk_entities(
-                split_docs, source, subject, cmd, ingestion.id
-            )
+            chunks = self._build_chunk_entities(split_docs, source, subject, cmd, ingestion.id)
             self.chunk_service.create_chunks(chunks)
 
             # Index
@@ -215,9 +205,7 @@ class DiarizationIngestionUseCase:
 
         return source_type, external_source
 
-    def _create_ingestion_job(
-        self, external_source: str, source_type: SourceType, subject_id: UUID
-    ) -> Any:
+    def _create_ingestion_job(self, external_source: str, source_type: SourceType, subject_id: UUID) -> Any:
         return self.ingestion_service.create_job(
             content_source_id=None,
             status=IngestionJobStatus.STARTED,
@@ -255,18 +243,14 @@ class DiarizationIngestionUseCase:
                 source_metadata=cast(dict, record.source_metadata),
             )
         else:
-            self.cs_service.update_processing_status(
-                source.id, ContentSourceStatus.PROCESSING
-            )
+            self.cs_service.update_processing_status(source.id, ContentSourceStatus.PROCESSING)
             # Update title if it has changed
             if cmd.name and source.title != cmd.name:
                 self.cs_service.update_title(source.id, cmd.name)
 
             if cmd.reprocess:
                 self.chunk_service.delete_by_content_source(source.id)
-                self.vector_service.delete(
-                    filters={"content_source_id": str(source.id)}
-                )
+                self.vector_service.delete(filters={"content_source_id": str(source.id)})
         return source
 
     def _generate_split_docs(
@@ -344,9 +328,7 @@ class DiarizationIngestionUseCase:
             return f"{h:02d}:{m:02d}:{s:02d}"
         return f"{m:02d}:{s:02d}"
 
-    def _format_transcript(
-        self, segments: List[Dict[str, Any]], recognition: Optional[Dict[str, Any]]
-    ) -> str:
+    def _format_transcript(self, segments: List[Dict[str, Any]], recognition: Optional[Dict[str, Any]]) -> str:
         if not segments:
             return ""
 

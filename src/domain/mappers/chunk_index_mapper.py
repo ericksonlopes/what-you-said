@@ -52,9 +52,7 @@ def _extract_cs_metadata(model: ChunkIndexModel) -> dict:
     }
 
 
-def _build_entity_kwargs(
-    model: ChunkIndexModel, cs_meta: dict, source_type: SourceType
-) -> dict:
+def _build_entity_kwargs(model: ChunkIndexModel, cs_meta: dict, source_type: SourceType) -> dict:
     """Construct keyword args for ChunkEntity from model and extracted metadata.
 
     Having this in a helper reduces the number of expressions inside the main
@@ -63,9 +61,7 @@ def _build_entity_kwargs(
     return {
         "id": cast(UUID, getattr(model, "id")),
         "job_id": cast(Optional[UUID], getattr(model, "job_id", None)),
-        "content_source_id": cast(
-            Optional[UUID], getattr(model, "content_source_id", None)
-        ),
+        "content_source_id": cast(Optional[UUID], getattr(model, "content_source_id", None)),
         "source_type": source_type,
         "external_source": cast(
             Optional[str],
@@ -106,9 +102,7 @@ class ChunkIndexMapper:
         if model is None:
             return None
         cs_meta = _extract_cs_metadata(model)
-        source_type_str = getattr(model, "source_type", None) or cs_meta.get(
-            "source_type_str"
-        )
+        source_type_str = getattr(model, "source_type", None) or cs_meta.get("source_type_str")
         source_type = _resolve_source_type(source_type_str)
         kwargs = _build_entity_kwargs(model, cs_meta, source_type)
         return ChunkEntity(**kwargs)

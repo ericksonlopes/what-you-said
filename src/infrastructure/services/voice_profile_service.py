@@ -30,9 +30,7 @@ class VoiceDB:
             import torch
             from pyannote.audio import Inference, Model
 
-            model = Model.from_pretrained(
-                "pyannote/wespeaker-voxceleb-resnet34-LM", use_auth_token=self.hf_token
-            )
+            model = Model.from_pretrained("pyannote/wespeaker-voxceleb-resnet34-LM", use_auth_token=self.hf_token)
             device = torch.device(self._device)
             self._inference = Inference(model, window="whole", device=device)
         return self._inference
@@ -53,16 +51,12 @@ class VoiceDB:
         local_temp_file = None
 
         is_s3 = (
-            audio_path.startswith("s3://")
-            or audio_path.startswith("processed/")
-            or audio_path.startswith("voices/")
+            audio_path.startswith("s3://") or audio_path.startswith("processed/") or audio_path.startswith("voices/")
         )
 
         if is_s3 or not os.path.exists(audio_path):
             s3_key = unquote(audio_path.replace(f"s3://{self.storage.bucket}/", ""))
-            local_temp_file = os.path.join(
-                temp_download_dir, f"tmp_voice_{uuid.uuid4()}.wav"
-            )
+            local_temp_file = os.path.join(temp_download_dir, f"tmp_voice_{uuid.uuid4()}.wav")
             os.makedirs(temp_download_dir, exist_ok=True)
 
             try:
@@ -71,21 +65,15 @@ class VoiceDB:
                 audio_path = local_temp_file
             except Exception as e:
                 if is_s3:
-                    raise ValueError(
-                        f"Failed to download from S3 (key: {s3_key}): {str(e)}"
-                    )
+                    raise ValueError(f"Failed to download from S3 (key: {s3_key}): {str(e)}")
                 else:
-                    raise FileNotFoundError(
-                        f"Local file not found and S3 download skipped: {audio_path}"
-                    )
+                    raise FileNotFoundError(f"Local file not found and S3 download skipped: {audio_path}")
 
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"Final audio path does not exist: {audio_path}")
 
         try:
-            existing = (
-                self.db.query(VoiceRecord).filter(VoiceRecord.name == name).first()
-            )
+            existing = self.db.query(VoiceRecord).filter(VoiceRecord.name == name).first()
 
             logger.info("Extracting embedding for voice: %s", name)
             new_embedding = np.array(self._extract_embedding(audio_path))
@@ -161,9 +149,7 @@ class VoiceDB:
         voice = self.db.query(VoiceRecord).filter(VoiceRecord.id == voice_id).first()
         if not voice or not voice.audios_path:
             return []
-        return self.storage.list_files(
-            prefix=cast(str, voice.audios_path), extension=".wav"
-        )
+        return self.storage.list_files(prefix=cast(str, voice.audios_path), extension=".wav")
 
     def delete_audio_file(self, s3_key: str) -> None:
         """Delete a specific audio file from S3."""
@@ -176,10 +162,7 @@ class VoiceDB:
     @property
     def voices(self) -> dict:
         records = self.db.query(VoiceRecord).all()
-        return {
-            cast(str, r.name): {"embedding": r.embedding, "id": cast(str, r.id)}
-            for r in records
-        }
+        return {cast(str, r.name): {"embedding": r.embedding, "id": cast(str, r.id)} for r in records}
 
     def __len__(self) -> int:
         return self.db.query(VoiceRecord).count()

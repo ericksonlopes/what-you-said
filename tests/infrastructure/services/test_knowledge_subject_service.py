@@ -38,15 +38,11 @@ class TestKnowledgeSubjectService:
         mock_repo.create_subject.return_value = sid
         mock_repo.get_by_id.return_value = self.create_mock_model(id=sid, name="New")
 
-        result = service.create_subject(
-            name="New", external_ref="ref", description="d", icon="i"
-        )
+        result = service.create_subject(name="New", external_ref="ref", description="d", icon="i")
 
         assert result.id == sid
         assert result.name == "New"
-        mock_repo.create_subject.assert_called_once_with(
-            name="New", external_ref="ref", description="d", icon="i"
-        )
+        mock_repo.create_subject.assert_called_once_with(name="New", external_ref="ref", description="d", icon="i")
 
     def test_get_by_name(self, service, mock_repo):
         mock_repo.get_by_name.return_value = self.create_mock_model(name="Target")
@@ -62,17 +58,13 @@ class TestKnowledgeSubjectService:
         mock_repo.get_by_id.assert_called_once_with(sid)
 
     def test_get_subject_by_external_ref(self, service, mock_repo):
-        mock_repo.get_by_external_ref.return_value = self.create_mock_model(
-            external_ref="ref123"
-        )
+        mock_repo.get_by_external_ref.return_value = self.create_mock_model(external_ref="ref123")
         result = service.get_subject_by_external_ref("ref123")
         assert result.external_ref == "ref123"
         mock_repo.get_by_external_ref.assert_called_once_with("ref123")
 
     def test_get_or_create_by_external_ref_existing(self, service, mock_repo):
-        mock_repo.get_by_external_ref.return_value = self.create_mock_model(
-            external_ref="ext"
-        )
+        mock_repo.get_by_external_ref.return_value = self.create_mock_model(external_ref="ext")
         result = service.get_or_create_by_external_ref("ext")
         assert result.external_ref == "ext"
         mock_repo.create_subject.assert_not_called()
@@ -83,9 +75,7 @@ class TestKnowledgeSubjectService:
             self.create_mock_model(external_ref="ext", name="Name"),
         ]
         mock_repo.create_subject.return_value = uuid4()
-        mock_repo.get_by_id.return_value = self.create_mock_model(
-            external_ref="ext", name="Name"
-        )
+        mock_repo.get_by_id.return_value = self.create_mock_model(external_ref="ext", name="Name")
 
         result = service.get_or_create_by_external_ref("ext", name="Name")
 
@@ -105,9 +95,7 @@ class TestKnowledgeSubjectService:
     def test_update_subject(self, service, mock_repo):
         sid = uuid4()
         service.update_subject(sid, name="Updated")
-        mock_repo.update.assert_called_once_with(
-            id=sid, name="Updated", description=None, external_ref=None, icon=None
-        )
+        mock_repo.update.assert_called_once_with(id=sid, name="Updated", description=None, external_ref=None, icon=None)
 
     def test_delete_subject(self, service, mock_repo):
         sid = uuid4()

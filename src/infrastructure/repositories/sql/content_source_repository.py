@@ -77,9 +77,7 @@ class ContentSourceSQLRepository:
 
                 return cast(UUID, cs.id)
             except Exception as e:
-                logger.error(
-                    "Error creating ContentSource", context={**extra, "error": str(e)}
-                )
+                logger.error("Error creating ContentSource", context={**extra, "error": str(e)})
                 session.rollback()
                 raise
 
@@ -101,9 +99,7 @@ class ContentSourceSQLRepository:
                 )
                 raise
 
-    def get_by_diarization_id(
-        self, diarization_id: str
-    ) -> Optional[ContentSourceModel]:
+    def get_by_diarization_id(self, diarization_id: str) -> Optional[ContentSourceModel]:
         """Find a ContentSource that has this diarization_id in its source_metadata JSON."""
         with Connector() as session:
             try:
@@ -121,13 +117,9 @@ class ContentSourceSQLRepository:
                 result = (
                     session.query(ContentSourceModel)
                     .filter(
-                        cast(
-                            ContentSourceModel.source_metadata["diarization_id"], String
-                        )
-                        == f'"{diarization_id}"'
+                        cast(ContentSourceModel.source_metadata["diarization_id"], String) == f'"{diarization_id}"'
                         if session.bind.dialect.name == "sqlite"
-                        else ContentSourceModel.source_metadata["diarization_id"].astext
-                        == diarization_id
+                        else ContentSourceModel.source_metadata["diarization_id"].astext == diarization_id
                     )
                     .first()
                 )
@@ -161,9 +153,7 @@ class ContentSourceSQLRepository:
 
                 result = query.order_by(ContentSourceModel.created_at.desc()).all()
 
-                logger.debug(
-                    "Fetch successful", context={**extra, "count": len(result)}
-                )
+                logger.debug("Fetch successful", context={**extra, "count": len(result)})
                 return result
             except Exception as e:
                 logger.error(
@@ -204,16 +194,12 @@ class ContentSourceSQLRepository:
                 )
                 raise
 
-    def list(
-        self, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[ContentSourceModel]:
+    def list(self, limit: Optional[int] = None, offset: Optional[int] = None) -> List[ContentSourceModel]:
         with Connector() as session:
             try:
                 extra = {"limit": limit, "offset": offset}
                 logger.debug("Listing all ContentSources", context=extra)
-                query = session.query(ContentSourceModel).order_by(
-                    ContentSourceModel.created_at.desc()
-                )
+                query = session.query(ContentSourceModel).order_by(ContentSourceModel.created_at.desc())
 
                 if offset is not None:
                     query = query.offset(offset)
@@ -236,11 +222,7 @@ class ContentSourceSQLRepository:
             try:
                 extra = {"subject_id": subject_id}
                 logger.debug("Counting ContentSources by subject ID", context=extra)
-                result = (
-                    session.query(ContentSourceModel)
-                    .filter_by(subject_id=subject_id)
-                    .count()
-                )
+                result = session.query(ContentSourceModel).filter_by(subject_id=subject_id).count()
                 logger.debug("Count successful", context={**extra, "count": result})
                 return result
             except Exception as e:
@@ -260,9 +242,7 @@ class ContentSourceSQLRepository:
         with Connector() as session:
             try:
                 extra = {"content_source_id": content_source_id, "status": status}
-                logger.debug(
-                    "Updating processing status for ContentSource", context=extra
-                )
+                logger.debug("Updating processing status for ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
                 if cs is None:
                     logger.warning("ContentSource not found for update", context=extra)
@@ -289,9 +269,7 @@ class ContentSourceSQLRepository:
                 logger.debug("Updating title for ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
                 if cs is None:
-                    logger.warning(
-                        "ContentSource not found for title update", context=extra
-                    )
+                    logger.warning("ContentSource not found for title update", context=extra)
                     return
                 cs.title = title
                 session.commit()
@@ -329,9 +307,7 @@ class ContentSourceSQLRepository:
                 logger.debug("Finishing ingestion for ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
                 if cs is None:
-                    logger.warning(
-                        "ContentSource not found for finishing ingestion", context=extra
-                    )
+                    logger.warning("ContentSource not found for finishing ingestion", context=extra)
                     return
 
                 # Explicitly update processing_status to 'done'
@@ -360,9 +336,7 @@ class ContentSourceSQLRepository:
                 session.rollback()
                 raise
 
-    def list_external_sources_by_subject(
-        self, subject_id: Any, source_type: str
-    ) -> List[str]:
+    def list_external_sources_by_subject(self, subject_id: Any, source_type: str) -> List[str]:
         """Return all external_source values for a given subject and source_type.
 
         Optimized query that only fetches the external_source column.
@@ -394,9 +368,7 @@ class ContentSourceSQLRepository:
                 logger.debug("Updating metadata for ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
                 if cs is None:
-                    logger.warning(
-                        "ContentSource not found for metadata update", context=extra
-                    )
+                    logger.warning("ContentSource not found for metadata update", context=extra)
                     return
                 # Merge existing metadata with new metadata
                 current = dict(cs.source_metadata or {})
@@ -420,9 +392,7 @@ class ContentSourceSQLRepository:
                 logger.debug("Deleting ContentSource", context=extra)
                 cs = session.get(ContentSourceModel, content_source_id)
                 if cs is None:
-                    logger.warning(
-                        "ContentSource not found for deletion", context=extra
-                    )
+                    logger.warning("ContentSource not found for deletion", context=extra)
                     return False
                 session.delete(cs)
                 session.commit()

@@ -38,9 +38,7 @@ class TestChunkQdrantRepository:
                 collection_name="test_collection",
             )
 
-    def test_ensure_collection_exists_creates_if_not_present(
-        self, mock_connector, mock_embedding_service
-    ):
+    def test_ensure_collection_exists_creates_if_not_present(self, mock_connector, mock_embedding_service):
         mock_client = mock_connector.__enter__.return_value
         mock_client.collection_exists.return_value = False
 
@@ -55,9 +53,7 @@ class TestChunkQdrantRepository:
         mock_client.create_collection.assert_called_once()
         mock_client.create_payload_index.assert_called_once()
 
-    def test_ensure_collection_exists_skips_if_present(
-        self, mock_connector, mock_embedding_service
-    ):
+    def test_ensure_collection_exists_skips_if_present(self, mock_connector, mock_embedding_service):
         mock_client = mock_connector.__enter__.return_value
         mock_client.collection_exists.return_value = True
 
@@ -71,9 +67,7 @@ class TestChunkQdrantRepository:
 
         mock_client.create_collection.assert_not_called()
 
-    def test_create_documents_success(
-        self, repo, mock_connector, mock_embedding_service
-    ):
+    def test_create_documents_success(self, repo, mock_connector, mock_embedding_service):
         doc = ChunkModel(
             id=uuid4(),
             job_id=uuid4(),
@@ -292,17 +286,9 @@ class TestChunkQdrantRepository:
         mock_client.query_points.return_value = MagicMock(points=[])
 
         existing_filters = rest.Filter(
-            must=[
-                rest.FieldCondition(
-                    key="subject_id", match=rest.MatchValue(value="123")
-                )
-            ],
-            should=[
-                rest.FieldCondition(key="extra", match=rest.MatchValue(value="val"))
-            ],
-            must_not=[
-                rest.FieldCondition(key="bad", match=rest.MatchValue(value="val"))
-            ],
+            must=[rest.FieldCondition(key="subject_id", match=rest.MatchValue(value="123"))],
+            should=[rest.FieldCondition(key="extra", match=rest.MatchValue(value="val"))],
+            must_not=[rest.FieldCondition(key="bad", match=rest.MatchValue(value="val"))],
         )
 
         repo._bm25_search("query", 5, existing_filters)

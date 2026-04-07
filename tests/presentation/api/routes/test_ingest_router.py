@@ -37,9 +37,7 @@ def test_ingest_youtube_success(mock_use_case):
         video_results=[],
     )
 
-    response = client.post(
-        "/rest/ingest/youtube", json={"video_url": "https://youtube.com/watch?v=123"}
-    )
+    response = client.post("/rest/ingest/youtube", json={"video_url": "https://youtube.com/watch?v=123"})
 
     assert response.status_code == 200
     mock_use_case.execute.assert_called_once()
@@ -51,9 +49,7 @@ def test_ingest_youtube_skipped(mock_use_case):
     mock_result.reason = "This content has already been ingested."
     mock_use_case.execute.return_value = mock_result
 
-    response = client.post(
-        "/rest/ingest/youtube", json={"video_url": "https://youtube.com/watch?v=123"}
-    )
+    response = client.post("/rest/ingest/youtube", json={"video_url": "https://youtube.com/watch?v=123"})
 
     assert response.status_code == 409
     assert response.json()["detail"] == "This content has already been ingested."
@@ -71,9 +67,7 @@ def test_ingest_youtube_value_error(mock_use_case):
 def test_ingest_youtube_exception(mock_use_case):
     mock_use_case.execute.side_effect = Exception("Internal error")
 
-    response = client.post(
-        "/rest/ingest/youtube", json={"video_url": "https://youtube.com/watch?v=123"}
-    )
+    response = client.post("/rest/ingest/youtube", json={"video_url": "https://youtube.com/watch?v=123"})
 
     assert response.status_code == 500
     assert response.json()["detail"] == "Internal error"

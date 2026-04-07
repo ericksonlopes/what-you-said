@@ -17,9 +17,7 @@ class ContentSourceService:
     Receives a ContentSourceSQLRepository and returns domain entities as outputs.
     """
 
-    def __init__(
-        self, repository: ContentSourceSQLRepository, logger: Optional[Logger] = None
-    ) -> None:
+    def __init__(self, repository: ContentSourceSQLRepository, logger: Optional[Logger] = None) -> None:
         self._repo = repository
         self._logger = logger or Logger()
 
@@ -39,13 +37,9 @@ class ContentSourceService:
         source_metadata: Optional[dict] = None,
     ) -> ContentSourceEntity:
         """Create a content source and return a domain entity."""
-        self._logger.debug(
-            "Creating content source", context={"external_source": external_source}
-        )
+        self._logger.debug("Creating content source", context={"external_source": external_source})
 
-        effective_processing_status = processing_status or (
-            status.value if status is not None else "pending"
-        )
+        effective_processing_status = processing_status or (status.value if status is not None else "pending")
 
         created_id = self._repo.create(
             subject_id=subject_id,
@@ -88,17 +82,13 @@ class ContentSourceService:
             subject_id=subject_id,
         )
 
-        return (
-            ContentSourceMapper.model_to_entity(list_models[0]) if list_models else None
-        )
+        return ContentSourceMapper.model_to_entity(list_models[0]) if list_models else None
 
     def get_by_id(self, id: UUID) -> Optional[ContentSourceEntity]:
         model = self._repo.get_by_id(id)
         return ContentSourceMapper.model_to_entity(model)
 
-    def get_by_diarization_id(
-        self, diarization_id: str
-    ) -> Optional[ContentSourceEntity]:
+    def get_by_diarization_id(self, diarization_id: str) -> Optional[ContentSourceEntity]:
         """Get a content source by its diarization_id in metadata."""
         model = self._repo.get_by_diarization_id(diarization_id)
         return ContentSourceMapper.model_to_entity(model)
@@ -112,9 +102,7 @@ class ContentSourceService:
         models = self._repo.list_by_subject(subject_id, limit=limit, offset=offset)
         return ContentSourceMapper.model_list_to_entities(models)
 
-    def list_all(
-        self, limit: Optional[int] = None, offset: Optional[int] = None
-    ) -> List[ContentSourceEntity]:
+    def list_all(self, limit: Optional[int] = None, offset: Optional[int] = None) -> List[ContentSourceEntity]:
         models = self._repo.list(limit=limit, offset=offset)
         return ContentSourceMapper.model_list_to_entities(models)
 
@@ -168,20 +156,14 @@ class ContentSourceService:
 
     def update_metadata(self, content_source_id: UUID, metadata: dict) -> None:
         """Update the metadata of a content source."""
-        self._repo.update_metadata(
-            content_source_id=content_source_id, metadata=metadata
-        )
+        self._repo.update_metadata(content_source_id=content_source_id, metadata=metadata)
 
-    def get_existing_external_sources(
-        self, subject_id: UUID, source_type: SourceType
-    ) -> set[str]:
+    def get_existing_external_sources(self, subject_id: UUID, source_type: SourceType) -> set[str]:
         """Return a set of all external_source values for a subject and source_type.
 
         Used for bulk deduplication when ingesting channels or large batches.
         """
-        raw = self._repo.list_external_sources_by_subject(
-            subject_id=subject_id, source_type=source_type.value
-        )
+        raw = self._repo.list_external_sources_by_subject(subject_id=subject_id, source_type=source_type.value)
         return set(raw)
 
     def delete_source(self, content_source_id: UUID) -> bool:

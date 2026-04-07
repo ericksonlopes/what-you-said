@@ -36,9 +36,7 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         )
         # This should trigger the except block in execute for job recovery
         # But we need it to continue, so we don't mock it to fail completely
-        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid.uuid4())
         with patch.object(
             use_case,
             "_process_single_video",
@@ -73,36 +71,24 @@ class TestYoutubeIngestionUseCaseEdgeCases:
             subject_id=str(uuid.uuid4()),
             ingestion_job_id=str(uuid.uuid4()),
         )
-        mock_services["ingestion_service"].get_by_id.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
-        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_services["ingestion_service"].get_by_id.return_value = MagicMock(id=uuid.uuid4())
+        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid.uuid4())
 
         with (
             patch(
                 "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor.get_video_id",
                 return_value="12345678901",
             ),
-            patch.object(
-                use_case, "_process_single_video", return_value={"error": "some error"}
-            ),
+            patch.object(use_case, "_process_single_video", return_value={"error": "some error"}),
         ):
             with pytest.raises(ValueError, match="some error"):
                 use_case.execute(cmd)
             mock_services["ingestion_service"].update_job.assert_called()
 
-    def test_process_single_video_duplicate_fail_job_creation(
-        self, use_case, mock_services
-    ):
+    def test_process_single_video_duplicate_fail_job_creation(self, use_case, mock_services):
         video_id = "12345678901"
-        mock_services["cs_service"].get_by_source_info.return_value = MagicMock(
-            processing_status="done"
-        )
-        mock_services["ingestion_service"].create_job.side_effect = Exception(
-            "Failed to create job"
-        )
+        mock_services["cs_service"].get_by_source_info.return_value = MagicMock(processing_status="done")
+        mock_services["ingestion_service"].create_job.side_effect = Exception("Failed to create job")
 
         cmd = IngestYoutubeCommand(video_url="...", subject_id=str(uuid.uuid4()))
         subject = MagicMock()
@@ -113,9 +99,7 @@ class TestYoutubeIngestionUseCaseEdgeCases:
     def test_process_single_video_job_reuse_not_found(self, use_case, mock_services):
         video_id = "12345678901"
         mock_services["cs_service"].get_by_source_info.return_value = None
-        mock_services[
-            "ingestion_service"
-        ].get_by_id.return_value = None  # Job not found
+        mock_services["ingestion_service"].get_by_id.return_value = None  # Job not found
 
         cmd = IngestYoutubeCommand(
             video_url="...",
@@ -125,12 +109,8 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         subject = MagicMock()
 
         with patch.object(use_case, "_create_ingestion_job") as mock_create:
-            with patch(
-                "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
-            ):
-                with pytest.raises(
-                    Exception
-                ):  # it will fail later but we check _create_ingestion_job call
+            with patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"):
+                with pytest.raises(Exception):  # it will fail later but we check _create_ingestion_job call
                     use_case._process_single_video("url", video_id, subject, cmd)
             mock_create.assert_called()
 
@@ -142,31 +122,23 @@ class TestYoutubeIngestionUseCaseEdgeCases:
     def test_resolve_subject_not_found_by_name(self, use_case, mock_services):
         cmd = IngestYoutubeCommand(video_url="...", subject_name="NonExistent")
         mock_services["ks_service"].get_by_name.return_value = None
-        with pytest.raises(
-            ValueError, match="KnowledgeSubject with name 'NonExistent' not found"
-        ):
+        with pytest.raises(ValueError, match="KnowledgeSubject with name 'NonExistent' not found"):
             use_case._resolve_subject(cmd)
 
     def test_resolve_subject_no_identifier(self, use_case):
         cmd = IngestYoutubeCommand(video_url="...")
         cmd.subject_id = None
         cmd.subject_name = None
-        with pytest.raises(
-            ValueError, match="Either subject_id or subject_name must be provided"
-        ):
+        with pytest.raises(ValueError, match="Either subject_id or subject_name must be provided"):
             use_case._resolve_subject(cmd)
 
     def test_fail_ingestion_and_job_exception_handling(self, use_case, mock_services):
         # Trigger the catch-all Exception in execute
         cmd = IngestYoutubeCommand(video_url="...", subject_id=str(uuid.uuid4()))
-        mock_services["ks_service"].get_subject_by_id.side_effect = Exception(
-            "General Failure"
-        )
+        mock_services["ks_service"].get_subject_by_id.side_effect = Exception("General Failure")
 
         # Mocking to reach the error handlers at the end of execute
-        with patch.object(
-            use_case, "_resolve_subject", side_effect=Exception("Failure")
-        ):
+        with patch.object(use_case, "_resolve_subject", side_effect=Exception("Failure")):
             with pytest.raises(Exception):
                 use_case.execute(cmd)
 
@@ -177,14 +149,10 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         cmd = IngestYoutubeCommand(video_url="...", subject_id=str(uuid.uuid4()))
 
         with (
-            patch(
-                "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
-            ),
+            patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"),
             patch.object(use_case, "_extract_and_split", return_value=[]),
         ):
-            with pytest.raises(
-                ValueError, match="No transcript chunks generated for video"
-            ):
+            with pytest.raises(ValueError, match="No transcript chunks generated for video"):
                 use_case._process_single_video("url", video_id, subject, cmd)
 
     def test_process_single_video_fail_handlers_internal(self, use_case, mock_services):
@@ -195,20 +163,12 @@ class TestYoutubeIngestionUseCaseEdgeCases:
 
         # Original error should bubble up if fail handlers also fail
         # But here we just want to see it reaches those lines.
-        mock_services["cs_service"].update_processing_status.side_effect = Exception(
-            "Failed status update"
-        )
-        mock_services["ingestion_service"].update_job.side_effect = Exception(
-            "Failed job update"
-        )
+        mock_services["cs_service"].update_processing_status.side_effect = Exception("Failed status update")
+        mock_services["ingestion_service"].update_job.side_effect = Exception("Failed job update")
 
         with (
-            patch(
-                "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
-            ),
-            patch.object(
-                use_case, "_extract_and_split", side_effect=Exception("Main Error")
-            ),
+            patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"),
+            patch.object(use_case, "_extract_and_split", side_effect=Exception("Main Error")),
         ):
             with pytest.raises(Exception) as excinfo:
                 use_case._process_single_video("url", video_id, subject, cmd)
@@ -228,9 +188,7 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         source.external_source = "vid1"
         subject = MagicMock()
         subject.id = uuid.uuid4()
-        cmd = IngestYoutubeCommand(
-            video_url="...", subject_id=str(subject.id), language="en"
-        )
+        cmd = IngestYoutubeCommand(video_url="...", subject_id=str(subject.id), language="en")
         job_id = uuid.uuid4()
 
         mock_services["model_loader_service"].model_name = "test-model"
@@ -255,15 +213,11 @@ class TestYoutubeIngestionUseCaseEdgeCases:
             subject_id=str(uuid.uuid4()),
             ingestion_job_id=str(job_id),
         )
-        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid.uuid4())
         mock_services["ingestion_service"].get_by_id.return_value = MagicMock(id=job_id)
 
         # Mocking extraction to return valid IDs
-        with patch(
-            "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor.get_video_id"
-        ) as mock_ext:
+        with patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor.get_video_id") as mock_ext:
             mock_ext.side_effect = ["v1", "v2"]
             with patch.object(use_case, "_process_single_video") as mock_process:
                 mock_process.side_effect = [
@@ -275,16 +229,13 @@ class TestYoutubeIngestionUseCaseEdgeCases:
                 # Verify update_job was called with summary
                 assert mock_services["ingestion_service"].update_job.called
                 found_failure = False
-                for call in mock_services[
-                    "ingestion_service"
-                ].update_job.call_args_list:
+                for call in mock_services["ingestion_service"].update_job.call_args_list:
                     status = call.kwargs.get("status")
                     # Handle both enum and string if necessary
                     status_val = status.value if hasattr(status, "value") else status
                     if (
                         status_val == IngestionJobStatus.FAILED.value
-                        and "Ingestion failed for 1 items"
-                        in call.kwargs.get("error_message", "")
+                        and "Ingestion failed for 1 items" in call.kwargs.get("error_message", "")
                     ):
                         found_failure = True
                         break
@@ -304,9 +255,7 @@ class TestYoutubeIngestionUseCaseEdgeCases:
             subject_id=str(uuid.uuid4()),
             ingestion_job_id=str(job_id),
         )
-        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_services["ks_service"].get_subject_by_id.return_value = MagicMock(id=uuid.uuid4())
         mock_services["ingestion_service"].get_by_id.return_value = MagicMock(id=job_id)
 
         with patch(
@@ -321,9 +270,7 @@ class TestYoutubeIngestionUseCaseEdgeCases:
                 use_case.execute(cmd)
 
                 # Verify update_job called with FINISHED status but partial message
-                update_calls = mock_services[
-                    "ingestion_service"
-                ].update_job.call_args_list
+                update_calls = mock_services["ingestion_service"].update_job.call_args_list
                 finished_call = None
                 for c in update_calls:
                     status = c.kwargs.get("status")
@@ -347,22 +294,14 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         )
         subject = MagicMock(id=uuid.uuid4())
 
-        with patch(
-            "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
-        ) as mock_ext_cls:
+        with patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor") as mock_ext_cls:
             mock_ext = mock_ext_cls.return_value
-            mock_ext.extract_metadata.return_value = MagicMock(
-                full_title="Title", title="Title"
-            )
+            mock_ext.extract_metadata.return_value = MagicMock(full_title="Title", title="Title")
 
             # Make it fail after cleanup to check if cleanup was called
-            with patch.object(
-                use_case, "_extract_and_split", side_effect=Exception("Stop here")
-            ):
+            with patch.object(use_case, "_extract_and_split", side_effect=Exception("Stop here")):
                 with pytest.raises(Exception, match="Stop here"):
-                    use_case._process_single_video(
-                        "https://www.youtube.com/watch?v=v1", video_id, subject, cmd
-                    )
+                    use_case._process_single_video("https://www.youtube.com/watch?v=v1", video_id, subject, cmd)
 
                 assert mock_services["chunk_service"].delete_by_content_source.called
                 assert mock_services["vector_service"].delete_by_video_id.called
@@ -378,22 +317,14 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         source = MagicMock(id=uuid.uuid4())
         mock_services["cs_service"].get_by_source_info.return_value = source
 
-        cmd = IngestYoutubeCommand(
-            video_url="https://www.youtube.com/watch?v=v1", subject_id=str(uuid.uuid4())
-        )
+        cmd = IngestYoutubeCommand(video_url="https://www.youtube.com/watch?v=v1", subject_id=str(uuid.uuid4()))
         subject = MagicMock(id=uuid.uuid4())
 
-        with patch(
-            "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
-        ) as mock_ext_cls:
+        with patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor") as mock_ext_cls:
             mock_ext = mock_ext_cls.return_value
-            mock_ext.extract_metadata.side_effect = YoutubeVideoPrivateException(
-                "Private video"
-            )
+            mock_ext.extract_metadata.side_effect = YoutubeVideoPrivateException("Private video")
 
-            result = use_case._process_single_video(
-                "https://www.youtube.com/watch?v=v1", video_id, subject, cmd
-            )
+            result = use_case._process_single_video("https://www.youtube.com/watch?v=v1", video_id, subject, cmd)
 
             assert result["cancelled"] is True
             # Verify source marked as CANCELLED using the Enum
@@ -417,15 +348,11 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         # Embedding model must be a string
         mock_services["model_loader_service"].model_name = "test-model"
 
-        cmd = IngestYoutubeCommand(
-            video_url="https://www.youtube.com/watch?v=v1", subject_id=str(uuid.uuid4())
-        )
+        cmd = IngestYoutubeCommand(video_url="https://www.youtube.com/watch?v=v1", subject_id=str(uuid.uuid4()))
         subject = MagicMock(id=uuid.uuid4())
         subject.id = uuid.uuid4()
 
-        with patch(
-            "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor"
-        ) as mock_ext_cls:
+        with patch("src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor") as mock_ext_cls:
             mock_ext = mock_ext_cls.return_value
             mock_ext.extract_metadata.return_value = MagicMock(full_title="Title")
 
@@ -436,13 +363,9 @@ class TestYoutubeIngestionUseCaseEdgeCases:
 
             with patch.object(use_case, "_extract_and_split", return_value=[doc]):
                 # Fail at indexing
-                with patch.object(
-                    use_case, "_index_chunks", side_effect=Exception("Indexing failed")
-                ):
+                with patch.object(use_case, "_index_chunks", side_effect=Exception("Indexing failed")):
                     with pytest.raises(Exception, match="Indexing failed"):
-                        use_case._process_single_video(
-                            "https://www.youtube.com/watch?v=v1", video_id, subject, cmd
-                        )
+                        use_case._process_single_video("https://www.youtube.com/watch?v=v1", video_id, subject, cmd)
 
                     # Check rollback calls
                     assert mock_services["chunk_service"].delete_by_job_id.called

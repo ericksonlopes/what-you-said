@@ -59,9 +59,7 @@ class TestAudioDiarizationRouter:
             mock_cs_repo = mock_cs_repo_cls.return_value
             mock_cs_repo.get_by_diarization_id.return_value = mock_cs
 
-            response = client.patch(
-                f"/rest/audio/{record_mock.id}", json={"segments": [{"text": "hello"}]}
-            )
+            response = client.patch(f"/rest/audio/{record_mock.id}", json={"segments": [{"text": "hello"}]})
 
             assert response.status_code == 200
             assert response.json()["status"] == "success"
@@ -145,9 +143,7 @@ class TestAudioDiarizationRouter:
 
         app.dependency_overrides.clear()
 
-    def test_start_audio_processing_pipeline_with_subject(
-        self, mock_db, mock_task_queue
-    ):
+    def test_start_audio_processing_pipeline_with_subject(self, mock_db, mock_task_queue):
         app.dependency_overrides[get_db] = lambda: mock_db
         app.dependency_overrides[get_task_queue_service] = lambda: mock_task_queue
         record_mock = MagicMock(id="new-uuid")
@@ -173,9 +169,7 @@ class TestAudioDiarizationRouter:
 
         app.dependency_overrides.clear()
 
-    def test_start_audio_processing_pipeline_failed_retry(
-        self, mock_db, mock_task_queue
-    ):
+    def test_start_audio_processing_pipeline_failed_retry(self, mock_db, mock_task_queue):
         app.dependency_overrides[get_db] = lambda: mock_db
         app.dependency_overrides[get_task_queue_service] = lambda: mock_task_queue
 

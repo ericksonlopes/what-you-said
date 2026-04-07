@@ -43,9 +43,7 @@ class ListRegisteredVoiceProfilesUseCase:
             samples_count = 0
             if r.audios_path:
                 with suppress(Exception):
-                    files = storage.list_files(
-                        prefix=cast(str, r.audios_path), extension=".wav"
-                    )
+                    files = storage.list_files(prefix=cast(str, r.audios_path), extension=".wav")
                     samples_count = len(files)
 
             result.append(
@@ -130,9 +128,7 @@ class TrainVoiceProfileFromSpeakerSegmentUseCase:
         s3_key = f"{record.storage_path}/{speaker_label}.wav"
 
         audio_cfg = settings.audio
-        local_path = os.path.join(
-            audio_cfg.temp_download_dir, f"train_{diarization_id}_{speaker_label}.wav"
-        )
+        local_path = os.path.join(audio_cfg.temp_download_dir, f"train_{diarization_id}_{speaker_label}.wav")
         os.makedirs(audio_cfg.temp_download_dir, exist_ok=True)
 
         try:

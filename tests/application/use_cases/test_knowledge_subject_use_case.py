@@ -31,9 +31,7 @@ class TestKnowledgeSubjectUseCase:
             vector_repo=mock_vector_repo,
         )
 
-    def test_delete_knowledge_success(
-        self, use_case, mock_ks_service, mock_cs_use_case, mock_vector_repo
-    ):
+    def test_delete_knowledge_success(self, use_case, mock_ks_service, mock_cs_use_case, mock_vector_repo):
         subject_id = uuid.uuid4()
 
         # 1. Subject exists
@@ -65,16 +63,12 @@ class TestKnowledgeSubjectUseCase:
         # Assertions
         assert result is True
         mock_ks_service.get_subject_by_id.assert_called_once_with(subject_id)
-        mock_vector_repo.delete.assert_called_once_with(
-            filters={"subject_id": str(subject_id)}
-        )
+        mock_vector_repo.delete.assert_called_once_with(filters={"subject_id": str(subject_id)})
         mock_cs_use_case.cs_service.list_by_subject.assert_called_once_with(subject_id)
         assert mock_cs_use_case.delete.call_count == 2
         mock_ks_service.delete_subject.assert_called_once_with(subject_id)
 
-    def test_delete_knowledge_not_found(
-        self, use_case, mock_ks_service, mock_vector_repo
-    ):
+    def test_delete_knowledge_not_found(self, use_case, mock_ks_service, mock_vector_repo):
         subject_id = uuid.uuid4()
         mock_ks_service.get_subject_by_id.return_value = None
 
@@ -84,9 +78,7 @@ class TestKnowledgeSubjectUseCase:
         mock_ks_service.get_subject_by_id.assert_called_once_with(subject_id)
         mock_vector_repo.delete.assert_not_called()
 
-    def test_delete_knowledge_exception(
-        self, use_case, mock_ks_service, mock_vector_repo
-    ):
+    def test_delete_knowledge_exception(self, use_case, mock_ks_service, mock_vector_repo):
         subject_id = uuid.uuid4()
         mock_ks_service.get_subject_by_id.return_value = MagicMock()
         mock_vector_repo.delete.side_effect = Exception("Vector error")

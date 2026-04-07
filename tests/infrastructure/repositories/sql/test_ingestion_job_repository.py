@@ -42,9 +42,7 @@ class TestIngestionJobSQLRepository:
         # Mock session to raise an error during add
         from unittest.mock import patch
 
-        with patch(
-            "src.infrastructure.repositories.sql.ingestion_job_repository.Connector"
-        ) as mock_connector:
+        with patch("src.infrastructure.repositories.sql.ingestion_job_repository.Connector") as mock_connector:
             mock_session = mock_connector.return_value.__enter__.return_value
             mock_session.add.side_effect = Exception("DB Error")
             with pytest.raises(Exception):
@@ -161,20 +159,14 @@ class TestIngestionJobSQLRepository:
         self.repo.create_job(None, status="finished", source_title="gamma")
         self.repo.create_job(None, status="failed", source_title="delta")
         jid_dup = self.repo.create_job(None, status="failed", source_title="epsilon")
-        self.repo.update_job(
-            jid_dup, status="failed", error_message="Duplicate content detected"
-        )
+        self.repo.update_job(jid_dup, status="failed", error_message="Duplicate content detected")
         self.repo.create_job(None, status="cancelled", source_title="zeta")
 
         # Test status filters
         assert len(self.repo.list_jobs(status="processing")) == 2  # started, processing
         assert len(self.repo.list_jobs(status="completed")) == 1  # finished
-        assert (
-            len(self.repo.list_jobs(status="failed")) == 1
-        )  # delta (epsilon is duplicate)
-        assert (
-            len(self.repo.list_jobs(status="cancelled")) == 2
-        )  # zeta, epsilon (duplicate)
+        assert len(self.repo.list_jobs(status="failed")) == 1  # delta (epsilon is duplicate)
+        assert len(self.repo.list_jobs(status="cancelled")) == 2  # zeta, epsilon (duplicate)
         assert len(self.repo.list_jobs(status="started")) == 1
 
         # Test search
@@ -199,9 +191,7 @@ class TestIngestionJobSQLRepository:
         self.repo.create_job(None, status="finished")  # completed
         self.repo.create_job(None, status="failed")  # failed
         jid = self.repo.create_job(None, status="failed")
-        self.repo.update_job(
-            jid, status="failed", error_message="Duplicate"
-        )  # cancelled
+        self.repo.update_job(jid, status="failed", error_message="Duplicate")  # cancelled
         self.repo.create_job(None, status="cancelled")  # cancelled
 
         counts = self.repo.get_status_counts()

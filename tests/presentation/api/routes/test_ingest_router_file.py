@@ -42,10 +42,7 @@ class TestIngestRouterFile:
         response = client.post("/rest/ingest/file", files=files, data=data)
 
         assert response.status_code == 200
-        assert (
-            response.json()["message"]
-            == "File upload successful, ingestion started in background."
-        )
+        assert response.json()["message"] == "File upload successful, ingestion started in background."
         assert response.json()["file_name"] == "test.txt"
 
     def test_ingest_file_invalid_uuid(self, client, mock_file_use_case):
@@ -58,9 +55,7 @@ class TestIngestRouterFile:
 
     def test_ingest_file_missing_file(self, client):
         response = client.post("/rest/ingest/file", data={"subject_name": "test"})
-        assert (
-            response.status_code == 422
-        )  # FastAPI validation error for missing required File
+        assert response.status_code == 422  # FastAPI validation error for missing required File
 
     def test_ingest_file_url_success(self, client):
         data = {

@@ -116,9 +116,7 @@ class TestDoclingExtractor:
 
         extractor = DoclingExtractor()
         # TOC like content
-        toc_content = (
-            "Chapter 1 . . . . . . . . . . . 1\nChapter 2 . . . . . . . . . . . 2"
-        )
+        toc_content = "Chapter 1 . . . . . . . . . . . 1\nChapter 2 . . . . . . . . . . . 2"
         assert extractor._is_noisy_chunk(toc_content) is True
 
         normal_content = "This is a normal paragraph of text with no noise."

@@ -12,9 +12,7 @@ class TestVoiceDB:
     def mock_infra(self):
         # Stub StorageService and Os logic globally for this class to prevent ANY footprint
         with (
-            patch(
-                "src.infrastructure.services.voice_profile_service.StorageService"
-            ) as mock_cls,
+            patch("src.infrastructure.services.voice_profile_service.StorageService") as mock_cls,
             patch("os.path.exists", return_value=True),
             patch("os.path.isdir", return_value=True),
             patch("os.makedirs"),
@@ -30,9 +28,7 @@ class TestVoiceDB:
             "src.infrastructure.services.voice_profile_service.get_best_device",
             return_value="cpu",
         ):
-            with patch(
-                "src.infrastructure.services.voice_profile_service.VoiceDB._get_inference"
-            ) as mock_inf_getter:
+            with patch("src.infrastructure.services.voice_profile_service.VoiceDB._get_inference") as mock_inf_getter:
                 mock_inf = MagicMock()
                 mock_inf_getter.return_value = mock_inf
                 mock_inf.return_value = MagicMock(tolist=lambda: [0.1, 0.2])
@@ -62,9 +58,7 @@ class TestVoiceDB:
         sqlite_memory.add(v)
         sqlite_memory.commit()
 
-        self.mock_storage.list_files.return_value = [
-            {"key": "voices/1/reference_1.wav"}
-        ]
+        self.mock_storage.list_files.return_value = [{"key": "voices/1/reference_1.wav"}]
 
         db_service = VoiceDB(sqlite_memory, hf_token="fake")
         db_service.remove("Test")
@@ -76,9 +70,7 @@ class TestVoiceDB:
             "src.infrastructure.services.voice_profile_service.get_best_device",
             return_value="cpu",
         ):
-            with patch(
-                "src.infrastructure.services.voice_profile_service.VoiceDB._get_inference"
-            ) as mock_inf_getter:
+            with patch("src.infrastructure.services.voice_profile_service.VoiceDB._get_inference") as mock_inf_getter:
                 mock_inf = MagicMock()
                 mock_inf_getter.return_value = mock_inf
                 mock_inf.return_value = MagicMock(tolist=lambda: [0.1, 0.2])

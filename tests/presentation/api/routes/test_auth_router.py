@@ -78,9 +78,7 @@ class TestAuthRouter:
             }
         )
 
-        response = client.get(
-            "/rest/auth/google/callback?code=testcode&state=state123&expected_state=state123"
-        )
+        response = client.get("/rest/auth/google/callback?code=testcode&state=state123&expected_state=state123")
 
         assert response.status_code == 200
         assert response.json()["access_token"] == "jwt"

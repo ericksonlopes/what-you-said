@@ -606,6 +606,7 @@
       "new_name": "Novo Nome...",
       "train_voice": "Treinar esta voz",
       "reinforce_voice": "Reforçar esta voz",
+      "processing_voice": "Treinando voz...",
       "match_pct": "{{count}}% de match",
       "save_btn": "Salvar e Indexar"
     },

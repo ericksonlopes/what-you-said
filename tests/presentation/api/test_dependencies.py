@@ -40,9 +40,7 @@ class TestDependencies:
     def test_get_model_loader(self):
         settings = MagicMock()
         settings.model_embedding.name = "test-model"
-        with patch(
-            "src.infrastructure.services.model_loader_service.SentenceTransformer"
-        ):
+        with patch("src.infrastructure.services.model_loader_service.SentenceTransformer"):
             loader = get_model_loader(settings)
             assert loader is not None
 
@@ -53,9 +51,7 @@ class TestDependencies:
 
     def test_get_weaviate_client(self):
         settings = MagicMock()
-        with patch(
-            "src.infrastructure.repositories.vector.weaviate.weaviate_client.WeaviateClient"
-        ) as _:
+        with patch("src.infrastructure.repositories.vector.weaviate.weaviate_client.WeaviateClient") as _:
             client = get_weaviate_client(settings)
             assert client is not None
 
@@ -66,12 +62,8 @@ class TestDependencies:
         loader = MagicMock()
 
         with (
-            patch(
-                "src.infrastructure.repositories.vector.weaviate.weaviate_client.WeaviateClient"
-            ),
-            patch(
-                "src.infrastructure.repositories.vector.weaviate.chunk_repository.ChunkWeaviateRepository"
-            ),
+            patch("src.infrastructure.repositories.vector.weaviate.weaviate_client.WeaviateClient"),
+            patch("src.infrastructure.repositories.vector.weaviate.chunk_repository.ChunkWeaviateRepository"),
         ):
             repo = get_vector_repository(settings, loader)
             assert repo is not None
@@ -84,9 +76,7 @@ class TestDependencies:
         settings.vector.collection_name_chunks = "test_collection"
         loader = MagicMock()
 
-        with patch(
-            "src.infrastructure.repositories.vector.chroma.chunk_repository.ChunkChromaRepository"
-        ):
+        with patch("src.infrastructure.repositories.vector.chroma.chunk_repository.ChunkChromaRepository"):
             repo = get_vector_repository(settings, loader)
             assert repo is not None
 
@@ -96,9 +86,7 @@ class TestDependencies:
         settings.vector.vector_index_path = "test_path"
         loader = MagicMock()
 
-        with patch(
-            "src.infrastructure.repositories.vector.faiss.chunk_repository.ChunkFAISSRepository"
-        ):
+        with patch("src.infrastructure.repositories.vector.faiss.chunk_repository.ChunkFAISSRepository"):
             repo = get_vector_repository(settings, loader)
             assert repo is not None
 

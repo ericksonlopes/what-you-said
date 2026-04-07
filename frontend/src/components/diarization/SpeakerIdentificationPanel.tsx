@@ -216,22 +216,36 @@ const SpeakerCard: React.FC<{
                 />
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => onTrainVoice(speaker)}
-                        className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300 shadow-sm hover:shadow-md ${
-                            (speaker.assigned.toUpperCase().startsWith('SPEAKER_') || speaker.assigned.toUpperCase() === 'UNKNOWN')
-                                ? 'bg-emerald-500/10 hover:bg-emerald-500 border-emerald-500/20 hover:border-emerald-500 text-emerald-400 hover:text-black shadow-emerald-500/10'
-                                : 'bg-blue-500/10 hover:bg-blue-500 border-blue-500/20 hover:border-blue-500 text-blue-400 hover:text-white shadow-blue-500/10'
-                        }`}
-                    >
-                        <Mic className="w-4 h-4" />
-                        <span>
-                            {(speaker.assigned.toUpperCase().startsWith('SPEAKER_') || speaker.assigned.toUpperCase() === 'UNKNOWN') 
-                                ? t('diarization.identification.train_voice') 
-                                : t('diarization.identification.reinforce_voice')
-                            }
-                        </span>
-                    </button>
+                    {(() => {
+                        const isProcessing = speaker.trainingStatus === 'processing';
+                        const isUntrained = speaker.assigned.toUpperCase().startsWith('SPEAKER_') || speaker.assigned.toUpperCase() === 'UNKNOWN';
+                        let cls: string;
+                        let label: string;
+                        let icon: React.ReactNode;
+                        if (isProcessing) {
+                            cls = 'bg-amber-500/10 border-amber-500/20 text-amber-400 cursor-wait';
+                            label = t('diarization.identification.processing_voice');
+                            icon = <Loader2 className="w-4 h-4 animate-spin" />;
+                        } else if (isUntrained) {
+                            cls = 'bg-emerald-500/10 hover:bg-emerald-500 border-emerald-500/20 hover:border-emerald-500 text-emerald-400 hover:text-black shadow-emerald-500/10';
+                            label = t('diarization.identification.train_voice');
+                            icon = <Mic className="w-4 h-4" />;
+                        } else {
+                            cls = 'bg-blue-500/10 hover:bg-blue-500 border-blue-500/20 hover:border-blue-500 text-blue-400 hover:text-white shadow-blue-500/10';
+                            label = t('diarization.identification.reinforce_voice');
+                            icon = <Mic className="w-4 h-4" />;
+                        }
+                        return (
+                            <button
+                                onClick={() => !isProcessing && onTrainVoice(speaker)}
+                                disabled={isProcessing}
+                                className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all duration-300 shadow-sm hover:shadow-md disabled:cursor-not-allowed ${cls}`}
+                            >
+                                {icon}
+                                <span>{label}</span>
+                            </button>
+                        );
+                    })()}
                     
                     {speaker.confidence > 0 && (
                         <div className="flex flex-col items-center justify-center px-4 border-l border-white/5 text-center min-w-[60px]">

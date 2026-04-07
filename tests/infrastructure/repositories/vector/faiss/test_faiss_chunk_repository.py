@@ -52,9 +52,7 @@ class TestChunkFAISSRepository:
 
     def test_init_load_existing(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
@@ -72,9 +70,7 @@ class TestChunkFAISSRepository:
 
     def test_create_documents_new_store(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=False):
-            with patch(
-                "langchain_community.vectorstores.FAISS.from_texts"
-            ) as mock_from:
+            with patch("langchain_community.vectorstores.FAISS.from_texts") as mock_from:
                 mock_store = MagicMock()
                 mock_from.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
@@ -107,9 +103,7 @@ class TestChunkFAISSRepository:
 
     def test_retriever_semantic(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
@@ -133,24 +127,18 @@ class TestChunkFAISSRepository:
 
     def test_retriever_error(self, mock_emb, temp_index_path):
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
-                mock_store.similarity_search_with_score.side_effect = Exception(
-                    "Search error"
-                )
+                mock_store.similarity_search_with_score.side_effect = Exception("Search error")
                 with pytest.raises(Exception):
                     repo.retriever("query")
 
     def test_bm25_search_empty(self, mock_emb, temp_index_path, monkeypatch):
         monkeypatch.setitem(sys.modules, "rank_bm25", MagicMock())
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)
@@ -160,9 +148,7 @@ class TestChunkFAISSRepository:
     def test_hybrid_search_empty(self, mock_emb, temp_index_path, monkeypatch):
         monkeypatch.setitem(sys.modules, "rank_bm25", MagicMock())
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "langchain_community.vectorstores.FAISS.load_local"
-            ) as mock_load:
+            with patch("langchain_community.vectorstores.FAISS.load_local") as mock_load:
                 mock_store = MagicMock()
                 mock_load.return_value = mock_store
                 repo = ChunkFAISSRepository(mock_emb, temp_index_path)

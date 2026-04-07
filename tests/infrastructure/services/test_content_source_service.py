@@ -42,9 +42,7 @@ class TestContentSourceService:
         sid = uuid4()
         cid = uuid4()
         mock_repo.create.return_value = cid
-        mock_repo.get_by_id.return_value = self.create_mock_model(
-            id=cid, subject_id=sid
-        )
+        mock_repo.get_by_id.return_value = self.create_mock_model(id=cid, subject_id=sid)
 
         res = service.create_source(
             subject_id=sid,

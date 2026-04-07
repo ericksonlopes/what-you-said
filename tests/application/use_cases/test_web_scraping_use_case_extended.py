@@ -36,12 +36,8 @@ class TestWebScrapingUseCaseExtended:
 
         mock_subject = MagicMock(id=subject_id)
         mock_deps["ks_service"].get_subject_by_id.return_value = mock_subject
-        mock_deps["extractor"].extract.return_value = [
-            Document(page_content="content", metadata={"title": "T"})
-        ]
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["extractor"].extract.return_value = [Document(page_content="content", metadata={"title": "T"})]
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
         mock_deps["cs_service"].get_by_source_info.return_value = None
         mock_deps["cs_service"].create_source.return_value = MagicMock(
             id=uuid.uuid4(), external_source="http://test.com"
@@ -58,9 +54,7 @@ class TestWebScrapingUseCaseExtended:
 
         mock_deps["ks_service"].get_by_name.return_value = MagicMock(id=uuid.uuid4())
         mock_deps["extractor"].extract.side_effect = Exception("Scraping error")
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
 
         with pytest.raises(Exception, match="Scraping error"):
             await use_case.execute(cmd)
@@ -73,12 +67,8 @@ class TestWebScrapingUseCaseExtended:
 
         mock_subject = MagicMock(id=uuid.uuid4())
         mock_deps["ks_service"].get_by_name.return_value = mock_subject
-        mock_deps["extractor"].extract.return_value = [
-            Document(page_content="content", metadata={"title": "T"})
-        ]
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["extractor"].extract.return_value = [Document(page_content="content", metadata={"title": "T"})]
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
         mock_deps["cs_service"].get_by_source_info.return_value = None
         mock_deps["cs_service"].create_source.return_value = MagicMock(
             id=uuid.uuid4(), external_source="http://test.com"
@@ -111,9 +101,7 @@ class TestWebScrapingUseCaseExtended:
         use_case = WebScrapingUseCase(**mock_deps, vector_store_type="qdrant")
         cmd = IngestWebCommand(url="http://test.com")
 
-        with pytest.raises(
-            ValueError, match="Either subject_id or subject_name must be provided"
-        ):
+        with pytest.raises(ValueError, match="Either subject_id or subject_name must be provided"):
             await use_case.execute(cmd)
 
     @pytest.mark.asyncio
@@ -122,9 +110,7 @@ class TestWebScrapingUseCaseExtended:
         cmd = IngestWebCommand(url="http://test.com", subject_name="S")
         mock_deps["ks_service"].get_by_name.return_value = MagicMock(id=uuid.uuid4())
         mock_deps["extractor"].extract.return_value = []
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
 
         with pytest.raises(ValueError, match="No content extracted"):
             await use_case.execute(cmd)
@@ -134,16 +120,12 @@ class TestWebScrapingUseCaseExtended:
         mock_deps["model_loader_service"].model_name = "test-model"
         job_id = uuid.uuid4()
         use_case = WebScrapingUseCase(**mock_deps, vector_store_type="qdrant")
-        cmd = IngestWebCommand(
-            url="http://test.com", subject_name="S", ingestion_job_id=str(job_id)
-        )
+        cmd = IngestWebCommand(url="http://test.com", subject_name="S", ingestion_job_id=str(job_id))
 
         mock_deps["ks_service"].get_by_name.return_value = MagicMock(id=uuid.uuid4())
         mock_job = MagicMock(id=job_id)
         mock_deps["ingestion_service"].get_by_id.return_value = mock_job
-        mock_deps["extractor"].extract.return_value = [
-            Document(page_content="content", metadata={"title": "T"})
-        ]
+        mock_deps["extractor"].extract.return_value = [Document(page_content="content", metadata={"title": "T"})]
         mock_deps["cs_service"].get_by_source_info.return_value = None
         mock_deps["cs_service"].create_source.return_value = MagicMock(
             id=uuid.uuid4(), external_source="http://test.com"
@@ -155,26 +137,18 @@ class TestWebScrapingUseCaseExtended:
         mock_deps["ingestion_service"].create_job.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_execute_with_existing_job_id_invalid_uuid_falls_back(
-        self, mock_deps
-    ):
+    async def test_execute_with_existing_job_id_invalid_uuid_falls_back(self, mock_deps):
         mock_deps["model_loader_service"].model_name = "test-model"
         use_case = WebScrapingUseCase(**mock_deps, vector_store_type="qdrant")
-        cmd = IngestWebCommand(
-            url="http://test.com", subject_name="S", ingestion_job_id="invalid-uuid"
-        )
+        cmd = IngestWebCommand(url="http://test.com", subject_name="S", ingestion_job_id="invalid-uuid")
 
         mock_deps["ks_service"].get_by_name.return_value = MagicMock(id=uuid.uuid4())
-        mock_deps["extractor"].extract.return_value = [
-            Document(page_content="content", metadata={"title": "T"})
-        ]
+        mock_deps["extractor"].extract.return_value = [Document(page_content="content", metadata={"title": "T"})]
         mock_deps["cs_service"].get_by_source_info.return_value = None
         mock_deps["cs_service"].create_source.return_value = MagicMock(
             id=uuid.uuid4(), external_source="http://test.com"
         )
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
 
         await use_case.execute(cmd)
 
@@ -187,12 +161,8 @@ class TestWebScrapingUseCaseExtended:
         cmd = IngestWebCommand(url="http://test.com", subject_name="S", reprocess=True)
 
         mock_deps["ks_service"].get_by_name.return_value = MagicMock(id=uuid.uuid4())
-        mock_deps["extractor"].extract.return_value = [
-            Document(page_content="content", metadata={"title": "T"})
-        ]
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["extractor"].extract.return_value = [Document(page_content="content", metadata={"title": "T"})]
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
 
         source_id = uuid.uuid4()
         mock_source = MagicMock(id=source_id, external_source="http://test.com")
@@ -200,12 +170,8 @@ class TestWebScrapingUseCaseExtended:
 
         await use_case.execute(cmd)
 
-        mock_deps["chunk_service"].delete_by_content_source.assert_called_once_with(
-            source_id
-        )
-        mock_deps["vector_service"].delete.assert_called_once_with(
-            filters={"content_source_id": str(source_id)}
-        )
+        mock_deps["chunk_service"].delete_by_content_source.assert_called_once_with(source_id)
+        mock_deps["vector_service"].delete.assert_called_once_with(filters={"content_source_id": str(source_id)})
 
     @pytest.mark.asyncio
     async def test_execute_reprocess_cleanup_error_ignored(self, mock_deps):
@@ -214,19 +180,13 @@ class TestWebScrapingUseCaseExtended:
         cmd = IngestWebCommand(url="http://test.com", subject_name="S", reprocess=True)
 
         mock_deps["ks_service"].get_by_name.return_value = MagicMock(id=uuid.uuid4())
-        mock_deps["extractor"].extract.return_value = [
-            Document(page_content="content", metadata={"title": "T"})
-        ]
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["extractor"].extract.return_value = [Document(page_content="content", metadata={"title": "T"})]
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
 
         source_id = uuid.uuid4()
         mock_source = MagicMock(id=source_id, external_source="http://test.com")
         mock_deps["cs_service"].get_by_source_info.return_value = mock_source
-        mock_deps["chunk_service"].delete_by_content_source.side_effect = Exception(
-            "Cleanup error"
-        )
+        mock_deps["chunk_service"].delete_by_content_source.side_effect = Exception("Cleanup error")
 
         # Should not raise exception
         await use_case.execute(cmd)
@@ -247,20 +207,14 @@ class TestWebScrapingUseCaseExtended:
         subject = MagicMock(id=uuid.uuid4())
         job_id = uuid.uuid4()
 
-        chunks = use_case._build_chunk_entities(
-            docs, source, subject, IngestWebCommand(url="url"), job_id
-        )
+        chunks = use_case._build_chunk_entities(docs, source, subject, IngestWebCommand(url="url"), job_id)
 
         assert len(chunks) == 1
         assert chunks[0].tokens_count == 3
-        mock_model.tokenizer.encode.assert_called_once_with(
-            "Hello world", add_special_tokens=False
-        )
+        mock_model.tokenizer.encode.assert_called_once_with("Hello world", add_special_tokens=False)
 
     @pytest.mark.asyncio
-    async def test_build_chunk_entities_with_tokenizer_exception_fallback(
-        self, mock_deps
-    ):
+    async def test_build_chunk_entities_with_tokenizer_exception_fallback(self, mock_deps):
         mock_model = MagicMock()
         mock_model.tokenizer.encode.side_effect = Exception("Tokenizer error")
         mock_deps["model_loader_service"].model = mock_model
@@ -273,9 +227,7 @@ class TestWebScrapingUseCaseExtended:
         subject = MagicMock(id=uuid.uuid4())
         job_id = uuid.uuid4()
 
-        chunks = use_case._build_chunk_entities(
-            docs, source, subject, IngestWebCommand(url="url"), job_id
-        )
+        chunks = use_case._build_chunk_entities(docs, source, subject, IngestWebCommand(url="url"), job_id)
 
         assert len(chunks) == 1
         # Fallback is len(page_content) // 4
@@ -294,9 +246,7 @@ class TestWebScrapingUseCaseExtended:
         mock_deps["extractor"].extract.return_value = [
             Document(page_content="Very long content " * 100, metadata={"title": "T"})
         ]
-        mock_deps["ingestion_service"].create_job.return_value = MagicMock(
-            id=uuid.uuid4()
-        )
+        mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=uuid.uuid4())
         mock_deps["cs_service"].get_by_source_info.return_value = None
         mock_deps["cs_service"].create_source.return_value = MagicMock(
             id=uuid.uuid4(), external_source="http://test.com"
@@ -314,9 +264,7 @@ class TestWebScrapingUseCaseExtended:
         cmd = IngestWebCommand(url="http://test.com", subject_name="S")
 
         mock_deps["ks_service"].get_by_name.return_value = MagicMock(id=uuid.uuid4())
-        mock_deps["extractor"].extract.return_value = [
-            Document(page_content="content", metadata={"title": "T"})
-        ]
+        mock_deps["extractor"].extract.return_value = [Document(page_content="content", metadata={"title": "T"})]
 
         job_id = uuid.uuid4()
         mock_deps["ingestion_service"].create_job.return_value = MagicMock(id=job_id)
@@ -326,9 +274,7 @@ class TestWebScrapingUseCaseExtended:
         mock_deps["cs_service"].get_by_source_info.return_value = mock_source
 
         # Fail during chunk creation
-        mock_deps["chunk_service"].create_chunks.side_effect = Exception(
-            "Execute error"
-        )
+        mock_deps["chunk_service"].create_chunks.side_effect = Exception("Execute error")
 
         with pytest.raises(Exception, match="Execute error"):
             await use_case.execute(cmd)

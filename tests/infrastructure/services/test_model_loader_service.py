@@ -17,9 +17,7 @@ def reset_singleton():
 @pytest.mark.Dependencies
 class TestModelLoaderService:
     def test_load_model_success(self):
-        with patch(
-            "src.infrastructure.services.model_loader_service.SentenceTransformer"
-        ) as mock_st:
+        with patch("src.infrastructure.services.model_loader_service.SentenceTransformer") as mock_st:
             mock_model = MagicMock()
             mock_st.return_value = mock_model
 
@@ -43,9 +41,7 @@ class TestModelLoaderService:
                 service.load_model()
 
     def test_dimensions_property(self):
-        with patch(
-            "src.infrastructure.services.model_loader_service.SentenceTransformer"
-        ) as mock_st:
+        with patch("src.infrastructure.services.model_loader_service.SentenceTransformer") as mock_st:
             mock_model = MagicMock()
             mock_model.get_sentence_embedding_dimension.return_value = 384
             mock_st.return_value = mock_model
@@ -54,9 +50,7 @@ class TestModelLoaderService:
             assert service.dimensions == 384
 
     def test_dimensions_property_failure(self):
-        with patch(
-            "src.infrastructure.services.model_loader_service.SentenceTransformer"
-        ) as mock_st:
+        with patch("src.infrastructure.services.model_loader_service.SentenceTransformer") as mock_st:
             mock_model = MagicMock()
             mock_model.get_sentence_embedding_dimension.return_value = None
             mock_st.return_value = mock_model
@@ -66,9 +60,7 @@ class TestModelLoaderService:
             assert service.dimensions == 0
 
     def test_max_seq_length_property(self):
-        with patch(
-            "src.infrastructure.services.model_loader_service.SentenceTransformer"
-        ) as mock_st:
+        with patch("src.infrastructure.services.model_loader_service.SentenceTransformer") as mock_st:
             mock_model = MagicMock()
             mock_model.max_seq_length = 512
             mock_st.return_value = mock_model
@@ -77,9 +69,7 @@ class TestModelLoaderService:
             assert service.max_seq_length == 512
 
     def test_max_seq_length_property_default(self):
-        with patch(
-            "src.infrastructure.services.model_loader_service.SentenceTransformer"
-        ) as mock_st:
+        with patch("src.infrastructure.services.model_loader_service.SentenceTransformer") as mock_st:
             mock_model = MagicMock()
             # My implementation uses getattr with default 0
             if hasattr(mock_model, "max_seq_length"):

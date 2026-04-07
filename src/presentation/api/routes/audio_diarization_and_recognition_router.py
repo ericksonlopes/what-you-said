@@ -98,9 +98,7 @@ async def update_diarization_segments(
                     language=cast(str, target_source.language or "pt"),
                     source_type=cast(Optional[str], target_source.source_type),
                     external_source=cast(Optional[str], target_source.external_source),
-                    source_metadata=cast(
-                        Optional[dict[str, Any]], target_source.source_metadata
-                    ),
+                    source_metadata=cast(Optional[dict[str, Any]], target_source.source_metadata),
                 )
 
                 task_queue.enqueue(
@@ -166,9 +164,7 @@ async def start_audio_processing_pipeline(
                 min_speakers=request.min_speakers,
                 max_speakers=request.max_speakers,
                 model_size=request.model_size or "large-v2",
-                recognize_voices=request.recognize_voices
-                if request.recognize_voices is not None
-                else True,
+                recognize_voices=request.recognize_voices if request.recognize_voices is not None else True,
                 subject_id=request.subject_id,
             )
             task_queue.enqueue(
@@ -232,9 +228,7 @@ async def start_audio_processing_pipeline(
             min_speakers=request.min_speakers,
             max_speakers=request.max_speakers,
             model_size=request.model_size or "large-v2",
-            recognize_voices=request.recognize_voices
-            if request.recognize_voices is not None
-            else True,
+            recognize_voices=request.recognize_voices if request.recognize_voices is not None else True,
             subject_id=request.subject_id,
         )
 
@@ -268,18 +262,14 @@ async def start_audio_processing_pipeline(
 )
 async def identify_speakers_in_existing_diarization(
     diarization_id: str,
-    use_case: Annotated[
-        IdentifySpeakersInProcessedAudioUseCase, Depends(get_identify_speakers_use_case)
-    ],
+    use_case: Annotated[IdentifySpeakersInProcessedAudioUseCase, Depends(get_identify_speakers_use_case)],
 ):
     logger.info("Speaker recognition request for diarization_id=%s", diarization_id)
     try:
         return use_case.execute(diarization_id)
     except ValueError as e:
         logger.warning("Recognition failed (ValueError): %s", str(e))
-        raise HTTPException(
-            status_code=404 if "not found" in str(e) else 400, detail=str(e)
-        )
+        raise HTTPException(status_code=404 if "not found" in str(e) else 400, detail=str(e))
     except Exception as e:
         logger.error("Recognition failed: %s\n%s", str(e), traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
@@ -319,26 +309,20 @@ async def list_available_s3_files_for_recognition(
 async def generate_signed_url_for_speaker_audio(
     diarization_id: str,
     speaker_label: str,
-    use_case: Annotated[
-        GenerateSpeakerAudioAccessUrlUseCase, Depends(get_generate_speaker_url_use_case)
-    ],
+    use_case: Annotated[GenerateSpeakerAudioAccessUrlUseCase, Depends(get_generate_speaker_url_use_case)],
 ):
     try:
         return use_case.execute(diarization_id, speaker_label)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        logger.error(
-            "Presigned URL generation failed: %s\n%s", str(e), traceback.format_exc()
-        )
+        logger.error("Presigned URL generation failed: %s\n%s", str(e), traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("")
 async def retrieve_all_processed_audio_history(
-    use_case: Annotated[
-        RetrieveProcessedAudioHistoryUseCase, Depends(get_retrieve_history_use_case)
-    ],
+    use_case: Annotated[RetrieveProcessedAudioHistoryUseCase, Depends(get_retrieve_history_use_case)],
     limit: int = 10,
     offset: int = 0,
     subject_id: str | None = None,
@@ -354,9 +338,7 @@ async def retrieve_all_processed_audio_history(
         logger.info("Audio history returned %d records", len(result))
         return result
     except Exception as e:
-        logger.error(
-            "Failed to retrieve audio history: %s\n%s", str(e), traceback.format_exc()
-        )
+        logger.error("Failed to retrieve audio history: %s\n%s", str(e), traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -368,9 +350,7 @@ async def retrieve_all_processed_audio_history(
 )
 async def delete_diarization_record(
     diarization_id: str,
-    use_case: Annotated[
-        DeleteDiarizationUseCase, Depends(get_delete_diarization_use_case)
-    ],
+    use_case: Annotated[DeleteDiarizationUseCase, Depends(get_delete_diarization_use_case)],
 ):
     deleted = use_case.execute(diarization_id)
     if not deleted:

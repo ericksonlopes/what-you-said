@@ -47,12 +47,8 @@ class DummyClientCtx:
         class Collection:
             def __init__(self, response):
                 self._response = response
-                self.query = SimpleNamespace(
-                    fetch_objects=lambda **kwargs: self._response
-                )
-                self.data = SimpleNamespace(
-                    delete_many=lambda where: SimpleNamespace(matches=1)
-                )
+                self.query = SimpleNamespace(fetch_objects=lambda **kwargs: self._response)
+                self.data = SimpleNamespace(delete_many=lambda where: SimpleNamespace(matches=1))
 
             def get(self, _):
                 return self

@@ -19,9 +19,7 @@ class IngestionJobModel(Base):
         ForeignKey("content_sources.id", deferrable=True, initially="IMMEDIATE"),
         nullable=True,
     )
-    started_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
-    )
+    started_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     created_at = synonym("started_at")
     updated_at = Column(
         DateTime(timezone=True),
@@ -50,9 +48,7 @@ class IngestionJobModel(Base):
     )
 
     content_source = relationship("ContentSourceModel", back_populates="ingestion_jobs")
-    chunks = relationship(
-        "ChunkIndexModel", back_populates="job", cascade="all, delete-orphan"
-    )
+    chunks = relationship("ChunkIndexModel", back_populates="job", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_ingestion_jobs_content_source_id", "content_source_id"),

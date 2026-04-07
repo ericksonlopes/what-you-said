@@ -49,9 +49,7 @@ class DiarizationResult(BaseModel):
     def speakers(self) -> list[str]:
         return sorted({s.speaker for s in self.segments})
 
-    def export_speaker_audio(
-        self, output_dir: str, min_segment_duration: float = 0.5
-    ) -> dict[str, str]:
+    def export_speaker_audio(self, output_dir: str, min_segment_duration: float = 0.5) -> dict[str, str]:
         """Export individual audio files per speaker from the diarized audio."""
         os.makedirs(output_dir, exist_ok=True)
         exported: dict[str, str] = {}
@@ -59,11 +57,7 @@ class DiarizationResult(BaseModel):
         data, sr = sf.read(self.audio_path, dtype="float32")
         for speaker in self.speakers:
             # Filter segments by duration to avoid noise/stutters in the sample
-            speaker_segments = [
-                s
-                for s in self.segments
-                if s.speaker == speaker and s.duration >= min_segment_duration
-            ]
+            speaker_segments = [s for s in self.segments if s.speaker == speaker and s.duration >= min_segment_duration]
 
             # Fallback: if all segments are short, take the longest ones anyway
             if not speaker_segments:

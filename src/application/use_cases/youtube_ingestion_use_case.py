@@ -129,9 +129,7 @@ class YoutubeIngestionUseCase:
     def _resolve_video_list(self, cmd: IngestYoutubeCommand) -> List[str]:
         """Resolves whether we are dealing with a playlist or a list of videos."""
         if cmd.data_type == YoutubeDataType.PLAYLIST:
-            playlist_url = cmd.video_url or (
-                cmd.video_urls[0] if cmd.video_urls else None
-            )
+            playlist_url = cmd.video_url or (cmd.video_urls[0] if cmd.video_urls else None)
             if not playlist_url:
                 raise ValueError("No video_url provided for playlist")
 
@@ -143,9 +141,7 @@ class YoutubeIngestionUseCase:
                     "No videos found in playlist",
                     context={"playlist_url": playlist_url},
                 )
-                raise ValueError(
-                    f"No videos found in playlist: {playlist_url}. Verify if the URL is valid and public."
-                )
+                raise ValueError(f"No videos found in playlist: {playlist_url}. Verify if the URL is valid and public.")
             return video_list
 
         video_list = []
@@ -211,10 +207,7 @@ class YoutubeIngestionUseCase:
         batch_has_network_error = False
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(batch)) as executor:
-            futures = [
-                executor.submit(self._process_video_task_wrapper, url, subject, cmd)
-                for url in batch
-            ]
+            futures = [executor.submit(self._process_video_task_wrapper, url, subject, cmd) for url in batch]
             for future in concurrent.futures.as_completed(futures):
                 single_result = future.result()
                 result.video_results.append(single_result)
@@ -224,20 +217,13 @@ class YoutubeIngestionUseCase:
                 if single_result.get("is_network_error"):
                     batch_has_network_error = True
 
-                if (
-                    not single_result.get("skipped", False)
-                    and "error" not in single_result
-                ):
-                    result.created_chunks = (
-                        result.created_chunks or 0
-                    ) + single_result.get("created_chunks", 0)
+                if not single_result.get("skipped", False) and "error" not in single_result:
+                    result.created_chunks = (result.created_chunks or 0) + single_result.get("created_chunks", 0)
                     result.vector_ids.extend(single_result.get("vector_ids", []))
 
         return {"ip_blocked": ip_blocked, "network_error": batch_has_network_error}
 
-    def _process_video_task_wrapper(
-        self, url: str, subject: Any, cmd: IngestYoutubeCommand
-    ) -> Dict[str, Any]:
+    def _process_video_task_wrapper(self, url: str, subject: Any, cmd: IngestYoutubeCommand) -> Dict[str, Any]:
         """Wrapper for processing a single video with error classification for batch results."""
         vid_id = "unknown"
         try:
@@ -282,9 +268,7 @@ class YoutubeIngestionUseCase:
         )
         time.sleep(total_wait)
 
-    def _finalize_parent_job(
-        self, ingestion: Any, result: IngestYoutubeResult, any_failed: bool
-    ) -> None:
+    def _finalize_parent_job(self, ingestion: Any, result: IngestYoutubeResult, any_failed: bool) -> None:
         """Updates the status of the main tracking job."""
         if not any_failed:
             self._finish_job(ingestion, chunks_count=result.created_chunks)
@@ -296,17 +280,10 @@ class YoutubeIngestionUseCase:
             return
 
         # 2. Real Errors vs Cancellations
-        real_errors = [
-            r["error"]
-            for r in result.video_results
-            if "error" in r and not r.get("cancelled", False)
-        ]
+        real_errors = [r["error"] for r in result.video_results if "error" in r and not r.get("cancelled", False)]
 
         if real_errors:
-            error_summary = (
-                f"Ingestion failed for {len(real_errors)} items: "
-                + "; ".join(real_errors)[:200]
-            )
+            error_summary = f"Ingestion failed for {len(real_errors)} items: " + "; ".join(real_errors)[:200]
             self._fail_job(ingestion, error_summary)
         else:
             # Only known limitations/cancellations
@@ -316,21 +293,15 @@ class YoutubeIngestionUseCase:
         """Checks if any video result failed due to an IP block."""
         return any(r.get("is_ip_blocked") for r in result.video_results)
 
-    def _handle_ip_block_failure(
-        self, ingestion: Any, result: IngestYoutubeResult
-    ) -> None:
+    def _handle_ip_block_failure(self, ingestion: Any, result: IngestYoutubeResult) -> None:
         """Handles the termination of a job due to an IP block."""
         block_item = next(r for r in result.video_results if r.get("is_ip_blocked"))
         error_summary = f"ABORTED: YouTube is blocking our requests (IP Ban/Block). {block_item.get('error', '')[:150]}"
         self._fail_job(ingestion, error_summary)
 
-    def _handle_partial_ingestion_status(
-        self, ingestion: Any, result: IngestYoutubeResult
-    ) -> None:
+    def _handle_partial_ingestion_status(self, ingestion: Any, result: IngestYoutubeResult) -> None:
         """Reports status for jobs that were partially successful (due to private videos, etc)."""
-        cancelled_msgs = [
-            r["error"] for r in result.video_results if r.get("cancelled", False)
-        ]
+        cancelled_msgs = [r["error"] for r in result.video_results if r.get("cancelled", False)]
         summary = f"Partial ingestion: {len(cancelled_msgs)} items skipped (private/unplayable)."
         self._report_status(
             job_id=ingestion.id,
@@ -339,20 +310,12 @@ class YoutubeIngestionUseCase:
             chunks_count=result.created_chunks,
         )
 
-    def _finalize_parent_source(
-        self, source: Any, result: IngestYoutubeResult, cmd: IngestYoutubeCommand
-    ) -> None:
+    def _finalize_parent_source(self, source: Any, result: IngestYoutubeResult, cmd: IngestYoutubeCommand) -> None:
         """Updates the status of the parent source."""
-        real_errors = [
-            r["error"]
-            for r in result.video_results
-            if "error" in r and not r.get("cancelled", False)
-        ]
+        real_errors = [r["error"] for r in result.video_results if "error" in r and not r.get("cancelled", False)]
 
         if real_errors:
-            self._fail_ingestion(
-                source, error_message=real_errors[0] if real_errors else None
-            )
+            self._fail_ingestion(source, error_message=real_errors[0] if real_errors else None)
         elif cmd.data_type != YoutubeDataType.PLAYLIST:
             # For single videos, if not already DONE/FAILED
             current_source = self.cs_service.get_by_id(source.id)
@@ -383,11 +346,7 @@ class YoutubeIngestionUseCase:
         source = None
         if cmd.ingestion_job_id:
             with suppress(Exception):
-                jid = (
-                    UUID(cmd.ingestion_job_id)
-                    if isinstance(cmd.ingestion_job_id, str)
-                    else cmd.ingestion_job_id
-                )
+                jid = UUID(cmd.ingestion_job_id) if isinstance(cmd.ingestion_job_id, str) else cmd.ingestion_job_id
                 ingestion = self.ingestion_service.get_by_id(jid)
                 if ingestion and ingestion.content_source_id:
                     source = self.cs_service.get_by_id(ingestion.content_source_id)
@@ -413,11 +372,7 @@ class YoutubeIngestionUseCase:
 
             # 3. For single video ingestion, if it fails, raise error for API
             is_batch = len(video_list) > 1
-            if (
-                any_failed
-                and cmd.data_type != YoutubeDataType.PLAYLIST
-                and not is_batch
-            ):
+            if any_failed and cmd.data_type != YoutubeDataType.PLAYLIST and not is_batch:
                 failed_item = next(r for r in result.video_results if "error" in r)
                 raise ValueError(failed_item["error"])
 
@@ -428,15 +383,11 @@ class YoutubeIngestionUseCase:
             logger.info(
                 "YouTube ingestion completed",
                 context={
-                    "job_ids": [
-                        r.get("job_id") for r in result.video_results if r.get("job_id")
-                    ]
+                    "job_ids": [r.get("job_id") for r in result.video_results if r.get("job_id")]
                     or cmd.ingestion_job_id,
                     "chunks": result.created_chunks,
                     "total_videos": len(result.video_results),
-                    "skipped": sum(
-                        1 for r in result.video_results if r.get("skipped", False)
-                    ),
+                    "skipped": sum(1 for r in result.video_results if r.get("skipped", False)),
                 },
             )
             return result
@@ -467,9 +418,7 @@ class YoutubeIngestionUseCase:
                 try:
                     self._fail_job(ingestion, error_msg)
                 except Exception as ej:
-                    logger.error(
-                        ej, context={"action": "fail_job", "job_id": str(ingestion.id)}
-                    )
+                    logger.error(ej, context={"action": "fail_job", "job_id": str(ingestion.id)})
 
             raise
 
@@ -480,20 +429,14 @@ class YoutubeIngestionUseCase:
         existing = self._check_existing_source(video_id, subject_id)
 
         # 1. Skip if already exists and done (not reprocessing)
-        if (
-            existing
-            and existing.processing_status == "done"
-            and not getattr(cmd, "reprocess", False)
-        ):
+        if existing and existing.processing_status == "done" and not getattr(cmd, "reprocess", False):
             return self._handle_duplicate_ingestion(video_id, existing)
 
         # 2. Get or create Job
         job = self._resolve_or_create_job(cmd, existing, video_id, subject_id)
         return existing, job, False
 
-    def _handle_duplicate_ingestion(
-        self, video_id: str, existing: Any
-    ) -> tuple[Any, Any, bool]:
+    def _handle_duplicate_ingestion(self, video_id: str, existing: Any) -> tuple[Any, Any, bool]:
         """Handles skipping ingestion when a duplicate source is found and completed."""
         logger.info(
             "Source already exists and is DONE, skipping ingestion (reprocess=False)",
@@ -534,29 +477,21 @@ class YoutubeIngestionUseCase:
                 job = self.ingestion_service.get_by_id(job_uuid)
 
         if not job:
-            job = self._create_ingestion_job(
-                source=existing, external_source=video_id, subject_id=subject_id
-            )
+            job = self._create_ingestion_job(source=existing, external_source=video_id, subject_id=subject_id)
         return job
 
-    def _handle_reprocessing_cleanup(
-        self, source: Any, job_id: UUID, video_id: str
-    ) -> None:
+    def _handle_reprocessing_cleanup(self, source: Any, job_id: UUID, video_id: str) -> None:
         """Cleans up previous ingestion data if reprocessing."""
         logger.info(
             "REPROCESSING: Performing pre-ingestion cleanup",
             context={"source_id": str(source.id), "video_id": video_id},
         )
         try:
-            sql_del = self.chunk_service.delete_by_content_source(
-                content_source_id=source.id
-            )
+            sql_del = self.chunk_service.delete_by_content_source(content_source_id=source.id)
             vec_del = self.vector_service.delete_by_video_id(video_id=video_id)
 
             # Mark previous jobs as REPROCESSED
-            self.ingestion_service.mark_previous_jobs_as_reprocessed(
-                content_source_id=source.id, current_job_id=job_id
-            )
+            self.ingestion_service.mark_previous_jobs_as_reprocessed(content_source_id=source.id, current_job_id=job_id)
 
             logger.info(
                 "Reprocessing cleanup finished",
@@ -568,9 +503,7 @@ class YoutubeIngestionUseCase:
                 context={"source_id": str(source.id), "error": str(ce)},
             )
 
-        self.cs_service.update_processing_status(
-            content_source_id=source.id, status=ContentSourceStatus.PROCESSING
-        )
+        self.cs_service.update_processing_status(content_source_id=source.id, status=ContentSourceStatus.PROCESSING)
 
     def _rollback_failed_ingestion(
         self, job_id: UUID, video_id: str, error_msg: str, source: Optional[Any] = None
@@ -592,9 +525,7 @@ class YoutubeIngestionUseCase:
                 },
             )
         except Exception as er:
-            logger.error(
-                er, context={"action": "rollback_ingestion", "job_id": str(job_id)}
-            )
+            logger.error(er, context={"action": "rollback_ingestion", "job_id": str(job_id)})
 
         if source:
             try:
@@ -615,14 +546,10 @@ class YoutubeIngestionUseCase:
         self, video_url: str, video_id: str, subject: Any, cmd: IngestYoutubeCommand
     ) -> Dict[str, Any]:
         """Orchestrates the ingestion of a single YouTube video."""
-        logger.info(
-            "Processing video", context={"video_id": video_id, "video_url": video_url}
-        )
+        logger.info("Processing video", context={"video_id": video_id, "video_url": video_url})
 
         # 1. Resolve source and job early
-        source, ingestion, skipped = self._ensure_ingestion_context(
-            video_id, subject.id, cmd
-        )
+        source, ingestion, skipped = self._ensure_ingestion_context(video_id, subject.id, cmd)
 
         if skipped:
             return self._format_skipped_result(video_url, video_id, source, ingestion)
@@ -638,12 +565,7 @@ class YoutubeIngestionUseCase:
             # 3. Extract core metadata
             yt_extractor = YoutubeExtractor(video_id=video_id, language=cmd.language)
             metadata = yt_extractor.extract_metadata()
-            extracted_title = (
-                metadata.full_title
-                or metadata.title
-                or cmd.title
-                or f"Video {video_id}"
-            )
+            extracted_title = metadata.full_title or metadata.title or cmd.title or f"Video {video_id}"
 
             # 4. Ensure source exists and is linked
             if source is None:
@@ -671,13 +593,9 @@ class YoutubeIngestionUseCase:
                 docs = self._extract_and_split(cmd, video_id, yt_extractor=yt_extractor)
 
             if not docs:
-                raise ValueError(
-                    f"No transcript chunks generated for video {video_id}."
-                )
+                raise ValueError(f"No transcript chunks generated for video {video_id}.")
 
-            self.cs_service.update_title(
-                content_source_id=source.id, title=extracted_title
-            )
+            self.cs_service.update_title(content_source_id=source.id, title=extracted_title)
             self._mark_source_processing(source)
 
             # 6. Embed and Persist
@@ -689,9 +607,7 @@ class YoutubeIngestionUseCase:
                 current_step=2,
                 chunks_count=len(docs),
             )
-            chunks = self._build_chunk_entities(
-                docs, source, subject, cmd, job_id=ingestion.id
-            )
+            chunks = self._build_chunk_entities(docs, source, subject, cmd, job_id=ingestion.id)
             self._persist_chunks(chunks)
 
             # 7. Vector Indexing
@@ -706,9 +622,7 @@ class YoutubeIngestionUseCase:
                 created_ids = self._index_chunks(chunks)
 
             # 8. Success Finalization
-            total_tokens = sum(
-                c.tokens_count for c in chunks if c.tokens_count is not None
-            )
+            total_tokens = sum(c.tokens_count for c in chunks if c.tokens_count is not None)
             self._report_status(
                 job_id=ingestion.id,
                 status="completed",
@@ -749,9 +663,7 @@ class YoutubeIngestionUseCase:
             )
 
             if ingestion:
-                self._report_status(
-                    job_id=ingestion.id, status="failed", error=error_msg
-                )
+                self._report_status(job_id=ingestion.id, status="failed", error=error_msg)
             if source:
                 self.cs_service.update_processing_status(
                     content_source_id=source.id, status=ContentSourceStatus.CANCELLED
@@ -768,14 +680,10 @@ class YoutubeIngestionUseCase:
 
         except Exception as e:
             error_msg = str(e)
-            logger.error(
-                e, context={"video_id": video_id, "action": "process_single_video"}
-            )
+            logger.error(e, context={"video_id": video_id, "action": "process_single_video"})
 
             if ingestion:
-                self._rollback_failed_ingestion(
-                    ingestion.id, video_id, error_msg, source=source
-                )
+                self._rollback_failed_ingestion(ingestion.id, video_id, error_msg, source=source)
 
             raise
 
@@ -796,22 +704,16 @@ class YoutubeIngestionUseCase:
             status=IngestionJobStatus.FAILED,
             error_message=error_message,
         )
-        logger.info(
-            "Ingestion job updated to FAILED", context={"job_id": str(ingestion.id)}
-        )
+        logger.info("Ingestion job updated to FAILED", context={"job_id": str(ingestion.id)})
 
     def _resolve_subject(self, cmd: IngestYoutubeCommand):
         if getattr(cmd, "subject_id", None):
             try:
                 subject_id_val = (
-                    cmd.subject_id
-                    if isinstance(cmd.subject_id, uuid.UUID)
-                    else uuid.UUID(str(cmd.subject_id))
+                    cmd.subject_id if isinstance(cmd.subject_id, uuid.UUID) else uuid.UUID(str(cmd.subject_id))
                 )
             except Exception as e:
-                logger.error(
-                    e, context={"subject_id": getattr(cmd, "subject_id", None)}
-                )
+                logger.error(e, context={"subject_id": getattr(cmd, "subject_id", None)})
                 raise ValueError(f"Invalid subject_id provided: {e}")
             subject = self.ks_service.get_subject_by_id(subject_id_val)
             if subject is None:
@@ -829,9 +731,7 @@ class YoutubeIngestionUseCase:
                     "KnowledgeSubject not found by name",
                     context={"subject_name": cmd.subject_name},
                 )
-                raise ValueError(
-                    f"KnowledgeSubject with name '{cmd.subject_name}' not found"
-                )
+                raise ValueError(f"KnowledgeSubject with name '{cmd.subject_name}' not found")
             return subject
 
         logger.error(
@@ -903,9 +803,7 @@ class YoutubeIngestionUseCase:
         return ingestion
 
     def _mark_source_processing(self, source) -> None:
-        self.cs_service.update_processing_status(
-            content_source_id=source.id, status=ContentSourceStatus.PROCESSING
-        )
+        self.cs_service.update_processing_status(content_source_id=source.id, status=ContentSourceStatus.PROCESSING)
         logger.debug(
             "Content source marked as PROCESSING",
             context={"content_source_id": str(source.id)},
@@ -917,15 +815,11 @@ class YoutubeIngestionUseCase:
         video_id: str,
         yt_extractor: Optional[YoutubeExtractor] = None,
     ) -> List[Document]:
-        logger.debug(
-            "Starting extraction and transcript split", context={"video_id": video_id}
-        )
+        logger.debug("Starting extraction and transcript split", context={"video_id": video_id})
         if yt_extractor is None:
             yt_extractor = YoutubeExtractor(video_id=video_id, language=cmd.language)
 
-        ytts = YoutubeDataProcessService(
-            model_loader_service=self.model_loader_service, yt_extractor=yt_extractor
-        )
+        ytts = YoutubeDataProcessService(model_loader_service=self.model_loader_service, yt_extractor=yt_extractor)
         effective_tokens = cmd.tokens_per_chunk
         docs: List[Document] = ytts.split_transcript(
             mode="tokens",
@@ -940,12 +834,8 @@ class YoutubeIngestionUseCase:
         return docs
 
     def _update_ingestion_processing(self, ingestion) -> None:
-        self.ingestion_service.update_job(
-            job_id=ingestion.id, status=IngestionJobStatus.PROCESSING
-        )
-        logger.debug(
-            "Ingestion job updated to PROCESSING", context={"job_id": str(ingestion.id)}
-        )
+        self.ingestion_service.update_job(job_id=ingestion.id, status=IngestionJobStatus.PROCESSING)
+        logger.debug("Ingestion job updated to PROCESSING", context={"job_id": str(ingestion.id)})
         self.event_bus.publish(
             "ingestion_status",
             {
@@ -986,9 +876,7 @@ class YoutubeIngestionUseCase:
 
     def _persist_chunks(self, chunks: List[ChunkEntity]) -> None:
         self.chunk_service.create_chunks(chunks)
-        logger.debug(
-            "Persisted chunks to SQL repository", context={"num_chunks": len(chunks)}
-        )
+        logger.debug("Persisted chunks to SQL repository", context={"num_chunks": len(chunks)})
 
     def _index_chunks(self, chunks: List[ChunkEntity]) -> List[str]:
         created_ids = self.vector_service.index_documents(chunks)
@@ -1034,9 +922,7 @@ class YoutubeIngestionUseCase:
             context={"job_id": str(ingestion.id), "chunks": chunks_count},
         )
 
-    def _format_skipped_result(
-        self, video_url: str, video_id: str, source: Any, ingestion: Any
-    ) -> Dict[str, Any]:
+    def _format_skipped_result(self, video_url: str, video_id: str, source: Any, ingestion: Any) -> Dict[str, Any]:
         """Formats the result for a skipped ingestion."""
         return {
             "video_url": video_url,

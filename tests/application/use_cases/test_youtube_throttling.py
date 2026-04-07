@@ -33,9 +33,7 @@ def make_use_case_mocks():
     vec_svc = MagicMock()
     event_bus = MagicMock()
 
-    return YoutubeIngestionUseCase(
-        ks, cs, isvc, model_loader, embedding, chunk_svc, vec_svc, "weaviate", event_bus
-    )
+    return YoutubeIngestionUseCase(ks, cs, isvc, model_loader, embedding, chunk_svc, vec_svc, "weaviate", event_bus)
 
 
 def test_throttling_logic(monkeypatch):

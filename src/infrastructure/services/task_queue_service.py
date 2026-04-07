@@ -24,16 +24,12 @@ class TaskQueueService:
     def start(self):
         """Starts the background worker threads."""
         if self._workers:
-            logger.warning(
-                "TaskQueueService already started.", context={"where": "start"}
-            )
+            logger.warning("TaskQueueService already started.", context={"where": "start"})
             return
 
         self._should_stop = False
         for i in range(self._num_workers):
-            t = threading.Thread(
-                target=self._worker_loop, name="TaskQueueWorker-" + str(i), daemon=True
-            )
+            t = threading.Thread(target=self._worker_loop, name="TaskQueueWorker-" + str(i), daemon=True)
             t.start()
             self._workers.append(t)
         logger.info(

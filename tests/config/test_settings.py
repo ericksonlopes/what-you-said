@@ -9,9 +9,7 @@ from src.config.settings import App, Settings, SQLConfig, VectorConfig
 
 
 def test_allowed_log_levels_default():
-    s = Settings(
-        app=App(list_log_levels=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
-    )
+    s = Settings(app=App(list_log_levels=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]))
     expected = {
         logging.DEBUG,
         logging.INFO,
@@ -59,9 +57,7 @@ def test_sql_url_postgres():
 
 def test_sql_url_mysql():
     test_pw = os.environ.get("TEST_SQL_PASSWORD", "p")
-    cfg = SQLConfig(
-        type="mysql", user="u", password=test_pw, host="h", port="3306", database="db"
-    )
+    cfg = SQLConfig(type="mysql", user="u", password=test_pw, host="h", port="3306", database="db")
     assert cfg.url == f"mysql+pymysql://u:{test_pw}@h:3306/db"
 
 
@@ -72,17 +68,13 @@ def test_weaviate_url_custom():
 
 def test_sql_url_mariadb():
     test_pw = os.environ.get("TEST_SQL_PASSWORD", "p")
-    cfg = SQLConfig(
-        type="mariadb", user="u", password=test_pw, host="h", port="3306", database="db"
-    )
+    cfg = SQLConfig(type="mariadb", user="u", password=test_pw, host="h", port="3306", database="db")
     assert cfg.url == f"mariadb+pymysql://u:{test_pw}@h:3306/db"
 
 
 def test_sql_url_mssql():
     test_pw = os.environ.get("TEST_SQL_PASSWORD", "p")
-    cfg = SQLConfig(
-        type="mssql", user="u", password=test_pw, host="h", port="1433", database="db"
-    )
+    cfg = SQLConfig(type="mssql", user="u", password=test_pw, host="h", port="1433", database="db")
     assert cfg.url == f"mssql+pytds://u:{test_pw}@h:1433/db"
 
 

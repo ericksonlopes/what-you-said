@@ -151,27 +151,21 @@ class TestContentSourceSQLRepository:
     def test_update_status_error(self, sqlite_memory):
         repo = ContentSourceSQLRepository()
         cid = repo.create(uuid4(), "pdf", "1.pdf")
-        with patch(
-            "sqlalchemy.orm.Session.commit", side_effect=Exception("Update Error")
-        ):
+        with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Update Error")):
             with pytest.raises(Exception, match="Update Error"):
                 repo.update_status(cid, "status")
 
     def test_update_title_error(self, sqlite_memory):
         repo = ContentSourceSQLRepository()
         cid = repo.create(uuid4(), "pdf", "1.pdf")
-        with patch(
-            "sqlalchemy.orm.Session.commit", side_effect=Exception("Update Error")
-        ):
+        with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Update Error")):
             with pytest.raises(Exception, match="Update Error"):
                 repo.update_title(cid, "title")
 
     def test_finish_ingestion_error(self, sqlite_memory):
         repo = ContentSourceSQLRepository()
         cid = repo.create(uuid4(), "pdf", "1.pdf")
-        with patch(
-            "sqlalchemy.orm.Session.commit", side_effect=Exception("Finish Error")
-        ):
+        with patch("sqlalchemy.orm.Session.commit", side_effect=Exception("Finish Error")):
             with pytest.raises(Exception, match="Finish Error"):
                 repo.finish_ingestion(cid, "m", 1, 1)
 

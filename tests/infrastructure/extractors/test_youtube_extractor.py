@@ -27,9 +27,7 @@ class TestYoutubeExtractor:
         video_id = "dummy_id"
         dummy_transcript = DummyTranscript()
 
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
-        ) as mock_api_cls:
+        with patch("src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi") as mock_api_cls:
             mock_api = mock_api_cls.return_value
             mock_api.fetch.return_value = dummy_transcript
             with patch.object(logger, "info"), patch.object(logger, "debug"):
@@ -42,26 +40,18 @@ class TestYoutubeExtractor:
                     if lang not in expected_languages:
                         expected_languages.append(lang)
 
-                mock_api.fetch.assert_called_once_with(
-                    video_id=video_id, languages=expected_languages
-                )
+                mock_api.fetch.assert_called_once_with(video_id=video_id, languages=expected_languages)
 
     def test_extract_transcript_no_transcript_found(self):
         video_id = "dummy_id"
         transcript_data = ""  # Should be a string
         requested_language_codes = ["pt"]
         message = "No transcript found"
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
-        ) as mock_api_cls:
+        with patch("src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi") as mock_api_cls:
             mock_api = mock_api_cls.return_value
             # Both primary and fallback should fail to trigger the final exception
-            mock_api.fetch.side_effect = NoTranscriptFound(
-                transcript_data, requested_language_codes, message
-            )
-            mock_api.list.side_effect = NoTranscriptFound(
-                transcript_data, requested_language_codes, message
-            )
+            mock_api.fetch.side_effect = NoTranscriptFound(transcript_data, requested_language_codes, message)
+            mock_api.list.side_effect = NoTranscriptFound(transcript_data, requested_language_codes, message)
             with patch.object(logger, "info"), patch.object(logger, "error"):
                 extractor = YoutubeExtractor(video_id)
                 with pytest.raises(YoutubeTranscriptNotFoundException):
@@ -69,9 +59,7 @@ class TestYoutubeExtractor:
 
     def test_extract_transcript_transcripts_disabled(self):
         video_id = "dummy_id"
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
-        ) as mock_api_cls:
+        with patch("src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi") as mock_api_cls:
             mock_api = mock_api_cls.return_value
             mock_api.fetch.side_effect = TranscriptsDisabled("Transcripts disabled")
             with patch.object(logger, "info"), patch.object(logger, "warning"):
@@ -81,9 +69,7 @@ class TestYoutubeExtractor:
 
     def test_extract_transcript_generic_error(self):
         video_id = "dummy_id"
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
-        ) as mock_api_cls:
+        with patch("src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi") as mock_api_cls:
             mock_api = mock_api_cls.return_value
             mock_api.fetch.side_effect = Exception("Generic error")
             with patch.object(logger, "info"), patch.object(logger, "error"):
@@ -113,9 +99,7 @@ class TestYoutubeExtractor:
             "uploader_url": "https://youtube.com/uploader_dummy",
         }
         # Patch YoutubeDL in the correct module
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
-        ) as mock_ytdlp:
+        with patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL") as mock_ytdlp:
             mock_instance = mock_ytdlp.return_value.__enter__.return_value
             mock_instance.extract_info.return_value = dummy_info
             with patch.object(logger, "info"):
@@ -165,9 +149,7 @@ class TestYoutubeExtractor:
                 None,
             ]
         }
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
-        ) as mock_ytdlp:
+        with patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL") as mock_ytdlp:
             mock_instance = mock_ytdlp.return_value.__enter__.return_value
             mock_instance.extract_info.return_value = dummy_playlist_info
 
@@ -183,9 +165,7 @@ class TestYoutubeExtractor:
     def test_extract_playlist_videos_empty_entries(self):
         playlist_url = "https://www.youtube.com/playlist?list=PL123"
         dummy_playlist_info = {"entries": []}
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
-        ) as mock_ytdlp:
+        with patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL") as mock_ytdlp:
             mock_instance = mock_ytdlp.return_value.__enter__.return_value
             mock_instance.extract_info.return_value = dummy_playlist_info
 
@@ -196,9 +176,7 @@ class TestYoutubeExtractor:
     @pytest.mark.PlaylistExtraction
     def test_extract_playlist_videos_error(self):
         playlist_url = "https://www.youtube.com/playlist?list=PL123"
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
-        ) as mock_ytdlp:
+        with patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL") as mock_ytdlp:
             mock_instance = mock_ytdlp.return_value.__enter__.return_value
             mock_instance.extract_info.side_effect = Exception("Playlist Error")
 
@@ -210,9 +188,7 @@ class TestYoutubeExtractor:
     def test_extract_playlist_videos_normalization(self):
         playlist_url = "https://www.youtube.com/watch?v=video1&list=PL123"
         dummy_playlist_info = {"entries": [{"id": "video1"}]}
-        with patch(
-            "src.infrastructure.extractors.youtube_extractor.YoutubeDL"
-        ) as mock_ytdlp:
+        with patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL") as mock_ytdlp:
             mock_instance = mock_ytdlp.return_value.__enter__.return_value
             mock_instance.extract_info.return_value = dummy_playlist_info
 

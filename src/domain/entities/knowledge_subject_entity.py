@@ -15,13 +15,9 @@ class KnowledgeSubjectEntity(BaseModel):
         default_factory=lambda: uuid4(),
         description="Logical ID of the knowledge subject",
     )
-    external_ref: Optional[str] = Field(
-        default=None, description="Optional external reference ID"
-    )
+    external_ref: Optional[str] = Field(default=None, description="Optional external reference ID")
     name: str = Field(..., description="Human-readable name of the subject")
-    description: Optional[str] = Field(
-        default=None, description="Optional longer description"
-    )
+    description: Optional[str] = Field(default=None, description="Optional longer description")
     icon: Optional[str] = Field(default=None, description="Icon name for the frontend")
     source_count: int = Field(default=0, description="Number of content sources")
     created_at: datetime = Field(

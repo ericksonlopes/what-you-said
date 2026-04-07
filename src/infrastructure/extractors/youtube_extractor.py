@@ -37,9 +37,7 @@ class YoutubeExtractor(IYoutubeExtractor):
 
     def __init__(self, video_id: str | None = None, language: str = "pt"):
         self.video_id = video_id
-        self.video_url = (
-            f"https://www.youtube.com/watch?v={video_id}" if video_id else None
-        )
+        self.video_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else None
         self.language = language
         self._ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
@@ -69,9 +67,7 @@ class YoutubeExtractor(IYoutubeExtractor):
             "retry_sleep_functions": {"http": lambda n: 5 * 2**n},
             # Use multiple clients to avoid "Sign in to confirm you're not a bot"
             # mediaconnect is often more resilient for servers
-            "extractor_args": {
-                "youtube": {"player_client": ["mediaconnect", "web", "mweb", "android"]}
-            },
+            "extractor_args": {"youtube": {"player_client": ["mediaconnect", "web", "mweb", "android"]}},
         }
 
         # Use cookies if provided by user in data/cookies.txt
@@ -89,7 +85,9 @@ class YoutubeExtractor(IYoutubeExtractor):
                 and settings.youtube.webshare_password
                 and settings.youtube.webshare_password.strip()
             ):
-                proxy = f"http://{settings.youtube.webshare_username}:{settings.youtube.webshare_password}@p.webshare.io:80"
+                proxy = (
+                    f"http://{settings.youtube.webshare_username}:{settings.youtube.webshare_password}@p.webshare.io:80"
+                )
 
             if proxy:
                 opts["proxy"] = proxy
@@ -106,17 +104,12 @@ class YoutubeExtractor(IYoutubeExtractor):
                 last_exception = e
                 # Check for specific fatal errors that shouldn't be retried
                 err_msg = str(e)
-                if any(
-                    x in err_msg for x in ["Private video", "not available", "Sign in"]
-                ):
+                if any(x in err_msg for x in ["Private video", "not available", "Sign in"]):
                     logger.error(f"Fatal YouTube error: {e}")
                     raise
 
                 # Check for IP blockings
-                if (
-                    "blocking requests from your IP" in err_msg
-                    or "IP is blocked" in err_msg
-                ):
+                if "blocking requests from your IP" in err_msg or "IP is blocked" in err_msg:
                     logger.error("YouTube IP Block detected in extractor retry loop")
                     raise YoutubeIPBlockedException(self.video_id or "unknown", err_msg)
 
@@ -186,9 +179,7 @@ class YoutubeExtractor(IYoutubeExtractor):
             )
             return YoutubeMetadataDTO(video_id=self.video_id or "unknown")
 
-    def download_audio(
-        self, url: str, output_dir: str = "./temp_audio", quality: str = "192"
-    ) -> str | None:
+    def download_audio(self, url: str, output_dir: str = "./temp_audio", quality: str = "192") -> str | None:
         """Downloads and extracts audio from a YouTube video with resilience."""
         os.makedirs(output_dir, exist_ok=True)
 
@@ -216,9 +207,7 @@ class YoutubeExtractor(IYoutubeExtractor):
         try:
             return self._run_with_retry(_download)
         except Exception as e:
-            logger.error(
-                f"Download failed after ALL retries: {e}", context={"url": url}
-            )
+            logger.error(f"Download failed after ALL retries: {e}", context={"url": url})
             return None
 
     def extract_playlist_videos(self, playlist_url: str) -> list[str]:
@@ -241,9 +230,7 @@ class YoutubeExtractor(IYoutubeExtractor):
                 context={"playlist_url": playlist_url, "error": str(e)},
             )
 
-        logger.info(
-            "Starting playlist extraction", context={"playlist_url": playlist_url}
-        )
+        logger.info("Starting playlist extraction", context={"playlist_url": playlist_url})
 
         def _extract():
             ydl_opts = self._get_common_ydl_opts()
@@ -291,9 +278,7 @@ class YoutubeExtractor(IYoutubeExtractor):
                     return [], chan
 
                 videos = self._parse_channel_entries(channel_info["entries"])
-                channel_name = (
-                    channel_info.get("channel") or channel_info.get("uploader") or ""
-                )
+                channel_name = channel_info.get("channel") or channel_info.get("uploader") or ""
                 return videos, channel_name
 
         try:
@@ -324,9 +309,7 @@ class YoutubeExtractor(IYoutubeExtractor):
 
         try:
             # First attempt: Try preferred languages in order
-            transcript = api.fetch(
-                video_id=self.video_id, languages=preferred_languages
-            )
+            transcript = api.fetch(video_id=self.video_id, languages=preferred_languages)
             logger.debug(
                 "Transcript fetched successfully (preferred).",
                 context={
@@ -358,15 +341,10 @@ class YoutubeExtractor(IYoutubeExtractor):
         if "This video is private" in error_msg:
             raise YoutubeVideoPrivateException(self.video_id or "unknown")
         if "unplayable" in error_msg.lower():
-            raise YoutubeVideoUnplayableException(
-                self.video_id or "unknown", reason=error_msg
-            )
+            raise YoutubeVideoUnplayableException(self.video_id or "unknown", reason=error_msg)
 
         # Hard Stop on IP Block
-        if (
-            "blocking requests from your IP" in error_msg
-            or "IP is blocked" in error_msg
-        ):
+        if "blocking requests from your IP" in error_msg or "IP is blocked" in error_msg:
             logger.error("YouTube IP Block detected during transcript fetch")
             raise YoutubeIPBlockedException(self.video_id or "unknown", error_msg)
 
@@ -377,17 +355,12 @@ class YoutubeExtractor(IYoutubeExtractor):
             )
             raise YoutubeTranscriptsDisabledException(self.video_id or "unknown")
 
-        if (
-            isinstance(error, NoTranscriptFound)
-            or "No transcript available" in error_msg
-        ):
+        if isinstance(error, NoTranscriptFound) or "No transcript available" in error_msg:
             logger.error(
                 "No transcript available for video in ANY language",
                 context={"video_id": self.video_id, "error": error_msg},
             )
-            raise YoutubeTranscriptNotFoundException(
-                self.video_id or "unknown", self.language
-            )
+            raise YoutubeTranscriptNotFoundException(self.video_id or "unknown", self.language)
 
         msg = f"Unexpected error while fetching transcript for video {self.video_id}: {error_msg}"
         logger.error(

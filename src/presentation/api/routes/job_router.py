@@ -45,9 +45,7 @@ def get_jobs(
     """Retrieve ingestion jobs with pagination and filtering"""
     try:
         offset = (page - 1) * page_size
-        result = job_service.list_jobs(
-            limit=page_size, offset=offset, status=status, search=search
-        )
+        result = job_service.list_jobs(limit=page_size, offset=offset, status=status, search=search)
         return PaginatedJobsResponse(
             items=result["jobs"],
             total=result["total"],
@@ -56,9 +54,7 @@ def get_jobs(
             stats=result["stats"],
         )
     except Exception as e:
-        logger.error(
-            e, context={"action": "list_jobs", "page": page, "page_size": page_size}
-        )
+        logger.error(e, context={"action": "list_jobs", "page": page, "page_size": page_size})
         raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR)
 
 

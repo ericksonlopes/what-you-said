@@ -51,9 +51,7 @@ class ChunkIndexModel(Base):
     extra = Column(JSON, nullable=True)
     version_number = Column(Integer, nullable=False, server_default=text("1"))
     vector_store_type = Column(Text, nullable=True)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

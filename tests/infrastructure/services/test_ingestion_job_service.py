@@ -54,9 +54,7 @@ class TestIngestionJobService:
 
         assert result.id == jid
         mock_repo.create_job.assert_called_once_with(
-            content_source_id=mock_repo.create_job.call_args.kwargs.get(
-                "content_source_id"
-            ),
+            content_source_id=mock_repo.create_job.call_args.kwargs.get("content_source_id"),
             status="started",
             embedding_model="emb",
             pipeline_version="1.0",
@@ -93,9 +91,7 @@ class TestIngestionJobService:
         jid = uuid4()
         sid = uuid4()
         service.link_job_to_source(jid, sid, "pdf")
-        mock_repo.link_job_to_source.assert_called_once_with(
-            job_id=jid, content_source_id=sid, ingestion_type="pdf"
-        )
+        mock_repo.link_job_to_source.assert_called_once_with(job_id=jid, content_source_id=sid, ingestion_type="pdf")
 
     def test_get_by_id(self, service, mock_repo):
         jid = uuid4()
@@ -124,6 +120,4 @@ class TestIngestionJobService:
         mock_repo.list_recent_jobs_by_subject.return_value = [self.create_mock_model()]
         result = service.list_recent_jobs_by_subject(sid, limit=5, offset=0)
         assert len(result) == 1
-        mock_repo.list_recent_jobs_by_subject.assert_called_once_with(
-            sid, limit=5, offset=0
-        )
+        mock_repo.list_recent_jobs_by_subject.assert_called_once_with(sid, limit=5, offset=0)

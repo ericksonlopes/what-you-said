@@ -68,9 +68,7 @@ class Crawl4AIExtractor(IBaseExtractor):
                 # 4. Multi-depth crawl if requested
                 depth = kwargs.get("depth", 1)
                 if depth > 1:
-                    sub_docs = await self._crawl_sub_pages(
-                        crawler, result, source, run_config, kwargs
-                    )
+                    sub_docs = await self._crawl_sub_pages(crawler, result, source, run_config, kwargs)
                     documents.extend(sub_docs)
 
                 return documents
@@ -82,19 +80,12 @@ class Crawl4AIExtractor(IBaseExtractor):
         return CrawlerRunConfig(
             css_selector=kwargs.get("css_selector"),
             word_count_threshold=kwargs.get("word_count_threshold", 200),
-            cache_mode=CacheMode.BYPASS
-            if kwargs.get("bypass_cache", True)
-            else CacheMode.ENABLED,
+            cache_mode=CacheMode.BYPASS if kwargs.get("bypass_cache", True) else CacheMode.ENABLED,
         )
 
-    async def _handle_crawl_failure(
-        self, result: Any, source: str, kwargs: Dict[str, Any]
-    ) -> List[Document]:
+    async def _handle_crawl_failure(self, result: Any, source: str, kwargs: Dict[str, Any]) -> List[Document]:
         # FALLBACK: If blocked by anti-bot or structural error (common for PDFs), try direct download
-        if (
-            "Blocked by anti-bot" in result.error_message
-            or "Structural" in result.error_message
-        ):
+        if "Blocked by anti-bot" in result.error_message or "Structural" in result.error_message:
             logger.warning(
                 "Crawl4AI blocked or failed structurally, trying direct download fallback",
                 context={"url": source, "error": result.error_message},
@@ -115,9 +106,7 @@ class Crawl4AIExtractor(IBaseExtractor):
             return text
         return re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
 
-    def _build_main_documents(
-        self, result: Any, source: str, exclude_links: bool
-    ) -> List[Document]:
+    def _build_main_documents(self, result: Any, source: str, exclude_links: bool) -> List[Document]:
         main_markdown = self._clean_markdown(result.markdown, exclude_links)
         metadata = {
             "source": source,
@@ -148,11 +137,7 @@ class Crawl4AIExtractor(IBaseExtractor):
         )
         internal_links = result.links.get("internal", [])
         sub_urls = list(
-            {
-                link["href"]
-                for link in internal_links
-                if link.get("href") and link["href"].startswith("http")
-            }
+            {link["href"] for link in internal_links if link.get("href") and link["href"].startswith("http")}
         )
 
         if not sub_urls:
@@ -164,18 +149,14 @@ class Crawl4AIExtractor(IBaseExtractor):
         if not sub_urls:
             return []
 
-        sub_results = await crawler.arun_many(
-            urls=sub_urls, config=run_config, concurrency_count=concurrency_count
-        )
+        sub_results = await crawler.arun_many(urls=sub_urls, config=run_config, concurrency_count=concurrency_count)
 
         documents = []
         for sub_res in sub_results:
             if sub_res.success:
                 sub_metadata = {
                     "source": sub_res.url,
-                    "title": sub_res.metadata.get("title", "")
-                    if sub_res.metadata
-                    else "",
+                    "title": sub_res.metadata.get("title", "") if sub_res.metadata else "",
                     "source_type": "web",
                     "scraper": "crawl4ai",
                     "status_code": sub_res.status_code,
@@ -184,9 +165,7 @@ class Crawl4AIExtractor(IBaseExtractor):
                 }
                 documents.append(
                     Document(
-                        page_content=self._clean_markdown(
-                            sub_res.markdown, exclude_links
-                        ),
+                        page_content=self._clean_markdown(sub_res.markdown, exclude_links),
                         metadata=sub_metadata,
                     )
                 )
@@ -214,9 +193,7 @@ class Crawl4AIExtractor(IBaseExtractor):
 
                 # Basic Content-Type check to confirm it's actually a PDF
                 content_type = response.headers.get("Content-Type", "").lower()
-                if "application/pdf" not in content_type and not url.lower().endswith(
-                    ".pdf"
-                ):
+                if "application/pdf" not in content_type and not url.lower().endswith(".pdf"):
                     logger.warning(
                         "URL might not be a PDF",
                         context={"url": url, "content_type": content_type},
@@ -225,9 +202,7 @@ class Crawl4AIExtractor(IBaseExtractor):
                 # Fix: Use anyio.to_thread.run_sync for synchronous tempfile operations if needed,
                 # or just create a path and use anyio for I/O.
                 def create_temp_file():
-                    with tempfile.NamedTemporaryFile(
-                        delete=False, suffix=".pdf"
-                    ) as tmp:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                         return tmp.name
 
                 tmp_path = await anyio.to_thread.run_sync(create_temp_file)

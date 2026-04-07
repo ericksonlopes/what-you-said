@@ -72,9 +72,7 @@ class DeleteDiarizationUseCase:
                 else:
                     os.remove(record.folder_path)
             except Exception as e:
-                logger.error(
-                    "Failed to delete local folder %s: %s", record.folder_path, str(e)
-                )
+                logger.error("Failed to delete local folder %s: %s", record.folder_path, str(e))
 
         # 3. Delete from Database
         logger.info("Deleting database record: %s", diarization_id)

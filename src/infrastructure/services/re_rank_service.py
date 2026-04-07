@@ -34,10 +34,7 @@ class ReRankService:
             )
 
             # FlashRank expects a list of dicts with 'id' and 'text'
-            passages = [
-                {"id": str(doc.id), "text": doc.content, "meta": {"model": doc}}
-                for doc in documents
-            ]
+            passages = [{"id": str(doc.id), "text": doc.content, "meta": {"model": doc}} for doc in documents]
 
             rerank_request = RerankRequest(query=query, passages=passages)
             results = self._ranker.rerank(rerank_request)

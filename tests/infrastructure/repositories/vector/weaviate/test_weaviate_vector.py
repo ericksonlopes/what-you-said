@@ -37,9 +37,7 @@ class TestWeaviateVector:
         captured = {}
 
         class FakeWeaviateVectorStore:
-            def __init__(
-                self, client, index_name, text_key, embedding, use_multi_tenancy
-            ):
+            def __init__(self, client, index_name, text_key, embedding, use_multi_tenancy):
                 captured["client"] = client
                 captured["index_name"] = index_name
                 captured["text_key"] = text_key
