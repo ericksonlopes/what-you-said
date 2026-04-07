@@ -34,7 +34,9 @@ class TestProcessAudioDiarizationPipeline:
         # Setup mocks
         mock_extractor = mock_extractor_cls.return_value
         mock_extractor.download_audio.return_value = "/tmp/audio.mp3"
-        mock_extractor.extract_metadata.return_value = MagicMock()
+        mock_extractor.extract_metadata.return_value = MagicMock(
+            title=None, full_title=None
+        )
 
         mock_diarizer = mock_diarizer_cls.return_value
         mock_diarization_result = MagicMock(spec=DiarizationResult)
@@ -59,7 +61,7 @@ class TestProcessAudioDiarizationPipeline:
                 recognize_voices=True,
             )
 
-            assert result["title"] == "audio"
+            assert result["name"] == "audio"
             assert result["storage_path"] == "processed/uuid-123/recognition"
         assert mock_extractor.download_audio.called
         assert mock_diarizer.run.called
@@ -196,6 +198,8 @@ class TestProcessAudioDiarizationPipeline:
         mock_extractor = mock_extractor_cls.return_value
         mock_extractor.download_audio.return_value = "/tmp/audio.mp3"
         mock_extractor.extract_metadata.side_effect = Exception("Metadata error")
+        # Ensure that if execute tries to use metadata after error (which it shouldn't), it's None
+        mock_extractor.get_metadata.return_value = None
 
         mock_diarizer = mock_diarizer_cls.return_value
         mock_diarization_result = MagicMock(spec=DiarizationResult)
@@ -215,5 +219,5 @@ class TestProcessAudioDiarizationPipeline:
                 recognize_voices=False,
             )
 
-            assert result["title"] == "audio"
+            assert result["name"] == "audio"
             assert result["storage_path"] == "processed/uuid-789/recognition"

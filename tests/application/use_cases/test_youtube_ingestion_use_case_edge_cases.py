@@ -79,8 +79,9 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         )
 
         with (
-            patch.object(
-                use_case, "_extract_video_id_from_url", return_value="12345678901"
+            patch(
+                "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor.get_video_id",
+                return_value="12345678901",
             ),
             patch.object(
                 use_case, "_process_single_video", return_value={"error": "some error"}
@@ -258,7 +259,9 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         mock_services["ingestion_service"].get_by_id.return_value = MagicMock(id=job_id)
 
         # Mocking extraction to return valid IDs
-        with patch.object(use_case, "_extract_video_id_from_url") as mock_ext:
+        with patch(
+            "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor.get_video_id"
+        ) as mock_ext:
             mock_ext.side_effect = ["v1", "v2"]
             with patch.object(use_case, "_process_single_video") as mock_process:
                 mock_process.side_effect = [
@@ -304,8 +307,9 @@ class TestYoutubeIngestionUseCaseEdgeCases:
         )
         mock_services["ingestion_service"].get_by_id.return_value = MagicMock(id=job_id)
 
-        with patch.object(
-            use_case, "_extract_video_id_from_url", side_effect=["v1", "v2"]
+        with patch(
+            "src.application.use_cases.youtube_ingestion_use_case.YoutubeExtractor.get_video_id",
+            side_effect=["v1", "v2"],
         ):
             with patch.object(use_case, "_process_single_video") as mock_process:
                 mock_process.side_effect = [

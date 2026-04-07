@@ -22,7 +22,9 @@ class TestDeleteDiarizationUseCase:
 
     @pytest.fixture
     def mock_cs_service(self):
-        return patch("src.infrastructure.services.content_source_service.ContentSourceService").start()
+        return patch(
+            "src.infrastructure.services.content_source_service.ContentSourceService"
+        ).start()
 
     def test_execute_success(self, sqlite_memory, mock_storage, mock_cs_service):
         # Setup record
@@ -36,7 +38,9 @@ class TestDeleteDiarizationUseCase:
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
-        use_case = DeleteDiarizationUseCase(sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage)
+        use_case = DeleteDiarizationUseCase(
+            sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage
+        )
 
         with (
             patch("os.path.exists", return_value=True),
@@ -56,7 +60,9 @@ class TestDeleteDiarizationUseCase:
             assert deleted_record is None
 
     def test_execute_not_found(self, sqlite_memory, mock_storage, mock_cs_service):
-        use_case = DeleteDiarizationUseCase(sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage)
+        use_case = DeleteDiarizationUseCase(
+            sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage
+        )
         result = use_case.execute("non-existent")
         assert result is False
 
@@ -71,7 +77,9 @@ class TestDeleteDiarizationUseCase:
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
-        use_case = DeleteDiarizationUseCase(sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage)
+        use_case = DeleteDiarizationUseCase(
+            sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage
+        )
         result = use_case.execute("test-id-no-paths")
 
         assert result is True
@@ -84,7 +92,9 @@ class TestDeleteDiarizationUseCase:
         )
         assert deleted_record is None
 
-    def test_execute_s3_error_continues(self, sqlite_memory, mock_storage, mock_cs_service):
+    def test_execute_s3_error_continues(
+        self, sqlite_memory, mock_storage, mock_cs_service
+    ):
         record = DiarizationRecord(
             id="test-id-s3-error",
             name="Test",
@@ -96,7 +106,9 @@ class TestDeleteDiarizationUseCase:
 
         mock_storage.delete_directory.side_effect = Exception("S3 Delete Failed")
 
-        use_case = DeleteDiarizationUseCase(sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage)
+        use_case = DeleteDiarizationUseCase(
+            sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage
+        )
         result = use_case.execute("test-id-s3-error")
 
         # Should still return true because DB deletion succeeds
@@ -110,7 +122,9 @@ class TestDeleteDiarizationUseCase:
         )
         assert deleted_record is None
 
-    def test_execute_local_file_instead_of_dir(self, sqlite_memory, mock_storage, mock_cs_service):
+    def test_execute_local_file_instead_of_dir(
+        self, sqlite_memory, mock_storage, mock_cs_service
+    ):
         record = DiarizationRecord(
             id="test-id-file",
             name="Test",
@@ -120,7 +134,9 @@ class TestDeleteDiarizationUseCase:
         sqlite_memory.add(record)
         sqlite_memory.commit()
 
-        use_case = DeleteDiarizationUseCase(sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage)
+        use_case = DeleteDiarizationUseCase(
+            sqlite_memory, cs_service=mock_cs_service, storage_service=mock_storage
+        )
 
         with (
             patch("os.path.exists", return_value=True),

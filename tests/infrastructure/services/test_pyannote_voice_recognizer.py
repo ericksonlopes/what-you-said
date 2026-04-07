@@ -80,7 +80,9 @@ class TestVoiceRecognizer:
                         assert res.results["s1"].best_match == "A"
 
     def test_get_inference_internal(self):
-        with patch("src.infrastructure.services.pyannote_voice_recognizer.model_loader") as mock_loader:
+        with patch(
+            "src.infrastructure.services.pyannote_voice_recognizer.model_loader"
+        ) as mock_loader:
             mock_loader.get_voice_inference.return_value = MagicMock()
             recognizer = VoiceRecognizer(MagicMock(), hf_token="f")
             inf = recognizer._get_inference()

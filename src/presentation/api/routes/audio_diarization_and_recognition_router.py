@@ -97,7 +97,9 @@ async def update_diarization_segments(
                     language=cast(str, target_source.language or "pt"),
                     source_type=cast(Optional[str], target_source.source_type),
                     external_source=cast(Optional[str], target_source.external_source),
-                    source_metadata=cast(Optional[dict[str, Any]], target_source.source_metadata),
+                    source_metadata=cast(
+                        Optional[dict[str, Any]], target_source.source_metadata
+                    ),
                 )
 
                 task_queue.enqueue(

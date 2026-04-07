@@ -123,7 +123,9 @@ class RedisTaskQueueService(ITaskQueue):
         try:
             # Fetch raw JSON payloads from the list
             # Redis list is LPUSH (front is index 0)
-            raw_tasks = cast(list[bytes], self._redis.lrange(self._queue_name, 0, limit - 1))
+            raw_tasks = cast(
+                list[bytes], self._redis.lrange(self._queue_name, 0, limit - 1)
+            )
             tasks = []
             for payload in raw_tasks:
                 try:

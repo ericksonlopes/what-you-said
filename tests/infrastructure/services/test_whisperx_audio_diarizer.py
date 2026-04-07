@@ -9,9 +9,13 @@ from src.infrastructure.services.whisperx_audio_diarizer import AudioDiarizer
 class TestAudioDiarizer:
     @pytest.fixture(autouse=True)
     def mock_deps(self):
-        with patch("src.infrastructure.services.whisperx_audio_diarizer.model_loader") as ml:
+        with patch(
+            "src.infrastructure.services.whisperx_audio_diarizer.model_loader"
+        ) as ml:
             self.mock_model_loader = ml
-            with patch("src.infrastructure.services.whisperx_audio_diarizer.whisperx") as wx:
+            with patch(
+                "src.infrastructure.services.whisperx_audio_diarizer.whisperx"
+            ) as wx:
                 self.whisperx = wx
                 yield
 
@@ -46,13 +50,16 @@ class TestAudioDiarizer:
         diarizer = AudioDiarizer(hf_token="f")
         audio_data = np.zeros(10)
         result = diarizer._transcribe(audio_data, "en")
-        
+
         assert result["language"] == "en"
         self.mock_model_loader.get_whisper_model.assert_called_once()
 
     def test_align_internal(self):
         mock_align_model = MagicMock()
-        self.mock_model_loader.get_align_model.return_value = (mock_align_model, MagicMock())
+        self.mock_model_loader.get_align_model.return_value = (
+            mock_align_model,
+            MagicMock(),
+        )
         self.whisperx.align.return_value = {"segments": []}
 
         diarizer = AudioDiarizer(hf_token="f")
@@ -68,8 +75,6 @@ class TestAudioDiarizer:
 
         diarizer = AudioDiarizer(hf_token="fake")
         audio_data = np.zeros(10)
-        segments, _ = diarizer._diarize(
-            audio_data, {"segments": []}, 1, None, None
-        )
+        segments, _ = diarizer._diarize(audio_data, {"segments": []}, 1, None, None)
         assert len(segments) == 1
         self.mock_model_loader.get_diarization_pipeline.assert_called_once()

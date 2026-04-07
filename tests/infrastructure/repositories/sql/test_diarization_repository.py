@@ -12,7 +12,7 @@ class TestDiarizationRepository:
 
         assert record.id is not None
         assert record.status == DiarizationStatus.PENDING.value
-        assert record.title == "Title"
+        assert record.name == "Title"
 
     def test_save_new_and_update(self, sqlite_memory):
         repo = DiarizationRepository(sqlite_memory)
@@ -31,7 +31,7 @@ class TestDiarizationRepository:
             result2, "T2", "upload", "f1", "/folder2", diarization_id=record.id
         )
         assert updated.id == record.id
-        assert updated.title == "T2"
+        assert updated.name == "T2"
         assert updated.language == "fr"
 
     def test_update_status_and_recognition(self, sqlite_memory):

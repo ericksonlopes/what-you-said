@@ -89,7 +89,10 @@ class TestContentSourceService:
         cid = uuid4()
         service.update_processing_status(cid, ContentSourceStatus.FAILED)
         mock_repo.update_status.assert_called_once_with(
-            content_source_id=cid, status="failed"
+            content_source_id=cid,
+            status="failed",
+            status_message=None,
+            error_message=None,
         )
 
     def test_finish_ingestion(self, service, mock_repo):

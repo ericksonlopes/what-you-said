@@ -334,7 +334,7 @@ class YoutubeExtractor(IYoutubeExtractor):
 
         except NoTranscriptFound:
             # Second attempt: Fallback to ANY available transcript
-            transcript_list = api.list_transcripts(self.video_id)  # type: ignore[attr-defined]
+            transcript_list = api.list(self.video_id)
             fallback_transcript = next(iter(transcript_list))
 
             logger.warning(

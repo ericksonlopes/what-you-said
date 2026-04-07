@@ -332,7 +332,9 @@ class TestWebScrapingUseCaseExtended:
             await use_case.execute(cmd)
 
         mock_deps["cs_service"].update_processing_status.assert_called_with(
-            content_source_id=source_id, status=ContentSourceStatus.FAILED
+            content_source_id=source_id,
+            status=ContentSourceStatus.FAILED,
+            error_message="Execute error",
         )
         mock_deps["ingestion_service"].update_job.assert_called_with(
             job_id=job_id,

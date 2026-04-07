@@ -40,6 +40,7 @@ def make_use_case_mocks():
 
 def test_throttling_logic(monkeypatch):
     use_case = make_use_case_mocks()
+    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
     # Mock settings
     from src.config.settings import settings
@@ -48,7 +49,7 @@ def test_throttling_logic(monkeypatch):
     monkeypatch.setattr(settings.youtube, "throttle_wait_seconds", 0.1)
 
     # Mock video processing methods to avoid actual extraction
-    monkeypatch.setattr(use_case, "_extract_video_id_from_url", lambda url: url)
+    monkeypatch.setattr(YoutubeExtractor, "get_video_id", lambda url: url)
     monkeypatch.setattr(
         use_case,
         "_process_single_video",
@@ -59,9 +60,6 @@ def test_throttling_logic(monkeypatch):
         "_resolve_subject",
         lambda *args: SimpleNamespace(id=uuid.uuid4(), name="s"),
     )
-
-    # Mock extract_playlist_videos to return 5 videos
-    from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
     monkeypatch.setattr(
         YoutubeExtractor,

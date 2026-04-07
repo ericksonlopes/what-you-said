@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 from youtube_transcript_api import (
-    YouTubeTranscriptApi,
     TranscriptsDisabled,
     NoTranscriptFound,
 )
@@ -28,8 +27,11 @@ class TestYoutubeExtractor:
         video_id = "dummy_id"
         dummy_transcript = DummyTranscript()
 
-        with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
-            mock_fetch.return_value = dummy_transcript
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
+        ) as mock_api_cls:
+            mock_api = mock_api_cls.return_value
+            mock_api.fetch.return_value = dummy_transcript
             with patch.object(logger, "info"), patch.object(logger, "debug"):
                 extractor = YoutubeExtractor(video_id)
                 result = extractor.extract_transcript()
@@ -40,7 +42,7 @@ class TestYoutubeExtractor:
                     if lang not in expected_languages:
                         expected_languages.append(lang)
 
-                mock_fetch.assert_called_once_with(
+                mock_api.fetch.assert_called_once_with(
                     video_id=video_id, languages=expected_languages
                 )
 
@@ -49,8 +51,15 @@ class TestYoutubeExtractor:
         transcript_data = ""  # Should be a string
         requested_language_codes = ["pt"]
         message = "No transcript found"
-        with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
-            mock_fetch.side_effect = NoTranscriptFound(
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
+        ) as mock_api_cls:
+            mock_api = mock_api_cls.return_value
+            # Both primary and fallback should fail to trigger the final exception
+            mock_api.fetch.side_effect = NoTranscriptFound(
+                transcript_data, requested_language_codes, message
+            )
+            mock_api.list.side_effect = NoTranscriptFound(
                 transcript_data, requested_language_codes, message
             )
             with patch.object(logger, "info"), patch.object(logger, "error"):
@@ -60,8 +69,11 @@ class TestYoutubeExtractor:
 
     def test_extract_transcript_transcripts_disabled(self):
         video_id = "dummy_id"
-        with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
-            mock_fetch.side_effect = TranscriptsDisabled("Transcripts disabled")
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
+        ) as mock_api_cls:
+            mock_api = mock_api_cls.return_value
+            mock_api.fetch.side_effect = TranscriptsDisabled("Transcripts disabled")
             with patch.object(logger, "info"), patch.object(logger, "warning"):
                 extractor = YoutubeExtractor(video_id)
                 with pytest.raises(YoutubeTranscriptsDisabledException):
@@ -69,8 +81,11 @@ class TestYoutubeExtractor:
 
     def test_extract_transcript_generic_error(self):
         video_id = "dummy_id"
-        with patch.object(YouTubeTranscriptApi, "fetch") as mock_fetch:
-            mock_fetch.side_effect = Exception("Generic error")
+        with patch(
+            "src.infrastructure.extractors.youtube_extractor.YouTubeTranscriptApi"
+        ) as mock_api_cls:
+            mock_api = mock_api_cls.return_value
+            mock_api.fetch.side_effect = Exception("Generic error")
             with patch.object(logger, "info"), patch.object(logger, "error"):
                 extractor = YoutubeExtractor(video_id)
                 with pytest.raises(Exception):
