@@ -17,7 +17,7 @@ interface SpeakerIdentificationPanelProps {
 }
 
 const isGenericSpeaker = (label: string) => {
-    return /^SPEAKER_\d+$/i.test(label) || label.toUpperCase().startsWith('SPEAKER');
+    return /^SPEAKER_?\d+$/i.test(label);
 };
 
 const SpeakerDropdown: React.FC<{
