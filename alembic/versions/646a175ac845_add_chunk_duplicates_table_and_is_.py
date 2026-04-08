@@ -36,7 +36,7 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.add_column("chunk_index", sa.Column("is_active", sa.Boolean(), server_default=sa.text("1"), nullable=False))
+    op.add_column("chunk_index", sa.Column("is_active", sa.Boolean(), server_default=sa.text("'1'"), nullable=False))
     # ### end Alembic commands ###
 
 
