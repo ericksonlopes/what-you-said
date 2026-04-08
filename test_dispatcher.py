@@ -13,13 +13,13 @@ class MockContext:
     def __init__(self, job_svc):
         self.job_service = job_svc
 
-import src.presentation.api.dependencies as deps
+import src.presentation.api.dependencies as deps  # noqa: E402
 
 deps.resolve_ingestion_context = MagicMock(return_value=MockContext(mock_job_service))
 
-from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand
-from src.application.dtos.enums.youtube_data_type import YoutubeDataType
-from src.application.workers import run_youtube_dispatcher_worker
+from src.application.dtos.commands.ingest_youtube_command import IngestYoutubeCommand  # noqa: E402
+from src.application.dtos.enums.youtube_data_type import YoutubeDataType  # noqa: E402
+from src.application.workers import run_youtube_dispatcher_worker  # noqa: E402
 
 
 def test_dispatcher():
@@ -28,7 +28,7 @@ def test_dispatcher():
     mock_app.state.task_queue = MagicMock()
     
     # Patch _get_app to return our mock
-    import src.application.workers as workers
+    import src.application.workers as workers  # noqa: E402
     workers._get_app = MagicMock(return_value=mock_app)
     
     # Create command for a small playlist (or the user's one)

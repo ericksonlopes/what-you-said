@@ -14,7 +14,13 @@ logger = Logger()
 class ChunkDuplicateSQLRepository:
     """Repository for managing duplicate chunk records in SQL."""
 
-    def create_duplicate_record(self, chunk_ids: List[UUID], similarity: float, status: str = "pending", content_source_id: Optional[str] = None) -> ChunkDuplicateModel:
+    def create_duplicate_record(
+        self,
+        chunk_ids: List[UUID],
+        similarity: float,
+        status: str = "pending",
+        content_source_id: Optional[str] = None
+    ) -> ChunkDuplicateModel:
         """Create a new duplicate grouping record."""
         with Connector() as session:
             try:
@@ -36,7 +42,13 @@ class ChunkDuplicateSQLRepository:
                 )
                 raise
 
-    def list_duplicates(self, status: Optional[str] = None, subject_ids: Optional[List[str]] = None, limit: int = 100, offset: int = 0) -> tuple[List[ChunkDuplicateModel], int]:
+    def list_duplicates(
+        self,
+        status: Optional[str] = None,
+        subject_ids: Optional[List[str]] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> tuple[List[ChunkDuplicateModel], int]:
         """List duplicate records with optional status and context filtering."""
         with Connector() as session:
             query = session.query(ChunkDuplicateModel)
@@ -94,5 +106,8 @@ class ChunkDuplicateSQLRepository:
                 return False
             except Exception as e:
                 session.rollback()
-                logger.error("Error deleting duplicate record", context={"duplicate_id": str(duplicate_id), "error": str(e)})
+                logger.error(
+                    "Error deleting duplicate record",
+                    context={"duplicate_id": str(duplicate_id), "error": str(e)}
+                )
                 raise

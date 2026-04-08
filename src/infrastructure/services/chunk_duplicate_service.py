@@ -64,7 +64,12 @@ class ChunkDuplicateService:
 
         return registered_count
 
-    def _filter_duplicates(self, source_id: UUID, similar_chunks: List[Any], threshold: float) -> List[tuple[UUID, float]]:
+    def _filter_duplicates(
+        self,
+        source_id: UUID,
+        similar_chunks: List[Any],
+        threshold: float
+    ) -> List[tuple[UUID, float]]:
         """Filter results to find valid duplicates above threshold."""
         duplicates = []
         source_id_str = str(source_id)
