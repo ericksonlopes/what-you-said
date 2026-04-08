@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.config.settings import Settings
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
-from src.infrastructure.repositories.sql.connector import Connector
+from src.infrastructure.connectors.connector_sql import Connector
 from src.presentation.api.dependencies import get_settings, get_vector_repository
 from src.presentation.api.schemas.settings_schemas import (
     AppSettingsSchema,

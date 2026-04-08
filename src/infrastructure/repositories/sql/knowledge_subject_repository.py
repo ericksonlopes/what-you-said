@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy.orm import selectinload
 
 from src.config.logger import Logger
-from src.infrastructure.repositories.sql.connector import Connector
+from src.infrastructure.connectors.connector_sql import Connector
 from src.infrastructure.repositories.sql.models.knowledge_subject import (
     KnowledgeSubjectModel,
 )

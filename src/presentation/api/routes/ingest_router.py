@@ -26,12 +26,14 @@ from src.config.logger import Logger
 from src.domain.entities.user import User
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
 from src.infrastructure.services.content_source_service import ContentSourceService
+from src.infrastructure.services.ingestion_job_service import IngestionJobService
 from src.presentation.api.dependencies import (
     get_cs_service,
     get_current_user,
     get_diarization_ingestion_use_case,
     get_file_ingestion_use_case,
     get_ingest_youtube_use_case,
+    get_job_service,
     get_task_queue_service,
     get_web_scraping_use_case,
 )
@@ -63,7 +65,9 @@ def ingest_youtube(
     request: Annotated[YoutubeIngestRequest, Body()],
     use_case: Annotated[YoutubeIngestionUseCase, Depends(get_ingest_youtube_use_case)],
     task_queue: Annotated[ITaskQueue, Depends(get_task_queue_service)],
-):
+    job_service: Annotated[IngestionJobService, Depends(get_job_service)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> IngestResponse:
     """
     Ingest data from YouTube videos or playlists into the vector store.
     """
@@ -119,15 +123,31 @@ def ingest_youtube(
 
         logger.info("Running ingestion in background via queue", context={"reason": reason})
 
+        # Ensure we have a job ID for background tasks so they are visible in UI
+        job_id = request.ingestion_job_id
+        if not job_id:
+            job_title = request.title or request.video_url or f"YouTube {reason.capitalize()}"
+            job = job_service.create_job(
+                source_title=job_title,
+                external_source=request.video_url or (request.video_urls[0] if request.video_urls else None),
+                subject_id=request.subject_id,
+                ingestion_type="YOUTUBE",
+                status="INITIALIZING",
+                status_message=f"Starting YouTube {reason} ingestion...",
+            )
+            job_id = str(job.id)
+            cmd.ingestion_job_id = job_id
+
         task_queue.enqueue(
             worker,
             cmd,
-            task_title=request.title or request.video_url or "YouTube Ingestion",
-            metadata={"job_id": str(request.ingestion_job_id)} if request.ingestion_job_id else {},
+            task_title=request.title or request.video_url or f"YouTube {reason.capitalize()}",
+            metadata={"job_id": job_id},
         )
         return IngestResponse(
             skipped=False,
-            reason="Ingestion started in background queue.",
+            reason=f"Ingestion started in background queue (Job: {job_id}).",
+            job_id=UUID(job_id) if job_id else None,
         )
 
     try:

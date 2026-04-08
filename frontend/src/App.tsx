@@ -34,6 +34,8 @@ import {ContentSource} from './types';
 import {ChatView} from './components/ChatView';
 import {KnowledgeAdminView} from './components/KnowledgeAdminView';
 import {QueueMonitorView} from './components/QueueMonitorView';
+import {DuplicatesView} from './components/DuplicatesView';
+import {SidebarContext} from './components/SidebarContext';
 
 
 function ActivityMonitorView() {
@@ -307,10 +309,10 @@ function ContentSourcesView() {
   const filteredSources = React.useMemo(() => {
     let result = sources;
 
-    // Filter by subject context (Single select in this view)
+    // Filter by subject context (Multi select)
     if (selectedSubjects.length > 0) {
-      const selectedId = selectedSubjects[0].id;
-      result = result.filter(src => src.subjectId === selectedId);
+      const selectedIds = selectedSubjects.map(s => s.id);
+      result = result.filter(src => src.subjectId && selectedIds.includes(src.subjectId));
     }
     
     if (typeFilter !== 'all') {
@@ -423,9 +425,7 @@ function ContentSourcesView() {
 
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                disabled={selectedSubjects.length === 0}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${selectedSubjects.length === 0 ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed opacity-50' : 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]'}`}
-                title={selectedSubjects.length === 0 ? t('common.hints.select_subject') : ''}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
               >
                 <Plus className="w-4 h-4 stroke-[3px]" />
                 {t('sources.add_btn')}
@@ -456,70 +456,10 @@ function ContentSourcesView() {
               onSearchSubmit={handleSearchSubmit}
               typeFilter={typeFilter}
               onTypeFilterChange={handleTypeChange}
-              onPageSizeChange={setPageSize}
               emptyMessage="Nenhuma fonte encontrada nesta base ou com esses filtros."
             />
           )}
         </motion.div>
-      </div>
-
-      {/* 🚀 FIXED RIGHT SIDEBAR (Experience unified with Diarization) */}
-      <div className="w-80 border-l border-white/5 bg-black/20 backdrop-blur-xl flex flex-col h-full shrink-0 relative z-20">
-        <div className="p-6 border-b border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-xs font-black text-white uppercase tracking-widest">{t('ecosystem.title')}</h3>
-          </div>
-        </div>
-        
-        <div className="p-6 border-b border-white/5 bg-emerald-500/5">
-          <p className="text-[10px] text-emerald-400/70 font-black uppercase tracking-widest leading-relaxed">
-            {t('ecosystem.description')}
-          </p>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-          {subjects.map((ctx) => {
-            const isSelected = selectedSubjects.some(s => s.id === ctx.id);
-            return (
-              <button
-                key={ctx.id}
-                onClick={() => selectSubject(ctx)}
-                className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all border ${isSelected ? 'bg-emerald-500/10 border-emerald-500/30 text-white shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-transparent border-transparent text-zinc-500 hover:bg-white/5 hover:text-zinc-300'}`}
-              >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'bg-zinc-900 text-zinc-600'}`}>
-                  <Database className="w-4 h-4" />
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <div className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-zinc-400'}`}>
-                    {ctx.name}
-                  </div>
-                  <div className="text-[9px] font-black uppercase tracking-widest opacity-50 mt-0.5">
-                    {ctx.sourceCount || 0} {t('ecosystem.sources_count')}
-                  </div>
-                </div>
-                {isSelected && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                )}
-              </button>
-            );
-          })}
-          {subjects.length === 0 && (
-             <div className="py-20 text-center opacity-20">
-                <Database className="w-8 h-8 mx-auto mb-3 text-zinc-500" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{t('ecosystem.no_base')}</span>
-             </div>
-          )}
-        </div>
-
-        <div className="p-6 border-t border-white/5 mt-auto">
-           <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none mt-0.5">
-                {selectedSubjects.length > 0 ? selectedSubjects[0].name : t('ecosystem.no_active_base')}
-              </span>
-           </div>
-        </div>
       </div>
     </div>
   );
@@ -589,19 +529,27 @@ function MainContent() {
       </header>
 
       {/* View Router */}
-      <main className="flex-1 overflow-hidden relative">
-        <ErrorBoundary>
-          {currentView === 'activity' && <ActivityMonitorView />}
-          {currentView === 'queue' && <QueueMonitorView />}
-          {currentView === 'sources' && <ContentSourcesView />}
+      <main className="flex-1 overflow-hidden relative flex">
+        <div className="flex-1 h-full min-w-0 overflow-y-auto">
+          <ErrorBoundary>
+            {currentView === 'activity' && <ActivityMonitorView />}
+            {currentView === 'queue' && <QueueMonitorView />}
+            {currentView === 'sources' && <ContentSourcesView />}
 
-          {currentView === 'chat' && <ChatView />}
-          {currentView === 'search' && <SearchView />}
-          {currentView === 'database' && <ChunksViewer />}
-          {currentView === 'knowledge_contexts' && <KnowledgeAdminView />}
-          {currentView === 'diarization' && <DiarizationView/>}
-          {currentView === 'voice_profiles' && <VoiceProfilesView />}
-        </ErrorBoundary>
+            {currentView === 'chat' && <ChatView />}
+            {currentView === 'search' && <SearchView />}
+            {currentView === 'database' && <ChunksViewer />}
+            {currentView === 'knowledge_contexts' && <KnowledgeAdminView />}
+            {currentView === 'diarization' && <DiarizationView/>}
+            {currentView === 'voice_profiles' && <VoiceProfilesView />}
+            {currentView === 'duplicates' && <DuplicatesView />}
+          </ErrorBoundary>
+        </div>
+        
+        {/* Global Ecosystem Sidebar for Data operations */}
+        {['sources', 'duplicates', 'diarization'].includes(currentView) && (
+          <SidebarContext />
+        )}
       </main>
 
       <AddContentModal 

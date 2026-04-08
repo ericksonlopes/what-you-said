@@ -3,7 +3,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from src.config.settings import settings
 
-# Engine setup based on dialect
 connect_args = {}
 if settings.sql.url.startswith("sqlite"):
     connect_args["check_same_thread"] = False

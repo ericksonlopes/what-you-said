@@ -1,9 +1,9 @@
 import logging
 import traceback
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, List, Optional, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from src.application.dtos.commands.process_audio_command import ProcessAudioCommand
@@ -325,7 +325,7 @@ async def retrieve_all_processed_audio_history(
     use_case: Annotated[RetrieveProcessedAudioHistoryUseCase, Depends(get_retrieve_history_use_case)],
     limit: int = 10,
     offset: int = 0,
-    subject_id: str | None = None,
+    subject_id: Optional[List[str]] = Query(None),
 ):
     try:
         logger.info(

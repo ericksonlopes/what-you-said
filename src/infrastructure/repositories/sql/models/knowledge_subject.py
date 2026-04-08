@@ -7,7 +7,7 @@ import uuid
 from sqlalchemy import UUID, Column, DateTime, Text, func
 from sqlalchemy.orm import relationship
 
-from src.infrastructure.repositories.sql.connector import Base
+from src.infrastructure.connectors.connector_sql import Base
 
 
 class KnowledgeSubjectModel(Base):

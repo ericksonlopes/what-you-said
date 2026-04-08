@@ -10,7 +10,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from src.config.settings import settings
-from src.infrastructure.repositories.sql.connector import Base
+from src.infrastructure.connectors.connector_sql import Base
 
 _package_name = "src.infrastructure.repositories.sql.models"
 
@@ -58,7 +58,7 @@ writer = rewriter.Rewriter()
 @writer.rewrites(ops.CreateTableOp)
 @writer.rewrites(ops.CreateIndexOp)
 def add_if_not_exists(context, revision, op):
-    if not context.as_batch:
+    if not getattr(context, "as_batch", False):
         op.if_not_exists = True
     return op
 
@@ -66,7 +66,7 @@ def add_if_not_exists(context, revision, op):
 @writer.rewrites(ops.DropTableOp)
 @writer.rewrites(ops.DropIndexOp)
 def add_if_exists(context, revision, op):
-    if not context.as_batch:
+    if not getattr(context, "as_batch", False):
         op.if_exists = True
     return op
 

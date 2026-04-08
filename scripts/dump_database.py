@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-from src.infrastructure.repositories.sql.connector import engine
+from infrastructure.connectors.connector_sql import engine
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

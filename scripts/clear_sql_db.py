@@ -4,7 +4,7 @@ import os
 # Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.infrastructure.repositories.sql.connector import engine, Base
+from infrastructure.connectors.connector_sql import engine, Base
 from src.infrastructure.repositories.sql import models  # noqa: F401
 from src.config.logger import Logger
 

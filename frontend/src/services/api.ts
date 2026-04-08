@@ -1,4 +1,4 @@
-import { Subject, IngestionTask, ContentSource, Chunk, PaginatedResponse, RawQueueTask } from '../types';
+import { Subject, IngestionTask, ContentSource, Chunk, PaginatedResponse, RawQueueTask, ChunkDuplicate } from '../types';
 
 
 const API_BASE_URL = '/rest';
@@ -353,11 +353,18 @@ export const api = {
   },
 
   // Diarization Methods
-  async fetchDiarizations(limit = 20, offset = 0, subjectId?: string): Promise<any[]> {
+  async fetchDiarizations(limit = 10, offset = 0, subject_ids?: string | string[]): Promise<any[]> {
     const url = new URL(`${API_BASE_URL}/audio`, globalThis.location.origin);
     url.searchParams.append('limit', limit.toString());
     url.searchParams.append('offset', offset.toString());
-    if (subjectId) url.searchParams.append('subject_id', subjectId);
+    
+    if (subject_ids) {
+      if (Array.isArray(subject_ids)) {
+        subject_ids.forEach(id => url.searchParams.append('subject_id', id));
+      } else {
+        url.searchParams.append('subject_id', subject_ids);
+      }
+    }
 
     const response = await fetch(url.toString(), {
       headers: getHeaders()
@@ -567,6 +574,49 @@ export const api = {
       headers: getHeaders()
     });
     await handleResponseError(response, 'Failed to remove task from queue');
+  },
+
+  // Duplicate Management
+  async fetchDuplicates(status?: string, subject_ids?: string[], limit = 100, offset = 0): Promise<{ results: ChunkDuplicate[]; total: number }> {
+    const url = new URL(`${API_BASE_URL}/duplicates`, globalThis.location.origin);
+    if (status) url.searchParams.append('status', status);
+    if (subject_ids && subject_ids.length > 0) {
+      subject_ids.forEach(id => url.searchParams.append('subject_id', id));
+    }
+    url.searchParams.append('limit', limit.toString());
+    url.searchParams.append('offset', offset.toString());
+
+    const response = await fetch(url.toString(), {
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to fetch duplicates');
+    return response.json();
+  },
+
+  async updateDuplicateStatus(id: string, status: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/duplicates/${id}/status`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ status })
+    });
+    await handleResponseError(response, 'Failed to update duplicate status');
+  },
+
+  async deactivateChunk(id: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/duplicates/chunks/${id}/deactivate`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Failed to deactivate chunk');
+  },
+
+  async analyzeAllDuplicates(): Promise<any> {
+    const response = await fetch(`${API_BASE_URL}/duplicates/analyze-all`, {
+      method: 'POST',
+      headers: getHeaders()
+    });
+    await handleResponseError(response, 'Global analysis failed');
+    return response.json();
   }
 };
 

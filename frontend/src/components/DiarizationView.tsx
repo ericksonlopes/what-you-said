@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'motion/react';
 import { 
-    ChevronLeft, 
-    Database 
+    ChevronLeft
 } from 'lucide-react';
 import { useAppContext } from '../store/AppContext';
 import { api } from '../services/api';
@@ -28,8 +27,6 @@ export function DiarizationView() {
     const { t } = useTranslation();
     const { 
         selectedSubjects, 
-        setSelectedSubjects,
-        subjects,
         addToast, 
         refreshJobs, 
         refreshSources,
@@ -66,8 +63,8 @@ export function DiarizationView() {
     const loadJobs = useCallback(async (silent = false) => {
         if (!silent) setIsLoadingJobs(true);
         try {
-            const subjectId = selectedSubjects.length > 0 ? selectedSubjects[0].id : undefined;
-            const data = await api.fetchDiarizations(50, 0, subjectId);
+            const subject_ids = selectedSubjects.map(s => s.id);
+            const data = await api.fetchDiarizations(50, 0, subject_ids);
             const mappedJobs = data.map(mapBackendJob);
             setJobs(mappedJobs);
             return mappedJobs;
@@ -209,10 +206,13 @@ export function DiarizationView() {
             if (url) {
                 const audio = new Audio(url);
                 audioRef.current = audio;
-                audio.onended = () => {
+                
+                const onAudioEnded = () => {
                     setSpeakers(prev => prev.map(s => ({...s, isPlaying: false})));
                     audioRef.current = null;
                 };
+                
+                audio.onended = onAudioEnded;
                 await audio.play();
             }
         } catch (err) {
@@ -442,65 +442,19 @@ export function DiarizationView() {
                 </AnimatePresence>
             </div>
 
-            {/* 🔵 RIGHT SIDEBAR */}
+            {/* 🔵 RIGHT SIDEBAR (Metadata only, Ecosystem is global) */}
             <AnimatePresence mode="wait">
-                <motion.div 
-                    key={viewMode === 'list' ? 'ecosystem' : 'metadata'}
-                    initial={{ opacity: 0, x: 20, width: 0 }}
-                    animate={{ opacity: 1, x: 0, width: 320 }}
-                    exit={{ opacity: 0, x: 20, width: 0 }}
-                    className="border-l border-white/5 bg-black/20 backdrop-blur-xl flex flex-col shrink-0 overflow-hidden"
-                >
-                    {viewMode === 'list' ? (
-                        <div className="w-[320px] flex flex-col h-full">
-                            <div className="p-6 border-b border-white/5 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Database className="w-4 h-4 text-emerald-400" />
-                                    <h3 className="text-xs font-black text-white uppercase tracking-widest">{t('ecosystem.title')}</h3>
-                                </div>
-                            </div>
-                            
-                            <div className="p-6 border-b border-white/5 bg-emerald-500/5">
-                                <p className="text-[10px] text-emerald-400/70 font-black uppercase tracking-widest leading-relaxed">
-                                    {t('ecosystem.description')}
-                                </p>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                                {subjects.map((ctx) => {
-                                    const isSelected = selectedSubjects.some(s => s.id === ctx.id);
-                                    return (
-                                        <button
-                                            key={ctx.id}
-                                            onClick={() => {
-                                                const sub = subjects.find(s => s.id === ctx.id);
-                                                if (sub) setSelectedSubjects([sub]);
-                                            }}
-                                            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all border ${isSelected ? 'bg-emerald-500/10 border-emerald-500/30 text-white shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-transparent border-transparent text-zinc-500 hover:bg-white/5 hover:text-zinc-300'}`}
-                                        >
-                                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isSelected ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'bg-zinc-900 text-zinc-600'}`}>
-                                                <Database className="w-4 h-4" />
-                                            </div>
-                                            <div className="text-left flex-1 min-w-0">
-                                                <div className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-zinc-400'}`}>
-                                                    {ctx.name}
-                                                </div>
-                                                <div className="text-[9px] font-black uppercase tracking-widest opacity-50 mt-0.5">
-                                                    {ctx.sourceCount || 0} {t('ecosystem.sources_count')}
-                                                </div>
-                                            </div>
-                                            {isSelected && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        activeJob && <DiarizationMetadataPanel job={activeJob} onReprocess={handleReprocessJob} />
-                    )}
-                </motion.div>
+                {viewMode === 'detail' && activeJob && (
+                    <motion.div 
+                        key="metadata"
+                        initial={{ opacity: 0, x: 20, width: 0 }}
+                        animate={{ opacity: 1, x: 0, width: 320 }}
+                        exit={{ opacity: 0, x: 20, width: 0 }}
+                        className="border-l border-white/5 bg-black/20 backdrop-blur-xl flex flex-col shrink-0 overflow-hidden"
+                    >
+                        <DiarizationMetadataPanel job={activeJob} onReprocess={handleReprocessJob} />
+                    </motion.div>
+                )}
             </AnimatePresence>
 
             {/* MODALS */}

@@ -107,7 +107,7 @@ class DiarizationRepository:
             DiarizationRecord.external_source == external_source,
         )
         if subject_id:
-            parsed_id = UUID(subject_id) if isinstance(subject_id, str) else subject_id
+            parsed_id = UUID(str(subject_id)) if isinstance(subject_id, str) else subject_id
             query = query.filter(DiarizationRecord.subject_id == parsed_id)
         else:
             query = query.filter(DiarizationRecord.subject_id.is_(None))
@@ -119,16 +119,20 @@ class DiarizationRepository:
         self,
         limit: int = 10,
         offset: int = 0,
-        subject_id: str | object | None = None,
+        subject_id: str | List[str] | None = None,
     ) -> List[DiarizationRecord]:
 
         query = self.db.query(DiarizationRecord)
         if subject_id:
-            parsed_id = UUID(subject_id) if isinstance(subject_id, str) else subject_id
-            query = query.filter(DiarizationRecord.subject_id == parsed_id)
+            if isinstance(subject_id, list):
+                parsed_ids = [UUID(sid) if isinstance(sid, str) else sid for sid in subject_id]
+                query = query.filter(DiarizationRecord.subject_id.in_(parsed_ids))
+            else:
+                parsed_id = UUID(subject_id) if isinstance(subject_id, str) else subject_id
+                query = query.filter(DiarizationRecord.subject_id == parsed_id)
 
         result = query.order_by(DiarizationRecord.created_at.desc()).offset(offset).limit(limit).all()
-        return cast(List[DiarizationRecord], cast(object, result))
+        return cast(List[DiarizationRecord], result)
 
     def get_by_id(self, diarization_id: str) -> Optional[DiarizationRecord]:
         result = self.db.query(DiarizationRecord).filter(DiarizationRecord.id == diarization_id).first()

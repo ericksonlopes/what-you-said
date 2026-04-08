@@ -7,6 +7,7 @@ import uuid
 from sqlalchemy import (
     JSON,
     UUID,
+    Boolean,
     Column,
     DateTime,
     ForeignKey,
@@ -18,7 +19,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from src.infrastructure.repositories.sql.connector import Base
+from src.infrastructure.connectors.connector_sql import Base
 
 
 class ChunkIndexModel(Base):
@@ -58,6 +59,7 @@ class ChunkIndexModel(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    is_active = Column(Boolean, default=True, server_default=text("1"), nullable=False)
 
     __table_args__ = (
         Index("ix_chunk_index_content_source_id", "content_source_id"),

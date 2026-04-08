@@ -55,7 +55,22 @@ export interface RawQueueTask {
   enqueued_at: number;
 }
 
-export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts' | 'diarization' | 'voice_profiles' | 'queue';
+export type ViewState = 'chat' | 'search' | 'sources' | 'activity' | 'database' | 'knowledge_contexts' | 'diarization' | 'voice_profiles' | 'queue' | 'duplicates';
+
+export type ChunkDuplicate = {
+  id: string;
+  chunk_ids: string[];
+  chunks?: {
+    id: string;
+    content: string;
+    source_title?: string;
+    source_id?: string;
+  }[];
+  similarity: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
 
 
 export type ToastType = 'success' | 'info' | 'error';

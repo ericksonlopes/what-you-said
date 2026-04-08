@@ -25,6 +25,8 @@
     "selected_one": "1 selected",
     "selected_other": "{{count}} selected",
     "all": "All",
+    "active": "Active",
+    "select": "Select",
     "errors": {
       "general": "An unexpected error occurred. Please try again."
     },
@@ -81,6 +83,8 @@
       "videosSelected": "Video(s) selected",
       "voices": "Voice Profiles",
       "sources": "Content Sources",
+      "contentSources": "Content Sources",
+      "duplicates": "Duplicates",
       "chunks": "Sources > Chunks",
       "activity": "Activity Monitor",
       "queue": "Task Queue (Redis)",
@@ -100,6 +104,14 @@
       "plan": "Local Instance",
       "settings": "Settings"
     }
+  },
+  "sidebarContext": {
+    "title": "Knowledge Bases",
+    "description": "Filter content sources by one or more selected contexts.",
+    "all_bases": "All Knowledge Bases",
+    "clear_filter": "Clear Selection",
+    "sources_count": "sources",
+    "no_base": "No knowledge base found"
   },
   "search": {
     "title": "Semantic Search",
@@ -243,6 +255,20 @@
     "reprocessed_message": "Superseded by a new version",
     "phase": "Phase",
     "duration": "duration"
+  },
+  "operations": {
+    "duplicatesTitle": "Duplicate Management",
+    "duplicatesDesc": "We identified segments with high similarity (>90%) that might be redundant or repeated cuts.",
+    "duplicates": "Duplicates",
+    "similarity": "Similarity",
+    "ignore": "Ignore",
+    "deactivate": "Deactivate",
+    "resolved": "Resolved",
+    "pending": "Pending",
+    "reviewed": "Reviewed",
+    "ignored": "Ignored",
+    "noDuplicates": "No duplicates found at the moment.",
+    "contentSources": "Content Sources"
   },
   "settings": {
     "title": "Settings",

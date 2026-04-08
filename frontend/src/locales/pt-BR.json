@@ -25,6 +25,8 @@
     "selected_one": "1 selecionado",
     "selected_other": "{{count}} selecionados",
     "all": "Todos",
+    "active": "Ativo",
+    "select": "Selecionar",
     "errors": {
       "general": "Ocorreu um erro inesperado. Tente novamente."
     },
@@ -75,12 +77,13 @@
       "search": "Busca Semântica",
       "diarization": "Reconhecimento de Fala",
       "voices": "Perfis de Voz",
-      "sources": "Fontes de Conteúdo",
-      "chunks": "Fontes > Chunks",
+      "contentSources": "Fontes de Conteúdo",
+      "duplicates": "Duplicidades",
+      "sources": "Fontes",
+      "knowledgeSubject": "Assunto de Conhecimento",
       "activity": "Monitor de Atividade",
       "queue": "Fila de Tarefas (Redis)",
       "knowledge_contexts": "Bases de Conhecimento",
-
       "database": "Detalhes da Fonte",
       "voice_profiles": "Perfis de Voz"
     },
@@ -96,6 +99,14 @@
       "plan": "Rodando Localmente",
       "settings": "Configurações"
     }
+  },
+  "sidebarContext": {
+    "title": "Bases de Conhecimento",
+    "description": "Filtre as fontes de conteúdo por um ou mais contextos selecionados.",
+    "all_bases": "Todas as Bases",
+    "clear_filter": "Limpar Filtros",
+    "sources_count": "fontes",
+    "no_base": "Nenhuma base de conhecimento encontrada"
   },
   "search": {
     "title": "Busca Semântica",
@@ -238,7 +249,22 @@
     "pipeline_optimized": "Pipeline otimizada",
     "reprocessed_message": "Substituído por uma nova versão",
     "phase": "Phase",
-    "duration": "duração"
+    "duration": "duração",
+    "diarization": "Diarização"
+  },
+  "operations": {
+    "duplicatesTitle": "Gerenciamento de Duplicidades",
+    "duplicatesDesc": "Identificamos trechos com alta similaridade (>90%) que podem ser redundantes ou cortes repetidos.",
+    "duplicates": "Duplicidades",
+    "similarity": "Similaridade",
+    "ignore": "Ignorar",
+    "deactivate": "Inativar",
+    "resolved": "Resolvido",
+    "pending": "Pendente",
+    "reviewed": "Revisado",
+    "ignored": "Ignorado",
+    "noDuplicates": "Nenhuma duplicidade encontrada no momento.",
+    "contentSources": "Fontes de Conteúdo"
   },
   "settings": {
     "title": "Configurações",

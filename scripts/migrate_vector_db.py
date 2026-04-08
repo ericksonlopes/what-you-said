@@ -31,7 +31,7 @@ sys.path.insert(0, _SCRIPTS_DIR)
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_
 from clear_vector_db import clear_vector_db
-from src.infrastructure.repositories.sql.connector import Session as DBSessionFactory
+from src.infrastructure.connectors.connector_sql import Session as DBSessionFactory
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
 from src.infrastructure.services.model_loader_service import ModelLoaderService
 from src.infrastructure.repositories.vector.models.chunk_model import ChunkModel

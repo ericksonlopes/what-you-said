@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import src.infrastructure.repositories.sql.connector as connector
+import src.infrastructure.connectors.connector_sql as connector
 
 
 @pytest.fixture(autouse=True)

@@ -25,6 +25,7 @@ from src.presentation.api.routes import (  # noqa: E402
 from src.presentation.api.routes import (  # noqa: E402
     auth_router,
     chunk_router,
+    duplicate_router,
     ingest_router,
     job_router,
     notification_router,
@@ -89,6 +90,7 @@ async def lifespan(app: FastAPI):
             run_audio_diarization_dispatcher_worker,
             run_audio_diarization_worker,
             run_diarization_ingestion_worker,
+            run_duplicate_detection_worker,
             run_file_ingestion_worker,
             run_web_ingestion_worker,
             run_youtube_dispatcher_worker,
@@ -106,6 +108,7 @@ async def lifespan(app: FastAPI):
             "run_audio_diarization_dispatcher_worker",
             run_audio_diarization_dispatcher_worker,
         )
+        register_task("run_duplicate_detection_worker", run_duplicate_detection_worker)
 
         logger.info("Initializing RedisTaskQueueService...")
         app.state.task_queue = RedisTaskQueueService(num_workers=1)
@@ -188,6 +191,12 @@ app.include_router(
     chunk_router.router,
     prefix="/rest/chunks",
     tags=["Chunks"],
+    dependencies=secured_deps,
+)
+app.include_router(
+    duplicate_router.router,
+    prefix="/rest/duplicates",
+    tags=["Duplicates"],
     dependencies=secured_deps,
 )
 app.include_router(

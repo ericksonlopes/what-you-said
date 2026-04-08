@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from src.domain.entities.user import User as UserEntity
 from src.domain.interfaces.repository.user_repository import IUserRepository
-from src.infrastructure.repositories.sql.connector import Connector
+from src.infrastructure.connectors.connector_sql import Connector
 from src.infrastructure.repositories.sql.models.user import User as UserModel
 from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 

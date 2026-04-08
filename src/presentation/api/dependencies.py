@@ -42,11 +42,14 @@ from src.domain.entities.enums.vector_store_type_enum import VectorStoreType
 from src.domain.interfaces.repository.retriver_repository import IVectorRepository
 from src.domain.interfaces.services.i_event_bus import IEventBus
 from src.domain.interfaces.services.i_task_queue import ITaskQueue
+from src.infrastructure.connectors.connector_sql import Session as DBSessionFactory
 from src.infrastructure.extractors.crawl4ai_extractor import Crawl4AIExtractor
+from src.infrastructure.repositories.sql.chunk_duplicate_repository import (
+    ChunkDuplicateSQLRepository,
+)
 from src.infrastructure.repositories.sql.chunk_index_repository import (
     ChunkIndexSQLRepository,
 )
-from src.infrastructure.repositories.sql.connector import Session as DBSessionFactory
 from src.infrastructure.repositories.sql.content_source_repository import (
     ContentSourceSQLRepository,
 )
@@ -61,6 +64,7 @@ from src.infrastructure.repositories.sql.knowledge_subject_repository import (
 )
 from src.infrastructure.repositories.sql.user_repository import UserSQLRepository
 from src.infrastructure.services.auth_service import AuthService
+from src.infrastructure.services.chunk_duplicate_service import ChunkDuplicateService
 from src.infrastructure.services.chunk_index_service import ChunkIndexService
 from src.infrastructure.services.chunk_vector_service import ChunkVectorService
 from src.infrastructure.services.content_source_service import ContentSourceService
@@ -115,6 +119,10 @@ def get_subject_repo() -> KnowledgeSubjectSQLRepository:
 
 def get_user_repo() -> UserSQLRepository:
     return UserSQLRepository()
+
+
+def get_duplicate_repo() -> ChunkDuplicateSQLRepository:
+    return ChunkDuplicateSQLRepository()
 
 
 # Services
@@ -293,6 +301,14 @@ def get_chunk_index_service(
     repo: ChunkIndexSQLRepository = Depends(get_chunk_repo),
 ) -> ChunkIndexService:
     return ChunkIndexService(repo)
+
+
+def get_duplicate_service(
+    repo: ChunkDuplicateSQLRepository = Depends(get_duplicate_repo),
+    chunk_repo: ChunkIndexSQLRepository = Depends(get_chunk_repo),
+    vector_service: ChunkVectorService = Depends(get_chunk_vector_service),
+) -> ChunkDuplicateService:
+    return ChunkDuplicateService(repo, chunk_repo, vector_service)
 
 
 def get_youtube_vector_service(

@@ -8,7 +8,7 @@ import uuid
 from sqlalchemy import JSON, UUID, Column, DateTime, Float, ForeignKey, String
 
 from src.domain.entities.enums.diarization_status_enum import DiarizationStatus
-from src.infrastructure.repositories.sql.connector import Base
+from src.infrastructure.connectors.connector_sql import Base
 
 
 def _generate_uuid() -> str:

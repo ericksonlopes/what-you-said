@@ -3,7 +3,7 @@ from typing import Any, List, Optional, cast
 from uuid import UUID
 
 from src.config.logger import Logger
-from src.infrastructure.repositories.sql.connector import Connector
+from src.infrastructure.connectors.connector_sql import Connector
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
 from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
 

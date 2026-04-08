@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from sqlalchemy.orm import joinedload
 
 from src.config.logger import Logger
-from src.infrastructure.repositories.sql.connector import Connector
+from src.infrastructure.connectors.connector_sql import Connector
 from src.infrastructure.repositories.sql.models.chunk_index import ChunkIndexModel
 from src.infrastructure.repositories.sql.models.content_source import ContentSourceModel
 from src.infrastructure.repositories.sql.utils.utils import ensure_uuid
@@ -260,3 +260,22 @@ class ChunkIndexSQLRepository:
                     context={"chunk_id": str(chunk_id), "error": str(e)},
                 )
                 return None
+
+    def update_is_active(self, chunk_id: Any, is_active: bool) -> bool:
+        """Update the is_active flag of a chunk."""
+        chunk_id = ensure_uuid(chunk_id)
+        with Connector() as session:
+            try:
+                chunk = session.query(ChunkIndexModel).filter_by(id=chunk_id).first()
+                if chunk:
+                    chunk.is_active = is_active
+                    session.commit()
+                    return True
+                return False
+            except Exception as e:
+                session.rollback()
+                logger.error(
+                    "Error updating chunk is_active",
+                    context={"chunk_id": str(chunk_id), "error": str(e)},
+                )
+                raise

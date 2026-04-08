@@ -72,7 +72,16 @@ def run_file_ingestion_worker(cmd: IngestFileCommand):
             event_bus=ctx.event_bus,
         )
 
-        use_case.execute(cmd)
+        result = use_case.execute(cmd)
+
+        # Enqueue duplicate detection
+        if result and "vector_ids" in result:
+            task_queue = app.state.task_queue
+            task_queue.enqueue(
+                run_duplicate_detection_worker,
+                {"chunk_ids": result["vector_ids"]},
+                task_title=f"Dup Check: {cmd.file_name}",
+            )
     except Exception as e:
         logger.error(f"Worker Error: Failed to execute file ingestion: {e}", exc_info=True)
     finally:
@@ -119,7 +128,16 @@ def run_youtube_ingestion_worker(cmd: IngestYoutubeCommand):
             event_bus=ctx.event_bus,
         )
 
-        use_case.execute(cmd)
+        result = use_case.execute(cmd)
+
+        # Enqueue duplicate detection
+        if result and "vector_ids" in result:
+            task_queue = app.state.task_queue
+            task_queue.enqueue(
+                run_duplicate_detection_worker,
+                {"chunk_ids": result["vector_ids"]},
+                task_title=f"Dup Check YouTube: {cmd.video_url}",
+            )
     except Exception as e:
         logger.error(f"Worker Error: Failed to execute YouTube ingestion: {e}", exc_info=True)
     finally:
@@ -144,8 +162,20 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
     try:
         from src.application.dtos.enums.youtube_data_type import YoutubeDataType
         from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
+        from src.presentation.api.dependencies import resolve_ingestion_context
 
         task_queue = app.state.task_queue
+        context = resolve_ingestion_context(app)
+        job_service = context.job_service
+        job_id = str(cmd.ingestion_job_id) if cmd.ingestion_job_id else None
+
+        if job_id:
+            job_service.update_job_status(
+                job_id,
+                status="PROCESSING",
+                status_message=f"Resolving {cmd.data_type} videos...",
+                progress=5,
+            )
 
         # 1. Resolve the full list of URLs
         video_list = []
@@ -154,6 +184,8 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
             playlist_url = cmd.video_url or (cmd.video_urls[0] if cmd.video_urls else None)
             if not playlist_url:
                 logger.warning("No URL provided for playlist dispatcher")
+                if job_id:
+                    job_service.update_job_status(job_id, "FAILED", "Missing playlist URL.")
                 return
 
             extractor = YoutubeExtractor(language=cmd.language)
@@ -163,6 +195,8 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
             channel_url = cmd.video_url or (cmd.video_urls[0] if cmd.video_urls else None)
             if not channel_url:
                 logger.warning("No URL provided for channel dispatcher")
+                if job_id:
+                    job_service.update_job_status(job_id, "FAILED", "Missing channel URL.")
                 return
 
             extractor = YoutubeExtractor(language=cmd.language)
@@ -173,15 +207,27 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
 
         if not video_list:
             logger.warning(f"YouTube Dispatcher resolved 0 videos for type {cmd.data_type}.")
+            if job_id:
+                job_service.update_job_status(
+                    job_id,
+                    "FAILED",
+                    f"No videos found in {cmd.data_type}. Verify if the URL is valid and public.",
+                )
             return
+
+        if job_id:
+            job_service.update_job_status(
+                job_id,
+                status="PROCESSING",
+                status_message=f"Dispatched {len(video_list)} videos for ingestion.",
+                progress=50,
+            )
 
         logger.info(f"YouTube Dispatcher resolved {len(video_list)} videos. Enqueueing individual tasks...")
 
         # 2. Enqueue each video as a separate task
         for url in video_list:
             # Create a clone of the command for a single video
-            # IMPORTANT: We don't reuse the same ingestion_job_id from the dispatcher
-            # so that each video can either create its own tracking or we let the use case handle it.
             single_cmd = IngestYoutubeCommand(
                 video_url=url,
                 subject_id=cmd.subject_id,
@@ -202,9 +248,21 @@ def run_youtube_dispatcher_worker(cmd: IngestYoutubeCommand):
             )
 
         logger.info(f"Successfully dispatched {len(video_list)} YouTube ingestion tasks.")
+        if job_id:
+            job_service.update_job_status(
+                job_id,
+                status="SUCCESS",
+                status_message=f"Dispatched {len(video_list)} videos successfully.",
+                progress=100,
+            )
 
     except Exception as e:
         logger.error(f"YouTube Dispatcher Worker Error: {e}", exc_info=True)
+        if job_id:
+            try:
+                job_service.update_job_status(job_id, "FAILED", str(e))
+            except Exception:
+                pass
     finally:
         clear_global_context()
 
@@ -238,7 +296,7 @@ def run_diarization_ingestion_worker(cmd: IngestDiarizationCommand):
         vector_svc = ChunkVectorService(vector_repo, rerank_service=rerank_svc)
 
         # DiarizationRepository needs a DB session
-        from src.infrastructure.repositories.sql.connector import Session as DBSession
+        from infrastructure.connectors.connector_sql import Session as DBSession
 
         db = DBSession()
         try:
@@ -256,7 +314,16 @@ def run_diarization_ingestion_worker(cmd: IngestDiarizationCommand):
                 event_bus=ctx.event_bus,
             )
 
-            use_case.execute(cmd)
+            result = use_case.execute(cmd)
+
+            # Enqueue duplicate detection
+            if result and "vector_ids" in result:
+                task_queue = app.state.task_queue
+                task_queue.enqueue(
+                    run_duplicate_detection_worker,
+                    {"chunk_ids": result["vector_ids"]},
+                    task_title=f"Dup Check Diarization: {cmd.source}"
+                )
         finally:
             db.close()
     except Exception as e:
@@ -313,7 +380,16 @@ def run_web_ingestion_worker(cmd: Any):
                 extractor=extractor,
             )
 
-            await use_case.execute(cmd)
+            result = await use_case.execute(cmd)
+
+            # Enqueue duplicate detection
+            if result and "vector_ids" in result:
+                task_queue = app.state.task_queue
+                task_queue.enqueue(
+                    run_duplicate_detection_worker,
+                    {"chunk_ids": result["vector_ids"]},
+                    task_title=f"Dup Check Web: {cmd.url}"
+                )
         except Exception as e:
             logging.getLogger(__name__).error(f"Worker Error: Failed to execute Web Scraping: {e}", exc_info=True)
         finally:
@@ -324,11 +400,11 @@ def run_web_ingestion_worker(cmd: Any):
 
 def _audio_diarization_subprocess(cmd_dict: dict):
     """Run audio diarization in a separate process to avoid torch/CUDA thread deadlocks."""
+    from infrastructure.connectors.connector_sql import (
+        Session as DBSessionFactory,
+    )
     from src.application.use_cases.process_audio_diarization_pipeline import (
         ProcessAudioDiarizationPipelineUseCase,
-    )
-    from src.infrastructure.repositories.sql.connector import (
-        Session as DBSessionFactory,
     )
     from src.infrastructure.repositories.sql.content_source_repository import (
         ContentSourceSQLRepository,
@@ -400,10 +476,10 @@ def run_audio_diarization_dispatcher_worker(cmd: ProcessAudioCommand):
         return
 
     try:
-        from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
-        from src.infrastructure.repositories.sql.connector import (
+        from infrastructure.connectors.connector_sql import (
             Session as DBSessionFactory,
         )
+        from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
         from src.infrastructure.repositories.sql.diarization_repository import (
             DiarizationRepository,
         )
@@ -516,7 +592,7 @@ def run_audio_diarization_worker(cmd: ProcessAudioCommand):
         if process.exitcode != 0:
             logger.error("Audio diarization subprocess exited with code %d", process.exitcode)
             if cmd.diarization_id:
-                from src.infrastructure.repositories.sql.connector import (
+                from infrastructure.connectors.connector_sql import (
                     Session as DBSessionFactory,
                 )
                 from src.infrastructure.repositories.sql.diarization_repository import (
@@ -574,10 +650,10 @@ def run_voice_training_worker(cmd: TrainVoiceCommand):
         return
 
     try:
+        from infrastructure.connectors.connector_sql import Session as DBSession
         from src.application.use_cases.manage_voice_profiles import (
             TrainVoiceProfileFromSpeakerSegmentUseCase,
         )
-        from src.infrastructure.repositories.sql.connector import Session as DBSession
         from src.presentation.api.dependencies import resolve_ingestion_context
 
         ctx = resolve_ingestion_context(app)
@@ -593,5 +669,48 @@ def run_voice_training_worker(cmd: TrainVoiceCommand):
             db.close()
     except Exception as e:
         logger.error(f"Worker Error: Failed to execute voice training: {e}", exc_info=True)
+    finally:
+        clear_global_context()
+
+
+def run_duplicate_detection_worker(cmd: dict):
+    """Background worker for detecting duplicate chunks."""
+    set_global_context({"correlation_id": "worker-duplicate-detection"})
+
+    app = _get_app()
+    if not app:
+        clear_global_context()
+        return
+
+    try:
+        from src.infrastructure.services.chunk_duplicate_service import ChunkDuplicateService
+        from src.presentation.api.dependencies import (
+            get_chunk_repo,
+            get_chunk_vector_service,
+            get_duplicate_repo,
+            resolve_rerank_service,
+            resolve_vector_repository,
+        )
+
+        # Manual resolution since we don't have a Request object
+        vector_repo = resolve_vector_repository(app)
+        rerank_svc = resolve_rerank_service(app)
+        vector_svc = get_chunk_vector_service(vector_repo, rerank_svc)
+        
+        duplicate_repo = get_duplicate_repo()
+        chunk_repo = get_chunk_repo()
+        
+        service = ChunkDuplicateService(duplicate_repo, chunk_repo, vector_svc)
+        
+        chunk_ids = cmd.get("chunk_ids", [])
+        if not chunk_ids:
+            return
+
+        logger.info(f"Running duplicate detection for {len(chunk_ids)} chunks")
+        count = service.find_and_register_duplicates(chunk_ids, similarity_threshold=0.90)
+        logger.info(f"Duplicate detection finished. Found {count} potential duplicate groups.")
+
+    except Exception as e:
+        logger.error(f"Worker Error: Failed to execute duplicate detection: {e}", exc_info=True)
     finally:
         clear_global_context()

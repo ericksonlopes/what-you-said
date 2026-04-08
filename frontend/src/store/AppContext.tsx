@@ -79,7 +79,7 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
   const [isJobsLoaded, setIsJobsLoaded] = useState(false);
   const [currentView, setCurrentView] = useState<ViewState>(() => {
     const saved = localStorage.getItem('currentView') as ViewState;
-    const validViews: ViewState[] = ['chat', 'search', 'sources', 'activity', 'database', 'knowledge_contexts', 'diarization', 'voice_profiles'];
+    const validViews: ViewState[] = ['chat', 'search', 'sources', 'activity', 'database', 'knowledge_contexts', 'diarization', 'voice_profiles', 'duplicates'];
     const initial = validViews.includes(saved) ? saved : 'search';
     return initial;
   });
@@ -153,9 +153,7 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
         }
       }
 
-      if (data.length > 0 && selectedSubjects.length === 0) {
-        setSelectedSubjects([data[0]]);
-      }
+      // No auto-selecting anymore, empty selection means "All"
     } catch (err) {
       console.error('Error fetching subjects:', err);
     }
@@ -398,10 +396,8 @@ export function AppProvider({ children }: { readonly children: ReactNode }) {
 
   // Persist selectedSubjects
   useEffect(() => {
-    if (selectedSubjects.length > 0) {
       const ids = selectedSubjects.map(s => s.id);
       localStorage.setItem('selectedSubjectIds', JSON.stringify(ids));
-    }
   }, [selectedSubjects]);
 
   const toggleSubjectSelection = useCallback((subject: Subject) => {

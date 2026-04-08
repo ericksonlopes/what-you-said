@@ -202,13 +202,46 @@ class YoutubeExtractor(IYoutubeExtractor):
             with YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 base_name = ydl.prepare_filename(info)
-                return str(Path(base_name).with_suffix(".mp3"))
+                mp3_path = str(Path(base_name).with_suffix(".mp3"))
+                self._validate_mp3_file(mp3_path)
+                return mp3_path
 
         try:
             return self._run_with_retry(_download)
         except Exception as e:
             logger.error(f"Download failed after ALL retries: {e}", context={"url": url})
             return None
+
+    @staticmethod
+    def _validate_mp3_file(path: str) -> None:
+        """Validate that the downloaded file is a real MP3.
+
+        Raises ValueError if the file is missing, empty, or doesn't start with
+        a valid MP3 signature (ID3 tag or MPEG audio frame sync). This catches
+        cases where yt-dlp/ffmpeg silently produced a corrupt or HTML-error
+        artifact with an .mp3 extension.
+        """
+        p = Path(path)
+        if not p.exists():
+            raise ValueError(f"Downloaded MP3 not found: {path}")
+
+        size = p.stat().st_size
+        if size < 1024:
+            raise ValueError(f"Downloaded MP3 is too small ({size} bytes): {path}")
+
+        with open(p, "rb") as f:
+            header = f.read(4)
+
+        # ID3v2 tag
+        if header[:3] == b"ID3":
+            return
+        # MPEG audio frame sync: 11 bits set (0xFF 0xEx/0xFx)
+        if len(header) >= 2 and header[0] == 0xFF and (header[1] & 0xE0) == 0xE0:
+            return
+
+        raise ValueError(
+            f"Downloaded file is not a valid MP3 (header={header!r}): {path}"
+        )
 
     def extract_playlist_videos(self, playlist_url: str) -> list[str]:
         """Extracts all video URLs from a YouTube playlist using yt_dlp."""

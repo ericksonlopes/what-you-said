@@ -19,7 +19,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from src.infrastructure.repositories.sql.connector import Base
+from src.infrastructure.connectors.connector_sql import Base
 
 
 class ContentSourceModel(Base):
