@@ -66,9 +66,10 @@ class YoutubeExtractor(IYoutubeExtractor):
             "fragment_retries": 10,
             "retry_sleep_functions": {"http": lambda n: 5 * 2**n},
             # Use multiple clients to avoid "Sign in to confirm you're not a bot"
+            # mediaconnect is often the most resilient for servers/VPS
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["web", "mweb", "android", "ios", "mediaconnect", "tv"],
+                    "player_client": ["mediaconnect", "android", "web", "mweb"],
                     "player_skip": ["webpage", "configs"],
                 }
             },
@@ -202,37 +203,93 @@ class YoutubeExtractor(IYoutubeExtractor):
             return YoutubeMetadataDTO(video_id=self.video_id or "unknown")
 
     def download_audio(self, url: str, output_dir: str = "./temp_audio", quality: str = "192") -> str | None:
-        """Downloads and extracts audio from a YouTube video with resilience."""
+        """Downloads and extracts audio from a YouTube video with resilience.
+
+        Tries multiple player_client orderings, since a given video may return
+        an empty/placeholder stream from one client but a real stream from another.
+        """
         os.makedirs(output_dir, exist_ok=True)
 
-        def _download():
-            ydl_opts = self._get_common_ydl_opts(quiet=True)
-            ydl_opts.update(
-                {
-                    "format": "bestaudio/best",
-                    "ffmpeg_location": self._ffmpeg_path,
-                    "postprocessors": [
-                        {
-                            "key": "FFmpegExtractAudio",
-                            "preferredcodec": "mp3",
-                            "preferredquality": quality,
-                        }
-                    ],
-                    "outtmpl": f"{output_dir}/%(title)s.%(ext)s",
-                }
-            )
-            with YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                base_name = ydl.prepare_filename(info)
-                mp3_path = str(Path(base_name).with_suffix(".mp3"))
-                self._validate_mp3_file(mp3_path)
-                return mp3_path
+        client_strategies = [
+            ["web", "mweb", "android"],
+            ["android", "ios", "tv"],
+            ["mediaconnect", "android"],
+            ["ios", "web"],
+        ]
 
-        try:
-            return self._run_with_retry(_download)
-        except Exception as e:
-            logger.error(f"Download failed after ALL retries: {e}", context={"url": url})
-            return None
+        last_err: Exception | None = None
+        for clients in client_strategies:
+            try:
+                return self._download_once(url, output_dir, quality, clients)
+            except Exception as e:
+                last_err = e
+                logger.warning(
+                    f"Audio download failed with player_client={clients}: {e}",
+                    context={"url": url},
+                )
+
+        # Differentiate "video is gated by YouTube" from generic download failures.
+        # When every client returns no formats, the video itself requires PO token /
+        # auth cookies — no code change can fix it, so log it explicitly.
+        err_msg = str(last_err) if last_err else ""
+        if "Requested format is not available" in err_msg or "No video formats" in err_msg:
+            logger.error(
+                "YouTube returned no downloadable formats for this video on any client. "
+                "Likely PO-token / auth-gated (age, region, kids, anti-bot). "
+                "Provide data/cookies.txt or a residential proxy to bypass.",
+                context={"url": url, "reason": "no_formats_available"},
+            )
+        else:
+            logger.error(
+                f"Download failed after ALL strategies: {last_err}",
+                context={"url": url, "reason": "download_failed"},
+            )
+        return None
+
+    def _download_once(
+        self,
+        url: str,
+        output_dir: str,
+        quality: str,
+        player_clients: list[str],
+    ) -> str:
+        """Single download attempt with a specific player_client ordering."""
+        ydl_opts = self._get_common_ydl_opts(quiet=True)
+        # Don't skip webpage/configs here — some clients need them to expose audio formats
+        ydl_opts["extractor_args"] = {
+            "youtube": {
+                "player_client": player_clients,
+            }
+        }
+        ydl_opts.update(
+            {
+                # Broad selector: prefer m4a/webm audio, then any audio, then any progressive stream
+                "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best[acodec!=none]/best",
+                "ffmpeg_location": self._ffmpeg_path,
+                "postprocessors": [
+                    {
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "mp3",
+                        "preferredquality": quality,
+                    }
+                ],
+                "outtmpl": f"{output_dir}/%(title)s.%(ext)s",
+            }
+        )
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            base_name = ydl.prepare_filename(info)
+            mp3_path = str(Path(base_name).with_suffix(".mp3"))
+            try:
+                self._validate_mp3_file(mp3_path)
+            except ValueError:
+                # Remove the bad artifact so the next strategy starts clean
+                try:
+                    Path(mp3_path).unlink(missing_ok=True)
+                except OSError:
+                    pass
+                raise
+            return mp3_path
 
     @staticmethod
     def _validate_mp3_file(path: str) -> None:
