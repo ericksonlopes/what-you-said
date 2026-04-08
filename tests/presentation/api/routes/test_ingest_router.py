@@ -77,7 +77,7 @@ def test_ingest_youtube_reprocess():
     # Use real dependency override for task_queue if needed,
     # but mock_app_state fixture already sets app.state.task_queue
     from src.presentation.api.dependencies import get_job_service, get_task_queue_service
-    
+
     mock_queue = MagicMock()
     app.dependency_overrides[get_task_queue_service] = lambda: mock_queue
 
