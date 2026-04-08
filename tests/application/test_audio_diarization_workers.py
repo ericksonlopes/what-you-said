@@ -40,7 +40,7 @@ class TestAudioDiarizationWorker:
             patch("src.application.workers.registry.get", return_value=mock_app),
             patch("src.infrastructure.extractors.youtube_extractor.YoutubeExtractor") as mock_extractor_cls,
             patch(
-                "src.infrastructure.repositories.sql.connector.Session",
+                "src.infrastructure.connectors.connector_sql.Session",
                 return_value=mock_db_session,
             ),
             patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository") as mock_repo_cls,
@@ -92,7 +92,7 @@ class TestAudioDiarizationWorker:
             patch("src.application.workers.registry.get", return_value=mock_app),
             patch("src.infrastructure.extractors.youtube_extractor.YoutubeExtractor") as mock_extractor_cls,
             patch(
-                "src.infrastructure.repositories.sql.connector.Session",
+                "src.infrastructure.connectors.connector_sql.Session",
                 return_value=mock_db_session,
             ),
             patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository") as mock_repo_cls,

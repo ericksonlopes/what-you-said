@@ -171,7 +171,7 @@ class TestWorkers:
             patch("src.presentation.api.dependencies.resolve_vector_repository"),
             patch("src.presentation.api.dependencies.resolve_rerank_service"),
             patch("src.infrastructure.services.chunk_vector_service.ChunkVectorService"),
-            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_cls,
+            patch("src.infrastructure.connectors.connector_sql.Session") as mock_session_cls,
             patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository"),
             patch(
                 "src.application.use_cases.diarization_ingestion_use_case.DiarizationIngestionUseCase"
@@ -211,7 +211,7 @@ class TestWorkers:
         from src.application.workers import _audio_diarization_subprocess
 
         with (
-            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_cls,
+            patch("src.infrastructure.connectors.connector_sql.Session") as mock_session_cls,
             patch("src.infrastructure.services.redis_event_bus.RedisEventBus"),
             patch(
                 "src.application.use_cases.process_audio_diarization_pipeline.ProcessAudioDiarizationPipelineUseCase"
@@ -266,7 +266,7 @@ class TestWorkers:
 
         with (
             patch("multiprocessing.get_context") as mock_get_ctx,
-            patch("src.infrastructure.repositories.sql.connector.Session") as mock_session_factory,
+            patch("src.infrastructure.connectors.connector_sql.Session") as mock_session_factory,
             patch("src.infrastructure.repositories.sql.diarization_repository.DiarizationRepository") as mock_repo_cls,
             patch("src.infrastructure.services.redis_event_bus.RedisEventBus"),
         ):

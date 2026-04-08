@@ -314,7 +314,7 @@ def run_diarization_ingestion_worker(cmd: IngestDiarizationCommand):
         vector_svc = ChunkVectorService(vector_repo, rerank_service=rerank_svc)
 
         # DiarizationRepository needs a DB session
-        from infrastructure.connectors.connector_sql import Session as DBSession
+        from src.infrastructure.connectors.connector_sql import Session as DBSession
 
         db = DBSession()
         try:
@@ -418,7 +418,7 @@ def run_web_ingestion_worker(cmd: Any):
 
 def _audio_diarization_subprocess(cmd_dict: dict):
     """Run audio diarization in a separate process to avoid torch/CUDA thread deadlocks."""
-    from infrastructure.connectors.connector_sql import (
+    from src.infrastructure.connectors.connector_sql import (
         Session as DBSessionFactory,
     )
     from src.application.use_cases.process_audio_diarization_pipeline import (
@@ -494,7 +494,7 @@ def run_audio_diarization_dispatcher_worker(cmd: ProcessAudioCommand):
         return
 
     try:
-        from infrastructure.connectors.connector_sql import (
+        from src.infrastructure.connectors.connector_sql import (
             Session as DBSessionFactory,
         )
         from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
@@ -610,7 +610,7 @@ def run_audio_diarization_worker(cmd: ProcessAudioCommand):
         if process.exitcode != 0:
             logger.error("Audio diarization subprocess exited with code %d", process.exitcode)
             if cmd.diarization_id:
-                from infrastructure.connectors.connector_sql import (
+                from src.infrastructure.connectors.connector_sql import (
                     Session as DBSessionFactory,
                 )
                 from src.infrastructure.repositories.sql.diarization_repository import (
@@ -668,7 +668,7 @@ def run_voice_training_worker(cmd: TrainVoiceCommand):
         return
 
     try:
-        from infrastructure.connectors.connector_sql import Session as DBSession
+        from src.infrastructure.connectors.connector_sql import Session as DBSession
         from src.application.use_cases.manage_voice_profiles import (
             TrainVoiceProfileFromSpeakerSegmentUseCase,
         )

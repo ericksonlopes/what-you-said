@@ -7,9 +7,10 @@ from src.infrastructure.extractors.youtube_extractor import YoutubeExtractor
 
 @pytest.mark.Downloader
 class TestYoutubeExtractorDownload:
+    @patch("src.infrastructure.extractors.youtube_extractor.YoutubeExtractor._validate_mp3_file")
     @patch("src.infrastructure.extractors.youtube_extractor.YoutubeDL")
     @patch("os.makedirs")
-    def test_download_success(self, mock_makedirs, mock_ytdl):
+    def test_download_success(self, mock_makedirs, mock_ytdl, mock_validate):
         # Mocking yt_dlp to return a fake filename
         mock_instance = mock_ytdl.return_value.__enter__.return_value
         mock_instance.extract_info.return_value = {"title": "Test Audio", "ext": "webm"}
